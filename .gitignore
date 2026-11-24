@@ -1,13 +1,17 @@
 # Godot 引擎生成物，不纳入版本管理
 .godot/
 *.translation
+*.import
 
 # 导出产物
-/build/
-/export/
+build/
+export/
 
 # 本机临时构建
 .build/
 
 # 素材不入库（1.34 GB，用环境变量 MIR2X_ASSETS 指向）
-/assets/
+assets/
+
+# 临时截图
+shot*.png
