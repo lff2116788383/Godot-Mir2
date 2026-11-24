@@ -1,2 +1,2 @@
-// Package storage will implement SQLite persistence and static game data loading.
+// Package storage implements the legacy SQLite schema, persistence repositories and content verification.
 package storage

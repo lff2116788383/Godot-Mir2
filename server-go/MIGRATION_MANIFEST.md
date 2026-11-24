@@ -16,11 +16,11 @@
 | ID | C++/数据源 | Go 目标 | 批次 | 状态 | 备注 |
 |---|---|---|---|---|---|
 | C01 | `common/src` 基础常量、数学、坐标、路径、ID | `internal/common`、`internal/protocol` | B1 | in-progress | `ActionNode`、StaticBuffer、StaticVector 已完成 |
-| C02 | `protocoldef.hpp`、`clientmsg.hpp`、`servermsg.hpp`、`cerealf.hpp`、`serdesmsg.hpp` | `internal/protocol` | B1 | in-progress | 固定消息、PortableBinary、SDItem 和 100 个 serdes/Lua golden 对象已完成；94/94 声明类型全覆盖 |
-| C03 | `actormsg.hpp`、`actormsgpack.hpp`、`msgf.hpp` | `internal/actor`、`internal/protocol` | B1/B3 | pending | 消息包络与路由 |
-| C04 | `*.inc` 静态记录表 | `internal/common` 或生成代码 | B1/B2 | pending | 优先使用转换工具生成 |
-| C05 | `server/src/server.sql` | `internal/storage` | B2 | pending | 包含自定义 SQLite 函数 |
-| C06 | 账号、角色、物品、行会、拍卖、摆摊、邮件数据库代码 | `internal/storage` | B2 | pending | 保留现有库兼容 |
+| C02 | `protocoldef.hpp`、`clientmsg.hpp`、`servermsg.hpp`、`cerealf.hpp`、`serdesmsg.hpp` | `internal/protocol` | B1 | adapted | 100 个 serdes/Lua golden 对象；94/94 声明类型全覆盖 |
+| C03 | `actormsg.hpp`、`actormsgpack.hpp`、`msgf.hpp` | `internal/actor`、`internal/protocol` | B3 | pending | 消息包络与路由 |
+| C04 | `*.inc` 静态记录表 | `internal/common` 或生成代码 | B4/B5 | pending | 随所属玩法批次迁移 |
+| C05 | `server/src/server.sql` | `internal/storage` | B2 | ported | schema 原样嵌入 |
+| C06 | 账号、角色、物品、行会、拍卖、摆摊、邮件数据库代码 | `internal/storage` | B2 | adapted | 持久化和数据访问完成；买断税务/投递编排归 B6 |
 | C07 | `actorpool.*`、`delaydriver.*`、`dispatcher.*` | `internal/actor` | B3 | pending | 地图串行执行优先 |
 | C08 | `netdriver.*`、`actornetdriver.*`、`servicecorenet.*`、`serverpeer.*` | `internal/transport` | B3 | pending | 保留旧 TCP 协议 |
 | C09 | `servermap.*`、`servermapop.*` | `internal/world` | B4 | pending | |
@@ -49,7 +49,7 @@
 
 ### B1：公共类型、协议和编解码
 
-状态：**进行中**
+状态：**完成**
 
 已完成：
 
@@ -119,9 +119,44 @@
 - 对 optional 缺省、空集合、map 多元素、Item/inventory/wear、runtime config、health、team 和递归 Lua 类型做边界测试；
 - 协议与公共类型测试、race 测试通过。
 
-待完成：
+批次结论：
+
+- 协议声明、序列化、framing 和短时 fuzz 已完成；
+- 真实 C++ 运行会话抓包移交 B8；
+- `serdesmsg.cpp` 领域辅助逻辑移交对应玩法批次；
+- `std::unordered_map` 多元素顺序差异已记录。
+
+移交后续批次：
 
 - 真实 C++ 客户端/服务端运行会话抓包和握手链路校验；
 - `serdesmsg.cpp` 中的辅助序列化逻辑；
 - 扩大协议对象 fuzz、深度/内存边界和长时间 fuzz。
 - `std::unordered_map` 的顺序兼容说明与 fuzz 验证（Go 侧当前按 key 排序，语义兼容但多元素字节序列不保证与 C++ 迭代顺序一致）。
+### B2：SQLite、配置和数据加载
+
+状态：**完成**
+
+完成内容：
+
+- 原样嵌入 22 张表、11 个索引和 guild trigger；
+- 纯 Go `modernc.org/sqlite` 驱动；
+- 实现 `jobValid`、`SYS_PLY_VIEWR`、`checkAuctionCategory`；
+- DSN 级 foreign key、WAL、busy timeout、synchronous 和 immediate transaction；
+- `STRICT` 表、外键、事务回滚和自定义函数测试；
+- 账号、角色仓储；
+- inventory/secured/wear/belt/learned magic/player config 仓储；
+- 金币原子增减；
+- 角色 Lua 变量 BLOB；
+- 动态任务表/字段；
+- 聊天、群组、好友、黑名单；
+- 行会、邀请、排名、公告和行会战；
+- 拍卖、摆摊、投递和直接交易数据层；
+- `cerealf` BLOB 兼容；
+- JSON 配置；
+- 内容清单和 SHA-256 校验。
+
+边界说明：
+
+- 物品/怪物/魔法/地图静态记录解析归入 B4/B5；
+- 拍卖购买税务/投递编排、摆摊买家付款编排归入 B6；
+- B2 的结束条件是持久化和数据访问基础设施稳定通过测试，而不是所有玩法业务事务落地。

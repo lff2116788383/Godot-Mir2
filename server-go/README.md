@@ -8,22 +8,28 @@
 
 ## 当前阶段
 
-B0 已完成：工程骨架、参考基线、资源基线、迁移索引和批次检查脚本。
+B0、B1、B2 已完成，下一步进入 B3。
 
-B1 进行中：
+### B1 已完成
 
-- 已完成消息 ID、消息属性表、TCP 分帧、varint、XOR 压缩；
-- 已完成全部 fixed client/server payload 类型和 wire codec；
-- 已完成 C++ ABI 布局 fixture 和固定消息尺寸全量对照测试；
-- 已完成 cereal PortableBinary writer/reader；
-- 已完成 `cerealf` 压缩标记、XOR 与 ZSTD 编解码；
-- 已完成五批 `serdesmsg`/Lua 对象及 C++ golden fixture 对照测试；
-- 累计完成 100 个 C++ cereal golden 样本；94 个 `serdesmsg` 声明类型已全部覆盖；
-- 协议声明类型迁移已全部完成；
-- 已完成 8 个完整 framing golden packet，覆盖 empty/raw/XOR/XOR64/response ID/variable payload；
-- 已完成 packet、varint、XOR 的短时 fuzz 验证；
-- B1 剩余真实 C++ 客户端/服务端会话抓包、辅助方法和少量非协议公共类型。
+- 旧客户端协议全部固定消息、100 个 serdes/Lua fixture；
+- `serdesmsg.hpp` 94/94 声明类型覆盖；
+- PortableBinary、`cerealf`、XOR、ZSTD；
+- 8 个完整 client/server framing golden packet；
+- packet、varint、XOR 短时 fuzz 通过。
 
+真实 C++ 客户端/服务端会话抓包归入 B8，`serdesmsg.cpp` 领域辅助方法归入对应玩法批次。
+
+### B2 已完成
+
+- 原样嵌入 22 张表、11 个索引和 guild trigger；
+- `jobValid`、`SYS_PLY_VIEWR`、`checkAuctionCategory`；
+- SQLite foreign key、WAL、busy timeout、事务和 STRICT 表；
+- 账号、角色、金币、背包、装备、任务、聊天、行会、拍卖、摆摊、投递和直接交易存储层；
+- `cerealf` BLOB 兼容；
+- JSON 配置和内容 SHA-256 校验。
+
+静态物品/怪物/魔法/地图记录解析归入 B4/B5，拍卖购买税务/投递和摆摊付款编排归入 B6。
 ## 常用命令
 
 ```powershell
