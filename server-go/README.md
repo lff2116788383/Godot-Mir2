@@ -17,8 +17,9 @@ B1 进行中：
 - 已完成 C++ ABI 布局 fixture 和固定消息尺寸全量对照测试；
 - 已完成 cereal PortableBinary writer/reader；
 - 已完成 `cerealf` 压缩标记、XOR 与 ZSTD 编解码；
-- 已完成第一批 13 个 `serdesmsg` 对象及 C++ golden fixture 对照测试；
-- 剩余其他 `serdesmsg` 对象、嵌套 variant/map/optional 组合和真实端到端报文。
+- 已完成两批 `serdesmsg` 对象及 C++ golden fixture 对照测试；
+- 累计完成 47 个 C++ cereal golden 样本，覆盖地图、玩家、行会、聊天、排行和 peer 配置等消息；
+- 剩余依赖 `SDItem`、runtime config、Lua 变量和复杂嵌套结构的 `serdesmsg` 对象，以及真实端到端报文。
 
 ## 常用命令
 

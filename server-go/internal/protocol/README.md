@@ -74,7 +74,11 @@ All fixed message payloads are tested against the C++ `sizeof` table.
 - `CF_XOR` sparse XOR compression;
 - `CF_ZSTD` Zstandard compression.
 
-The first `serdesmsg.hpp` batch is implemented in `serdes_basic.go`. Its golden bytes are generated from a standalone C++ cereal probe and checked into `testdata/serdes-golden.json`.
+The first two `serdesmsg.hpp` batches are implemented in `serdes_basic.go` and `serdes_second_batch.go`. They cover 47 golden fixtures generated from a standalone C++ cereal probe and checked into `testdata/serdes-golden.json`.
+
+Current second-batch coverage includes player/guild/ranking DTOs, ground items/firewalls/safe zones, chat messages, NPC events, magic keys, peer configuration and nested collections.
+
+Known ordering nuance: C++ `std::unordered_map` iteration order is implementation-defined. The Go encoder writes those maps in ascending key order, which is semantically compatible with cereal decoding but does not guarantee byte-for-byte equality for multi-entry unordered maps.
 
 ## ABI-sensitive findings
 

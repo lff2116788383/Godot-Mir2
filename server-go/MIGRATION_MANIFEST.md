@@ -16,7 +16,7 @@
 | ID | C++/数据源 | Go 目标 | 批次 | 状态 | 备注 |
 |---|---|---|---|---|---|
 | C01 | `common/src` 基础常量、数学、坐标、路径、ID | `internal/common`、`internal/protocol` | B1 | in-progress | `ActionNode`、StaticBuffer、StaticVector 已完成 |
-| C02 | `protocoldef.hpp`、`clientmsg.hpp`、`servermsg.hpp`、`cerealf.hpp`、`serdesmsg.hpp` | `internal/protocol` | B1 | in-progress | 固定消息和 PortableBinary 已完成；serdes 对象迁移中 |
+| C02 | `protocoldef.hpp`、`clientmsg.hpp`、`servermsg.hpp`、`cerealf.hpp`、`serdesmsg.hpp` | `internal/protocol` | B1 | in-progress | 固定消息、PortableBinary 和 47 个 serdes golden 对象已完成；其余复杂 serdes 迁移中 |
 | C03 | `actormsg.hpp`、`actormsgpack.hpp`、`msgf.hpp` | `internal/actor`、`internal/protocol` | B1/B3 | pending | 消息包络与路由 |
 | C04 | `*.inc` 静态记录表 | `internal/common` 或生成代码 | B1/B2 | pending | 优先使用转换工具生成 |
 | C05 | `server/src/server.sql` | `internal/storage` | B2 | pending | 包含自定义 SQLite 函数 |
@@ -71,19 +71,30 @@
 - 对全部固定长度消息做 Go 编码长度与 C++ `sizeof` 全量对照测试；
 - `cerealf` PortableBinary writer/reader；
 - `cerealf` 的 CF_NONE/CF_XOR/CF_ZSTD 压缩封装；
-- 第一批 13 个 `serdesmsg` 对象：
+- 第一批 13 个核心 `serdesmsg` 对象：
   - `SDSendPackage`、`SDObserverNetPackage`
   - `SDInitQuest`、`SDInitGuard`、`SDInitPlayer`、`SDInitNPChar`、`SDInitMonster`
   - `SDNPCXMLLayout`
   - `SDChatGroupMember`、`SDChatPeerPlayerVar`、`SDChatPeerGroupVar`
   - `SDChatPeer`、`SDChatPeerID`
+- 第二批 34 个 `serdesmsg` 对象，覆盖：
+  - inventory/input/NPC sell 请求；
+  - player、guild、guild war、ranking；
+  - ground item、firewall、safe zone；
+  - learned magic、magic key；
+  - chat message、NPC event；
+  - `std::map`、`std::unordered_map`、optional、嵌套 vector；
+  - peer config/index/list；
+  - `SDChatPeerList`、`SDUIDList`。
 - 建立可重复生成的 C++ cereal golden fixture；
-- 对首批 serdes 对象做 Go/C++ 字节级对照和反序列化测试；
+- 对 47 个 serdes fixture 做 Go/C++ 字节级对照和反序列化测试；
+- 对 optional 缺省、空集合、map 多元素和 tagged-value helper 做边界测试；
 - 协议与公共类型测试、race 测试通过。
 
 待完成：
 
-- `serdesmsg.hpp` 其余可变对象，重点包括 variant、optional、map、unordered_map 和 Lua 变量；
+- `serdesmsg.hpp` 其余可变对象，重点包括 `SDItem`、runtime config、Lua 变量和复杂嵌套结构；
 - `serdesmsg.cpp` 中的辅助序列化逻辑；
 - 客户端/服务端真实 golden packet 样本；
-- 大批量协议对象的 fuzz/边界测试。
+- 大批量协议对象的 fuzz/边界测试；
+- `std::unordered_map` 的顺序兼容说明与 fuzz 验证（Go 侧当前按 key 排序，语义兼容但多元素字节序列不保证与 C++ 迭代顺序一致）。

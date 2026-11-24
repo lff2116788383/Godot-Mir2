@@ -50,5 +50,6 @@ $rows = foreach ($file in ($files | Sort-Object FullName -Unique)) {
 
 $parent = Split-Path -Parent $OutputFile
 if ($parent) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
-$rows | Export-Csv -LiteralPath $OutputFile -NoTypeInformation -Encoding UTF8
+$csv = $rows | ConvertTo-Csv -NoTypeInformation
+[System.IO.File]::WriteAllText($OutputFile, (($csv -join "`n") + "`n"), $utf8)
 Write-Host "Wrote $($rows.Count) rows to $OutputFile"

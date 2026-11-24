@@ -380,15 +380,16 @@ func (v SDChatPeer) MarshalPortable(writer *PortableWriter) error {
 func (v *SDChatPeer) UnmarshalPortable(reader *PortableReader) error {
 	v.ID = reader.Uint32()
 	v.Name = reader.String()
+	v.Avatar = 0
 	v.AvatarPresent = !reader.Bool()
 	if v.AvatarPresent {
 		v.Avatar = reader.Uint64()
 	}
+	v.PlayerVar = SDChatPeerPlayerVar{}
+	v.GroupVar = SDChatPeerGroupVar{}
 	v.DespKind = reader.Int32()
 	switch v.DespKind {
 	case SDChatPeerDespNone:
-		v.PlayerVar = SDChatPeerPlayerVar{}
-		v.GroupVar = SDChatPeerGroupVar{}
 	case SDChatPeerDespPlayer:
 		if err := v.PlayerVar.UnmarshalPortable(reader); err != nil {
 			return err

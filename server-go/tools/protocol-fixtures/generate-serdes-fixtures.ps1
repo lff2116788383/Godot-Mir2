@@ -62,5 +62,6 @@ $result = [ordered]@{
 
 $parent = Split-Path -Parent $OutputFile
 if ($parent) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
-[System.IO.File]::WriteAllText($OutputFile, ($result | ConvertTo-Json -Depth 8) + "`n", $utf8)
+$json = ($result | ConvertTo-Json -Depth 8) -replace "`r`n", "`n"
+[System.IO.File]::WriteAllText($OutputFile, $json + "`n", $utf8)
 Write-Host "Wrote $($fixtures.Count) serdes fixtures to $OutputFile"
