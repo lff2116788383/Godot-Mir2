@@ -41,4 +41,16 @@ It compiles `serdes_fixture_probe.cpp` with cereal and writes raw `PortableBinar
 
 The probe currently mirrors 100 `serdesmsg.hpp`/Lua fixture objects. Extend the probe whenever another object is migrated.
 
+## Full framing packet fixtures
+
+```powershell
+pwsh ./tools/protocol-fixtures/generate-framing-fixtures.ps1
+```
+
+It compiles `framing_fixture_probe.cpp`, which mirrors the C++ packet framing algorithm, and writes:
+
+- `internal/protocol/testdata/framing-golden.json`
+
+The fixture covers client/server direction, all four message kinds, response IDs and XOR64.
+
 All generated outputs are checked in so normal Go development does not require the C++ toolchain.

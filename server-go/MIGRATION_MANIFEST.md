@@ -109,12 +109,19 @@
   - `SDRemoteCall`、`SDRemoteCallResult`、`SDSendNotify`。
 - 建立可重复生成的 C++ cereal golden fixture；
 - 对 100 个 serdes/Lua fixture 做 Go/C++ 字节级对照和反序列化测试；
+- 新增 8 个完整 framing golden packet：
+  - empty、fixed raw、fixed XOR、wide XOR64；
+  - response ID；
+  - variable payload；
+  - client 与 server 两个方向。
+- packet decoder 使用全部 framing golden 作为 fuzz seed，fuzz 通过；
+- varint 与 XOR decoder 独立 fuzz 通过。
 - 对 optional 缺省、空集合、map 多元素、Item/inventory/wear、runtime config、health、team 和递归 Lua 类型做边界测试；
 - 协议与公共类型测试、race 测试通过。
 
 待完成：
 
-- 真实客户端/服务端端到端 packet 校验；
+- 真实 C++ 客户端/服务端运行会话抓包和握手链路校验；
 - `serdesmsg.cpp` 中的辅助序列化逻辑；
-- 大批量协议对象的 fuzz/边界测试；
+- 扩大协议对象 fuzz、深度/内存边界和长时间 fuzz。
 - `std::unordered_map` 的顺序兼容说明与 fuzz 验证（Go 侧当前按 key 排序，语义兼容但多元素字节序列不保证与 C++ 迭代顺序一致）。

@@ -19,7 +19,10 @@ B1 进行中：
 - 已完成 `cerealf` 压缩标记、XOR 与 ZSTD 编解码；
 - 已完成五批 `serdesmsg`/Lua 对象及 C++ golden fixture 对照测试；
 - 累计完成 100 个 C++ cereal golden 样本；94 个 `serdesmsg` 声明类型已全部覆盖；
-- 协议声明类型迁移已全部完成；B1 剩余真实端到端 packet 校验、fuzz 和少量非协议公共类型。
+- 协议声明类型迁移已全部完成；
+- 已完成 8 个完整 framing golden packet，覆盖 empty/raw/XOR/XOR64/response ID/variable payload；
+- 已完成 packet、varint、XOR 的短时 fuzz 验证；
+- B1 剩余真实 C++ 客户端/服务端会话抓包、辅助方法和少量非协议公共类型。
 
 ## 常用命令
 

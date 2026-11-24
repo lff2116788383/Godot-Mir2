@@ -10,3 +10,4 @@
 - `protocol-fixtures/generate-cpp-layout.ps1`：生成 packed message ABI 尺寸；
 - `protocol-fixtures/generate-message-table.ps1`：生成消息 ID 和 framing 属性；
 - `protocol-fixtures/generate-serdes-fixtures.ps1`：生成 cereal PortableBinary golden 样本。
+- `protocol-fixtures/generate-framing-fixtures.ps1`：生成完整 client/server framing golden packet。
