@@ -65,6 +65,7 @@
 | `test_ui.gd` | 39 | 背包堆叠/seqID/删除/合并、消息栈、小地图换算 |
 | `test_typeset.gd` | 20 | Token 模型、换行判定、三种对齐、两端填充、垂直排版 |
 | `test_human.gd` | 31 | humanKey 位编码、四层 gfxID、文件名解码、真实素材查找 |
+| `anim_selftest.gd` | 12 | 动作切换（STAND↔WALK）、4 帧循环推进、朝向同步（场景内运行） |
 
 ## 已完成但需回归的
 

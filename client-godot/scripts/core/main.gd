@@ -64,6 +64,11 @@ func _maybe_run_test() -> void:
 		add_child(t0)
 		await t0.run(self)
 		return
+	if name == "anim":
+		var ta: Node = load("res://tools/anim_selftest.gd").new()
+		add_child(ta)
+		await ta.run(self)
+		return
 	if name != "move":
 		return
 	var t: Node = load("res://tools/move_selftest.gd").new()
@@ -88,12 +93,9 @@ func _create_player() -> void:
 	_human.anchor_offset = Vector2(-10, -48)
 	_human.set_appearance(0, 1, 0, 0, false)   # dress=0 裸身, hair=1, 无头盔武器, 女性
 
-	var idle = MotionNode.new()
-	idle.type = MotionType.MOTION_STAND
-	idle.direction = PathFinder.DIR_DOWN
-	idle.x = _spawn.x
-	idle.y = _spawn.y
-	_human.set_motion(idle)
+	# 绑定动画节点，切到站立动作
+	_player.bind_animation(_human)
+	_player.set_motion_type(MotionType.MOTION_STAND)
 	print("[Main] 人形外观: dress=%d hair=%d 层可见: body0=%s body1=%s head=%s" % [
 		_human.dress, _human.hair,
 		str(_human.get_node("body0").visible),

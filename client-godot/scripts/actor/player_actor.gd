@@ -17,6 +17,9 @@ signal grid_changed(grid: Vector2i)
 signal move_finished
 signal facing_changed(dir: int)
 
+const MotionNodeScript := preload("res://scripts/action/motion_node.gd")
+const MotionTypeScript := preload("res://scripts/action/motion_type.gd")
+
 const GRID_X := 48
 const GRID_Y := 32
 
@@ -33,7 +36,34 @@ var _acc := 0.0
 var _seg_from := Vector2.ZERO
 var _seg_to := Vector2.ZERO
 
+## 当前动作（MotionNode），由外部注入 HumanActor 用于播放动画
+var _motion = null
+## 外部动画节点（HumanActor），负责贴图刷新
+var _anim_node = null
+## 动作帧累积时间（毫秒）
+var _frame_acc := 0.0
+
 var grid_checker: Callable
+
+
+## 绑定动画节点（HumanActor）
+func bind_animation(node) -> void:
+	_anim_node = node
+
+
+## 切动作：type 用 MotionType，自动同步 direction / 坐标
+func set_motion_type(motion_type: int) -> void:
+	var m = MotionNodeScript.new()
+	m.type = motion_type
+	m.direction = facing
+	m.x = grid.x
+	m.y = grid.y
+	m.end_x = grid.x
+	m.end_y = grid.y
+	_motion = m
+	_frame_acc = 0.0
+	if _anim_node != null:
+		_anim_node.set_motion(m)
 
 
 func setup(map_view: MapView, checker: Callable) -> void:
@@ -81,6 +111,10 @@ func set_facing(d: int) -> void:
 	if d == facing or d < PathFinder.DIR_BEGIN or d >= PathFinder.DIR_END:
 		return
 	facing = d
+	if _motion != null:
+		_motion.direction = d
+		if _anim_node != null:
+			_anim_node.set_facing_dir(d)
 	var i: int = d - PathFinder.DIR_BEGIN
 	var off_x: int = PathFinder.DX[i]
 	var off_y: int = PathFinder.DY[i]
@@ -110,6 +144,7 @@ func request_move(dst: Vector2i, max_step: int = 1) -> bool:
 	_moving = true
 	_acc = 0.0
 	_seg_from = position
+	set_motion_type(MotionTypeScript.MOTION_WALK)   # 走路动画
 	_begin_segment()
 	return true
 
@@ -127,6 +162,9 @@ func _begin_segment() -> void:
 
 
 func _process(dt: float) -> void:
+	# 动画帧无论是否在移动都要推进（站立也有 4 帧待机动画）
+	_advance_animation(dt)
+
 	if not _moving:
 		return
 	var dur := ms_per_grid / 1000.0
@@ -157,9 +195,22 @@ func _process(dt: float) -> void:
 		position = _seg_from.lerp(_seg_to, t)
 
 
+## 按原版 frameDelay 推进动画帧
+func _advance_animation(dt: float) -> void:
+	if _motion == null or _anim_node == null:
+		return
+	var delay: float = _motion.frame_delay()
+	_frame_acc += dt * 1000.0
+	while _frame_acc >= delay:
+		_frame_acc -= delay
+		if not _anim_node.advance_frame():
+			break
+
+
 func _end_move() -> void:
 	_moving = false
 	_acc = 0.0
+	set_motion_type(MotionTypeScript.MOTION_STAND)  # 回到站立
 	move_finished.emit()
 
 
