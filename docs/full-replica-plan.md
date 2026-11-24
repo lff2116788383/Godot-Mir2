@@ -47,9 +47,39 @@
 | SDL3 渲染/输入/窗口 | Godot 接管 | Godot 原生 |
 | SDL3 音频播放 | Godot 接管 | `AudioStreamPlayer` |
 | widget 像素级绘制细节 | 属渲染层 | Godot `Control` 等价实现，**布局与交互逻辑照搬** |
+| **服务端 Lua 脚本（690 个）** | **跑在服务端进程，客户端只消费结果** | 见 2.4 |
 | 服务端业务逻辑 | 任务明确不写 | mock 只回应必要消息 |
 | 集群/分线/数据库 | 同上 | mock 内存态 |
 | 资源编辑器工具 | 非运行时 | 不移植 |
+
+### 2.4 Lua 脚本归属（已查证，客户端不需要 Lua 运行时）
+
+**结论：690 个 Lua 脚本 / 48,462 行，一行都不用转 GDScript。**
+
+| 证据 | 位置 | 说明 |
+|---|---|---|
+| 客户端 Lua 模块只有 **17 行** | `client/src/clientluamodule.cpp` | 仅 1 个 `addLogString` |
+| 客户端只导出 **1 个** API | `processrun.cpp:1416` `bindFunction("addCBLog")` | 仅用于日志 |
+| `luaCommand()` 是 GM 调试控制台 | `processrun.cpp:1136` | 非游戏脚本执行入口 |
+| 服务端导出 **20+ API** | `servermap.cpp:88-546` `npchar.cpp:60-334` | `addGuard` / `addMonster` / `isSafeGrid` / `dbSetGKey` 等 |
+| 脚本目录 | `server/script/` | map 285、npc 341、quest 44，**全部服务端执行** |
+
+**客户端如何获得 Lua 逻辑的结果**：不执行脚本，只消费服务端下发的消息。
+
+| Lua 语句 | 服务端下发 | 客户端行为 |
+|---|---|---|
+| `addSafeZone({x,y,r})` | `SM_SAFEZONELIST` | 画安全区高亮 |
+| `addGuard('禁军卫士', x, y, dir)` | `SM_CORECORD` | 显示 NPC |
+| `addMonster(...)` | `SM_CORECORD` | 显示怪物 |
+| `setNPCSell{...}` | `SM_NPCSELL` | 显示商品列表 |
+| NPC 对话 XML | `SM_NPCXMLLAYOUT` | 解析排版（S11） |
+| 任务状态 | `SM_QUESTDESPUPDATE` / `SM_QUESTDESPLIST` | 任务面板 UI |
+
+**mock 侧决策**：`tools/mock-server/` **不嵌 Lua**，按协议下发固定数据即可。
+想验证真实刷怪逻辑，属于将来真做服务端的事，不混入本轮。
+
+**唯一可选的 Lua 需求**：客户端 GM 调试控制台（原版 `luaCommand` 功能）。
+本轮**不做**。
 
 ---
 

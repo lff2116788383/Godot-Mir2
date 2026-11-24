@@ -1,0 +1,2904 @@
+{
+ "_meta": {
+  "_source": "magicrecord.inc",
+  "_total_slots": 117,
+  "_valid_records": 116
+ },
+ "records": {
+  "1": {
+   "name": "物理攻击",
+   "castRange": {
+    "type": "CRT_DIR",
+    "distance": 1
+   }
+  },
+  "2": {
+   "name": "魔法特效_火焰灰烬",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 2450,
+      "frameCount": 10,
+      "gfxDirType": 5,
+      "onGround": 1,
+      "loop": 1
+     }
+    ]
+   }
+  },
+  "3": {
+   "name": "魔法特效_冰刺",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 1048666,
+      "frameCount": 20,
+      "gfxDirType": 2,
+      "onGround": 1,
+      "speed": 200
+     }
+    ]
+   }
+  },
+  "4": {
+   "name": "魔法特效_护身符",
+   "seffBase": 13,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 2080,
+      "frameCount": 6,
+      "gfxDirType": 8
+     },
+     {
+      "stage": "运行",
+      "type": "跟随",
+      "gfxID": 980,
+      "frameCount": 3,
+      "gfxDirType": 16,
+      "loop": 1,
+      "speed": 200
+     }
+    ]
+   }
+  },
+  "5": {
+   "name": "魔法特效_召唤骷髅",
+   "seffBase": 17,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 740,
+      "frameCount": 10,
+      "motion": "MOTION_SPELL1",
+      "speed": 80
+     },
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 750,
+      "frameCount": 10,
+      "speed": 200
+     }
+    ]
+   }
+  },
+  "6": {
+   "name": "魔法特效_雷电术",
+   "seffBase": 11,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 1450,
+      "frameCount": 5
+     }
+    ]
+   }
+  },
+  "7": {
+   "name": "魔法特效_火球术",
+   "seffBase": 1,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "跟随",
+      "gfxID": 420,
+      "frameCount": 5,
+      "gfxDirType": 16,
+      "loop": 1,
+      "speed": 200
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 580,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "8": {
+   "name": "魔法特效_大火球",
+   "seffBase": 5,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 1560,
+      "frameCount": 9,
+      "gfxDirType": 8
+     },
+     {
+      "stage": "运行",
+      "type": "跟随",
+      "gfxID": 1640,
+      "frameCount": 6,
+      "gfxDirType": 16,
+      "loop": 1,
+      "speed": 200
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 1800,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "9": {
+   "name": "魔法特效_瞬息移动",
+   "seffBase": 21,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 110,
+      "frameCount": 10
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 2360,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "10": {
+   "name": "魔法特效_召唤雷电",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 2097432,
+      "frameCount": 8,
+      "gfxDirType": 1,
+      "motion": "MOTION_SPELL1"
+     }
+    ]
+   }
+  },
+  "11": {
+   "name": "魔法特效_困魔咒",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 640,
+      "onGround": 1,
+      "loop": 1
+     }
+    ]
+   }
+  },
+  "12": {
+   "name": "祖玛教主_魔法特效_施法",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 3146448,
+      "frameCount": 8,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "13": {
+   "name": "魔法特效_安全区边界",
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_困魔咒",
+       "stage": "运行",
+       "scale": "0.4f",
+       "modColor": "colorf::YELLOW_A255"
+      }
+     }
+    ]
+   }
+  },
+  "14": {
+   "name": "雷电术",
+   "elem": "雷",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "霹雳掌"
+   },
+   "coolDown": 800,
+   "mp": 7,
+   "mpInc": 6,
+   "power": {},
+   "addPower": {},
+   "seffBase": 11,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 1430,
+      "frameCount": 12,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "ref": {
+       "name": "魔法特效_雷电术",
+       "stage": "运行"
+      }
+     }
+    ]
+   }
+  },
+  "15": {
+   "name": "魔法盾",
+   "elem": "风",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "抗拒火环"
+   },
+   "coolDown": 100,
+   "mp": 20,
+   "mpInc": 30,
+   "seffBase": 31,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 830,
+      "frameCount": 9,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 839,
+      "frameCount": 10
+     },
+     {
+      "stage": "持续",
+      "type": "附着",
+      "gfxID": 850,
+      "frameCount": 3,
+      "loop": 1
+     },
+     {
+      "stage": "挨打",
+      "type": "附着",
+      "gfxID": 853,
+      "frameCount": 3
+     }
+    ]
+   }
+  },
+  "16": {
+   "name": "召唤骷髅",
+   "elem": "幻影",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士"
+   },
+   "coolDown": 2000,
+   "mp": 15,
+   "mpInc": 10,
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_召唤骷髅",
+       "stage": "启动"
+      }
+     },
+     {
+      "ref": {
+       "name": "魔法特效_召唤骷髅",
+       "stage": "运行"
+      }
+     }
+    ]
+   }
+  },
+  "17": {
+   "name": "火球术",
+   "elem": "火",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师"
+   },
+   "coolDown": 500,
+   "checkGround": 1,
+   "mp": 3,
+   "mpInc": 1,
+   "power": {},
+   "addPower": {},
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 1820,
+      "frameCount": 8,
+      "gfxDirType": 8
+     },
+     {
+      "ref": {
+       "name": "魔法特效_火球术",
+       "stage": "运行"
+      }
+     },
+     {
+      "ref": {
+       "name": "魔法特效_火球术",
+       "stage": "裂解"
+      }
+     }
+    ]
+   }
+  },
+  "18": {
+   "name": "大火球",
+   "elem": "火",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "火球术"
+   },
+   "coolDown": 700,
+   "checkGround": 1,
+   "mp": 6,
+   "mpInc": 6,
+   "power": {},
+   "addPower": {},
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_大火球",
+       "stage": "启动"
+      }
+     },
+     {
+      "ref": {
+       "name": "魔法特效_大火球",
+       "stage": "运行"
+      }
+     },
+     {
+      "ref": {
+       "name": "魔法特效_大火球",
+       "stage": "裂解"
+      }
+     }
+    ]
+   }
+  },
+  "19": {
+   "name": "治愈术",
+   "elem": "神圣",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士"
+   },
+   "coolDown": 400,
+   "mp": 7,
+   "mpInc": 2,
+   "power": {},
+   "seffBase": 2,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 600,
+      "frameCount": 10,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 610,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "20": {
+   "name": "基本剑术",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "战士"
+   }
+  },
+  "21": {
+   "name": "精神力战法",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士"
+   }
+  },
+  "22": {
+   "name": "施毒术",
+   "elem": "暗黑",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士"
+   },
+   "coolDown": 600,
+   "mp": 10,
+   "mpInc": 5,
+   "seffBase": 6,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 60,
+      "frameCount": 10,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 70,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "23": {
+   "name": "攻杀剑术",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "战士",
+    "prior": "基本剑术"
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 1350,
+      "frameCount": 6,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "24": {
+   "name": "抗拒火环",
+   "elem": "风",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "风掌"
+   },
+   "coolDown": 600,
+   "mp": 8,
+   "mpInc": 1,
+   "power": {},
+   "seffBase": 8,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 90,
+      "frameCount": 8,
+      "motion": "MOTION_SPELL1"
+     }
+    ]
+   }
+  },
+  "25": {
+   "name": "疾光电影",
+   "elem": "雷",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "雷电术"
+   },
+   "coolDown": 800,
+   "mp": 12,
+   "mpInc": 15,
+   "power": {},
+   "addPower": {},
+   "seffBase": 10,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 1970,
+      "frameCount": 10,
+      "gfxDirType": 8
+     },
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 1049756,
+      "frameCount": 6,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "26": {
+   "name": "刺杀剑术",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "战士",
+    "prior": "攻杀剑术"
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 320,
+      "frameCount": 6,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "27": {
+   "name": "灵魂火符",
+   "elem": "暗黑",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "隐身术"
+   },
+   "coolDown": 500,
+   "checkGround": 1,
+   "mp": 6,
+   "mpInc": 3,
+   "power": {},
+   "addPower": {},
+   "seffBase": 13,
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_护身符",
+       "stage": "启动"
+      }
+     },
+     {
+      "ref": {
+       "name": "魔法特效_护身符",
+       "stage": "运行"
+      }
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 1140,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "28": {
+   "name": "幽灵盾",
+   "elem": "暗黑",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "困魔咒"
+   },
+   "coolDown": 700,
+   "mp": 10,
+   "mpInc": 5,
+   "seffBase": 14,
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_护身符",
+       "stage": "启动"
+      }
+     },
+     {
+      "ref": {
+       "name": "魔法特效_护身符",
+       "stage": "运行"
+      }
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 200,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "29": {
+   "name": "神圣战甲术",
+   "elem": "暗黑",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "幽灵盾"
+   },
+   "coolDown": 700,
+   "mp": 10,
+   "mpInc": 5,
+   "seffBase": 15,
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_护身符",
+       "stage": "启动"
+      }
+     },
+     {
+      "ref": {
+       "name": "魔法特效_护身符",
+       "stage": "运行"
+      }
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 170,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "30": {
+   "name": "困魔咒",
+   "elem": "暗黑",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "施毒术"
+   },
+   "coolDown": 1000,
+   "mp": 15,
+   "mpInc": 10,
+   "seffBase": 16,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 630,
+      "frameCount": 10,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "ref": {
+       "name": "魔法特效_困魔咒",
+       "stage": "运行"
+      }
+     }
+    ]
+   }
+  },
+  "31": {
+   "name": "隐身术",
+   "elem": "暗黑",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "施毒术"
+   },
+   "coolDown": 700,
+   "mp": 5,
+   "mpInc": 5,
+   "seffBase": 18,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 810,
+      "frameCount": 10,
+      "motion": "MOTION_SPELL1"
+     }
+    ]
+   }
+  },
+  "32": {
+   "name": "集体隐身术",
+   "elem": "暗黑",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "隐身术"
+   },
+   "coolDown": 700,
+   "mp": 10,
+   "mpInc": 5,
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_护身符",
+       "stage": "启动"
+      }
+     },
+     {
+      "ref": {
+       "name": "魔法特效_护身符",
+       "stage": "运行"
+      }
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 820,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "33": {
+   "name": "诱惑之光",
+   "elem": "幻影",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师"
+   },
+   "coolDown": 600,
+   "mp": 3,
+   "mpInc": 3,
+   "seffBase": 20,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 0,
+      "frameCount": 10,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 10,
+      "frameCount": 20
+     }
+    ]
+   }
+  },
+  "34": {
+   "name": "瞬息移动",
+   "elem": "幻影",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师"
+   },
+   "coolDown": 700,
+   "mp": 10,
+   "mpInc": 10,
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_瞬息移动",
+       "stage": "运行"
+      }
+     },
+     {
+      "ref": {
+       "name": "魔法特效_瞬息移动",
+       "stage": "裂解"
+      }
+     }
+    ]
+   }
+  },
+  "35": {
+   "name": "火墙",
+   "elem": "火",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "地狱火"
+   },
+   "coolDown": 1000,
+   "mp": 22,
+   "mpInc": 30,
+   "power": {},
+   "addPower": {},
+   "seffBase": 22,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 910,
+      "frameCount": 10,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 920,
+      "frameCount": 5,
+      "onGround": 1,
+      "loop": 1,
+      "speed": 50
+     }
+    ]
+   }
+  },
+  "36": {
+   "name": "地狱火",
+   "elem": "火",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "大火球"
+   },
+   "coolDown": 800,
+   "mp": 11,
+   "mpInc": 15,
+   "power": {},
+   "addPower": {},
+   "seffBase": 9,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 1820,
+      "frameCount": 8,
+      "gfxDirType": 8
+     },
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 1900,
+      "frameCount": 30,
+      "gfxDirType": 2,
+      "onGround": 1,
+      "speed": 200
+     }
+    ]
+   }
+  },
+  "37": {
+   "name": "爆裂火焰",
+   "elem": "火",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "地狱火"
+   },
+   "coolDown": 900,
+   "mp": 15,
+   "mpInc": 20,
+   "power": {},
+   "addPower": {},
+   "seffBase": 23,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 940,
+      "frameCount": 10,
+      "gfxDirType": 1,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 950,
+      "frameCount": 10,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "38": {
+   "name": "地狱雷光",
+   "elem": "雷",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "疾光电影"
+   },
+   "coolDown": 900,
+   "mp": 17,
+   "mpInc": 20,
+   "power": {},
+   "addPower": {},
+   "seffBase": 24,
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_召唤雷电",
+       "stage": "启动"
+      }
+     },
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 1049556,
+      "frameCount": 8,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "39": {
+   "name": "半月弯刀",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "战士",
+    "prior": "刺杀剑术"
+   },
+   "mpInc": 3,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 230,
+      "frameCount": 6,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "40": {
+   "name": "烈火剑法",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "战士",
+    "prior": "半月弯刀"
+   },
+   "mp": 2,
+   "mpInc": 7,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 1470,
+      "frameCount": 6,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "41": {
+   "name": "野蛮冲撞",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "战士",
+    "prior": "基本剑术"
+   },
+   "mp": 20
+  },
+  "42": {
+   "name": "群体治愈术",
+   "elem": "神圣",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "治愈术"
+   },
+   "coolDown": 400,
+   "mp": 10,
+   "mpInc": 20,
+   "power": {},
+   "addPower": {},
+   "seffBase": 29,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 660,
+      "frameCount": 10,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 670,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "43": {
+   "name": "召唤神兽",
+   "elem": "幻影",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "召唤骷髅"
+   },
+   "coolDown": 2000,
+   "mp": 15,
+   "mpInc": 15,
+   "seffBase": 30,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 2590,
+      "frameCount": 19,
+      "motion": "MOTION_SPELL1",
+      "speed": 180
+     }
+    ]
+   }
+  },
+  "44": {
+   "name": "圣言术",
+   "elem": "幻影",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "诱惑之光"
+   },
+   "coolDown": 1000,
+   "mp": 30,
+   "mpInc": 30,
+   "seffBase": 32,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 130,
+      "frameCount": 10,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 140,
+      "frameCount": 20
+     }
+    ]
+   }
+  },
+  "45": {
+   "name": "冰咆哮",
+   "elem": "冰",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "冰沙掌"
+   },
+   "coolDown": 900,
+   "mp": 19,
+   "mpInc": 20,
+   "power": {},
+   "addPower": {},
+   "seffBase": 33,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 770,
+      "frameCount": 10,
+      "gfxDirType": 1,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 780,
+      "frameCount": 10,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "46": {
+   "name": "莲月剑法",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "战士",
+    "prior": "烈火剑法"
+   },
+   "mp": 3,
+   "mpInc": 9,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 1050356,
+      "frameCount": 10,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "47": {
+   "name": "翔空剑法",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "战士",
+    "prior": "半月弯刀"
+   },
+   "mp": 2,
+   "mpInc": 8,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 2270,
+      "frameCount": 10,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "48": {
+   "name": "空拳刀法",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "精神力战法"
+   },
+   "coolDown": 800,
+   "mp": 20,
+   "mpInc": 10
+  },
+  "49": {
+   "name": "月魂断玉",
+   "elem": "神圣",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "治愈术"
+   },
+   "coolDown": 500,
+   "mp": 6,
+   "mpInc": 3,
+   "power": {},
+   "addPower": {},
+   "seffBase": 37,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 3250,
+      "frameCount": 6,
+      "gfxDirType": 8
+     },
+     {
+      "stage": "运行",
+      "type": "跟随",
+      "gfxID": 3330,
+      "frameCount": 6,
+      "gfxDirType": 1,
+      "loop": 1,
+      "speed": 200
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 3340,
+      "frameCount": 10,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "50": {
+   "name": "月魂灵波",
+   "elem": "神圣",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "月魂断玉"
+   },
+   "mp": 8,
+   "mpInc": 4,
+   "power": {},
+   "addPower": {},
+   "seffBase": 38,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 3360,
+      "frameCount": 6,
+      "gfxDirType": 8
+     },
+     {
+      "stage": "运行",
+      "type": "跟随",
+      "gfxID": 3440,
+      "frameCount": 6,
+      "gfxDirType": 1,
+      "loop": 1,
+      "speed": 200
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 3450,
+      "frameCount": 10,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "51": {
+   "name": "冰月神掌",
+   "elem": "冰",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师"
+   },
+   "coolDown": 500,
+   "checkGround": 1,
+   "mp": 4,
+   "mpInc": 1,
+   "power": {},
+   "addPower": {},
+   "seffBase": 39,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 2620,
+      "frameCount": 6,
+      "gfxDirType": 8
+     },
+     {
+      "stage": "运行",
+      "type": "跟随",
+      "gfxID": 2700,
+      "frameCount": 3,
+      "gfxDirType": 16,
+      "loop": 1,
+      "speed": 200
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 2860,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "52": {
+   "name": "冰月震天",
+   "elem": "冰",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "冰月神掌"
+   },
+   "coolDown": 700,
+   "checkGround": 1,
+   "mp": 7,
+   "mpInc": 6,
+   "power": {},
+   "addPower": {},
+   "seffBase": 40,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 2880,
+      "frameCount": 6,
+      "gfxDirType": 8
+     },
+     {
+      "stage": "运行",
+      "type": "跟随",
+      "gfxID": 2960,
+      "frameCount": 6,
+      "gfxDirType": 1,
+      "loop": 1,
+      "speed": 200
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 2970,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "53": {
+   "name": "霹雳掌",
+   "elem": "雷",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师"
+   },
+   "coolDown": 500,
+   "mp": 4,
+   "mpInc": 1,
+   "power": {},
+   "addPower": {},
+   "seffBase": 41,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 2990,
+      "frameCount": 6,
+      "gfxDirType": 8
+     },
+     {
+      "stage": "运行",
+      "type": "跟随",
+      "gfxID": 3070,
+      "frameCount": 6,
+      "gfxDirType": 16,
+      "loop": 1,
+      "speed": 200
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 3230,
+      "frameCount": 10,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "54": {
+   "name": "冰沙掌",
+   "elem": "冰",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "冰月震天"
+   },
+   "coolDown": 800,
+   "checkGround": 1,
+   "mp": 12,
+   "mpInc": 15,
+   "power": {},
+   "addPower": {},
+   "seffBase": 53,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 1048576,
+      "frameCount": 10,
+      "gfxDirType": 8
+     },
+     {
+      "stage": "运行",
+      "type": "固定",
+      "onGround": 1,
+      "speed": 200
+     }
+    ]
+   }
+  },
+  "55": {
+   "name": "风掌",
+   "elem": "风",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师"
+   },
+   "coolDown": 500,
+   "mp": 3,
+   "mpInc": 1,
+   "power": {},
+   "addPower": {},
+   "seffBase": 67,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 1048926,
+      "modColor": "colorf::RGBA(255, 255, 255, 120)",
+      "frameCount": 7,
+      "gfxDirType": 8
+     },
+     {
+      "stage": "运行",
+      "type": "跟随",
+      "gfxID": 1049006,
+      "modColor": "colorf::RGBA(255, 255, 255, 120)",
+      "frameCount": 5,
+      "gfxDirType": 16,
+      "loop": 1,
+      "speed": 200
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 1049166,
+      "modColor": "colorf::RGBA(255, 255, 255, 120)",
+      "frameCount": 10,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "56": {
+   "name": "龙卷风",
+   "elem": "风",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "风震天"
+   },
+   "coolDown": 900,
+   "mp": 18,
+   "mpInc": 20,
+   "power": {},
+   "addPower": {},
+   "seffBase": 72,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 1049606,
+      "frameCount": 10,
+      "gfxDirType": 1,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 1049616,
+      "frameCount": 16,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "57": {
+   "name": "风震天",
+   "elem": "风",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "击风"
+   },
+   "coolDown": 800,
+   "mp": 13,
+   "mpInc": 15,
+   "power": {},
+   "addPower": {},
+   "seffBase": 73,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 1050546,
+      "frameCount": 10,
+      "gfxDirType": 1,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 1050566,
+      "frameCount": 5,
+      "gfxDirType": 1
+     },
+     {
+      "stage": "裂解",
+      "type": "固定",
+      "gfxID": 1050576,
+      "frameCount": 10,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "58": {
+   "name": "击风",
+   "elem": "风",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "风掌"
+   },
+   "coolDown": 800,
+   "mp": 6,
+   "mpInc": 6,
+   "power": {},
+   "addPower": {},
+   "seffBase": 74,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 1050546,
+      "frameCount": 10,
+      "gfxDirType": 1,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 1050556,
+      "frameCount": 15,
+      "gfxDirType": 1
+     },
+     {
+      "stage": "裂解",
+      "type": "固定",
+      "gfxID": 1050576,
+      "frameCount": 10,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "59": {
+   "name": "回生术",
+   "elem": "神圣",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "群体治愈术"
+   },
+   "coolDown": 5000,
+   "mp": 100,
+   "mpInc": 100,
+   "seffBase": 77,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 1048886,
+      "frameCount": 10,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 1048896,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "60": {
+   "name": "强魔震法",
+   "elem": "暗黑",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "神圣战甲术"
+   },
+   "coolDown": 700,
+   "mp": 10,
+   "mpInc": 5,
+   "seffBase": 89,
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_护身符",
+       "stage": "启动"
+      }
+     },
+     {
+      "ref": {
+       "name": "魔法特效_护身符",
+       "stage": "运行"
+      }
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 1050446,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "61": {
+   "name": "猛虎强势",
+   "elem": "暗黑",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "强魔震法"
+   },
+   "coolDown": 700,
+   "mp": 10,
+   "mpInc": 5,
+   "seffBase": 94,
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_护身符",
+       "stage": "启动"
+      }
+     },
+     {
+      "ref": {
+       "name": "魔法特效_护身符",
+       "stage": "运行"
+      }
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 1048716,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "62": {
+   "name": "铁布衫",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "战士",
+    "prior": "乾坤大挪移"
+   },
+   "coolDown": 1000,
+   "mp": 40,
+   "mpInc": 20,
+   "power": {},
+   "addPower": {},
+   "seffBase": 102,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 2097192,
+      "modColor": "colorf::RGBA(255, 255, 255, 120)",
+      "frameCount": 10,
+      "gfxDirType": 1,
+      "motion": "MOTION_ATTACKMODE"
+     }
+    ]
+   }
+  },
+  "63": {
+   "name": "十方斩",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "战士",
+    "prior": "翔空剑法"
+   },
+   "mpInc": 7,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 2097672,
+      "frameCount": 6,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "64": {
+   "name": "异形换位",
+   "elem": "幻影",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "瞬息移动"
+   },
+   "coolDown": 2500,
+   "mp": 20,
+   "mpInc": 20,
+   "seffBase": 104,
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_瞬息移动",
+       "stage": "运行"
+      }
+     },
+     {
+      "ref": {
+       "name": "魔法特效_瞬息移动",
+       "stage": "裂解"
+      }
+     }
+    ]
+   }
+  },
+  "65": {
+   "name": "超强召唤骷髅",
+   "elem": "幻影",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "召唤神兽"
+   },
+   "coolDown": 2000,
+   "mp": 20,
+   "mpInc": 25,
+   "seffBase": 105,
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_召唤骷髅",
+       "stage": "启动"
+      }
+     },
+     {
+      "ref": {
+       "name": "魔法特效_召唤骷髅",
+       "stage": "运行"
+      }
+     }
+    ]
+   }
+  },
+  "66": {
+   "name": "破血狂杀",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "战士",
+    "prior": "斗转星移"
+   },
+   "coolDown": 2000,
+   "mp": 100,
+   "mpInc": 100,
+   "power": {},
+   "addPower": {},
+   "seffBase": 106,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 2097212,
+      "modColor": "colorf::RGBA(255, 255, 255, 100)",
+      "frameCount": 10,
+      "gfxDirType": 1,
+      "motion": "MOTION_ATTACKMODE"
+     }
+    ]
+   }
+  },
+  "67": {
+   "name": "乾坤大挪移",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "战士",
+    "prior": "野蛮冲撞"
+   },
+   "coolDown": 200,
+   "mp": 40,
+   "mpInc": 10,
+   "seffBase": 107,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 2097152,
+      "frameCount": 10,
+      "gfxDirType": 1,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 2097162,
+      "frameCount": 10,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "68": {
+   "name": "斗转星移",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "战士",
+    "prior": "铁布衫"
+   },
+   "coolDown": 200,
+   "mp": 40,
+   "mpInc": 20,
+   "seffBase": 108,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 2097732,
+      "frameCount": 10,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "69": {
+   "name": "魄冰刺",
+   "elem": "冰",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "冰咆哮"
+   },
+   "coolDown": 100,
+   "mp": 20,
+   "mpInc": 20,
+   "power": {},
+   "addPower": {},
+   "seffBase": 110,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 1048576,
+      "frameCount": 10,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "70": {
+   "name": "怒神霹雳",
+   "elem": "雷",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "地狱雷光"
+   },
+   "coolDown": 100,
+   "mp": 40,
+   "mpInc": 30,
+   "power": {},
+   "addPower": {},
+   "seffBase": 111,
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_召唤雷电",
+       "stage": "启动"
+      }
+     },
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 2097622,
+      "frameCount": 10,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "71": {
+   "name": "凝血离魂",
+   "elem": "幻影",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "圣言术"
+   },
+   "coolDown": 100,
+   "mp": 60,
+   "mpInc": 10,
+   "power": {},
+   "addPower": {},
+   "seffBase": 112,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 2097232,
+      "frameCount": 10,
+      "motion": "MOTION_SPELL1"
+     }
+    ]
+   }
+  },
+  "72": {
+   "name": "焰天火雨",
+   "elem": "火",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "法师",
+    "prior": "大火球"
+   },
+   "coolDown": 100,
+   "mp": 32,
+   "mpInc": 20,
+   "power": {},
+   "addPower": {},
+   "seffBase": 113,
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_大火球",
+       "stage": "启动"
+      }
+     },
+     {
+      "ref": {
+       "name": "魔法特效_大火球",
+       "stage": "运行"
+      }
+     },
+     {
+      "ref": {
+       "name": "魔法特效_大火球",
+       "stage": "裂解"
+      }
+     }
+    ]
+   }
+  },
+  "73": {
+   "name": "云寂术",
+   "elem": "神圣",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "月魂灵波"
+   },
+   "coolDown": 100,
+   "mp": 20,
+   "mpInc": 10,
+   "seffBase": 120,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 2097372,
+      "frameCount": 10,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 2097382,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "74": {
+   "name": "妙影无踪",
+   "elem": "暗黑",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "集体隐身术"
+   },
+   "coolDown": 100,
+   "mp": 120,
+   "mpInc": 80,
+   "seffBase": 121,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 2097582,
+      "frameCount": 7,
+      "motion": "MOTION_ATTACKMODE"
+     }
+    ]
+   }
+  },
+  "75": {
+   "name": "阴阳法环",
+   "elem": "神圣",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "云寂术"
+   },
+   "coolDown": 200,
+   "mp": 60,
+   "mpInc": 50,
+   "seffBase": 122,
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_召唤雷电",
+       "stage": "启动",
+       "modColor": "colorf::RGBA(255, 255, 126, 80)"
+      }
+     },
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 2097442,
+      "modColor": "colorf::RGBA(255, 255, 255, 100)",
+      "frameCount": 9
+     },
+     {
+      "stage": "持续",
+      "type": "附着",
+      "gfxID": 2097452,
+      "modColor": "colorf::RGBA(255, 255, 255, 100)",
+      "frameCount": 3,
+      "loop": 1
+     },
+     {
+      "stage": "挨打",
+      "type": "附着",
+      "gfxID": 2097455,
+      "modColor": "colorf::RGBA(255, 255, 255, 100)",
+      "frameCount": 3
+     }
+    ]
+   }
+  },
+  "76": {
+   "name": "移花接玉",
+   "elem": "幻影",
+   "req": {
+    "level": {},
+    "train": {},
+    "job": "道士",
+    "prior": "超强召唤骷髅"
+   },
+   "coolDown": 200,
+   "mp": 40,
+   "mpInc": 30,
+   "power": {},
+   "addPower": {},
+   "seffBase": 123,
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "启动",
+      "type": "附着",
+      "gfxID": 2097512,
+      "frameCount": 10,
+      "motion": "MOTION_SPELL1"
+     },
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 2097522,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "77": {
+   "name": "神兽_喷火",
+   "elem": "火",
+   "castRange": {
+    "type": "CRT_DIR",
+    "distance": 2
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 3146708,
+      "frameCount": 6,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "78": {
+   "name": "沙漠石人_石坑",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 15728840,
+      "frameCount": 1,
+      "gfxDirType": 8,
+      "onGround": 1,
+      "loop": 1
+     }
+    ]
+   }
+  },
+  "79": {
+   "name": "沙漠石人_死亡特效",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 3146034,
+      "frameCount": 8,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "80": {
+   "name": "雷电僵尸_雷电",
+   "elem": "雷",
+   "castRange": {
+    "type": "CRT_DIR",
+    "distance": 8
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 3146328,
+      "frameCount": 6,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "81": {
+   "name": "僧侣僵尸_地洞",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 15728880,
+      "frameCount": 1,
+      "gfxDirType": 8,
+      "onGround": 1,
+      "loop": 1
+     }
+    ]
+   }
+  },
+  "82": {
+   "name": "沙漠树魔_喷刺",
+   "castRange": {
+    "type": "CRT_LIMITED",
+    "distance": 5
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "跟随",
+      "gfxID": 3146688,
+      "frameCount": 1,
+      "gfxDirType": 1,
+      "loop": 1
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 1049506,
+      "frameCount": 6
+     }
+    ]
+   }
+  },
+  "83": {
+   "name": "楔蛾_喷毒",
+   "castRange": {
+    "type": "CRT_DIR",
+    "distance": 1
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 3146608,
+      "frameCount": 6,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "84": {
+   "name": "掷斧骷髅_掷斧",
+   "castRange": {
+    "type": "CRT_LIMITED",
+    "distance": 5
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "跟随",
+      "gfxID": 3146528,
+      "frameCount": 6,
+      "gfxDirType": 8,
+      "loop": 1
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 1049506,
+      "frameCount": 6
+     }
+    ]
+   }
+  },
+  "85": {
+   "name": "诺玛法老_火球术",
+   "elem": "火",
+   "castRange": {
+    "type": "CRT_LIMITED",
+    "distance": 8
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_火球术",
+       "stage": "运行"
+      }
+     },
+     {
+      "ref": {
+       "name": "魔法特效_火球术",
+       "stage": "裂解"
+      }
+     }
+    ]
+   }
+  },
+  "86": {
+   "name": "诺玛大法老_雷电术",
+   "elem": "雷",
+   "castRange": {
+    "type": "CRT_LIMITED",
+    "distance": 10
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_雷电术",
+       "stage": "运行"
+      }
+     }
+    ]
+   }
+  },
+  "87": {
+   "name": "稻草人_死亡特效",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 3146408,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "88": {
+   "name": "轻甲守卫_死亡特效",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 3145788,
+      "frameCount": 18
+     }
+    ]
+   }
+  },
+  "89": {
+   "name": "蚂蚁道士_治疗",
+   "castRange": {
+    "type": "CRT_LIMITED",
+    "distance": 8
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 3145828,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "90": {
+   "name": "红衣法师_魔法",
+   "castRange": {
+    "type": "CRT_LIMITED",
+    "distance": 8
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 3146008,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "91": {
+   "name": "红衣法师_死亡特效",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 3145788,
+      "frameCount": 18
+     }
+    ]
+   }
+  },
+  "92": {
+   "name": "骷髅精灵_死亡特效",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 3147648,
+      "frameCount": 10
+     }
+    ]
+   }
+  },
+  "93": {
+   "name": "洞蛆_喷毒",
+   "castRange": {
+    "type": "CRT_DIR",
+    "distance": 1
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 3147668,
+      "frameCount": 5,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "94": {
+   "name": "火焰沃玛_喷火",
+   "castRange": {
+    "type": "CRT_DIR",
+    "distance": 1
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 3146248,
+      "frameCount": 7,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "95": {
+   "name": "沃玛教主_电光",
+   "elem": "雷",
+   "castRange": {
+    "type": "CRT_DIR",
+    "distance": 1
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 3146168,
+      "frameCount": 6,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "96": {
+   "name": "沃玛教主_雷电术",
+   "elem": "雷",
+   "castRange": {
+    "type": "CRT_LIMITED",
+    "distance": 10
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_雷电术",
+       "stage": "运行"
+      }
+     }
+    ]
+   }
+  },
+  "97": {
+   "name": "暗黑战士_喷刺",
+   "castRange": {
+    "type": "CRT_LIMITED",
+    "distance": 8
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "跟随",
+      "gfxID": 3146968,
+      "frameCount": 1,
+      "gfxDirType": 16,
+      "loop": 1
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 1049506,
+      "frameCount": 6
+     }
+    ]
+   }
+  },
+  "98": {
+   "name": "粪虫_喷毒",
+   "castRange": {
+    "type": "CRT_DIR",
+    "distance": 1
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 3147758,
+      "frameCount": 5,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "99": {
+   "name": "祖玛弓箭手_射箭",
+   "castRange": {
+    "type": "CRT_LIMITED",
+    "distance": 8
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "跟随",
+      "gfxID": 3147128,
+      "frameCount": 1,
+      "gfxDirType": 16,
+      "loop": 1
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 1049506,
+      "frameCount": 6
+     }
+    ]
+   }
+  },
+  "100": {
+   "name": "祖玛教主_石像碎片",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "固定",
+      "gfxID": 15728850,
+      "frameCount": 1,
+      "gfxDirType": 1,
+      "onGround": 1,
+      "loop": 1
+     }
+    ]
+   }
+  },
+  "101": {
+   "name": "祖玛教主_火墙",
+   "elem": "火",
+   "castRange": {
+    "type": "CRT_LIMITED",
+    "distance": 6
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "祖玛教主_魔法特效_施法",
+       "stage": "启动"
+      }
+     }
+    ]
+   }
+  },
+  "102": {
+   "name": "祖玛教主_地狱火",
+   "elem": "火",
+   "castRange": {
+    "type": "CRT_DIR",
+    "distance": 6
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "祖玛教主_魔法特效_施法",
+       "stage": "启动"
+      }
+     }
+    ]
+   }
+  },
+  "103": {
+   "name": "爆毒蚂蚁_喷毒",
+   "castRange": {
+    "type": "CRT_LIMITED",
+    "distance": 5
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "跟随",
+      "gfxID": 3145808,
+      "frameCount": 6,
+      "gfxDirType": 1,
+      "loop": 1
+     }
+    ]
+   }
+  },
+  "104": {
+   "name": "沙漠风魔_扇风",
+   "castRange": {
+    "type": "CRT_LIMITED",
+    "distance": 5
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 3147298,
+      "frameCount": 10,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "105": {
+   "name": "神舰守卫_死亡特效",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 3145988,
+      "frameCount": 6
+     }
+    ]
+   }
+  },
+  "106": {
+   "name": "月魔蜘蛛_死亡特效",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 3147978,
+      "frameCount": 20
+     }
+    ]
+   }
+  },
+  "107": {
+   "name": "爆裂蜘蛛_死亡特效",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 3147938,
+      "frameCount": 7
+     }
+    ]
+   }
+  },
+  "108": {
+   "name": "霸王教主_火刃",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 3147528,
+      "frameCount": 7,
+      "gfxDirType": 8
+     }
+    ]
+   }
+  },
+  "109": {
+   "name": "霸王教主_野蛮冲撞",
+   "castRange": {
+    "type": "CRT_DIR",
+    "distance": 5
+   }
+  },
+  "110": {
+   "name": "霸王教主_死亡特效",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 3147618,
+      "frameCount": 18,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "111": {
+   "name": "潘夜右护卫_死亡特效",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 4194394,
+      "frameCount": 5,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "112": {
+   "name": "潘夜右护卫_电魔杖",
+   "castRange": {
+    "type": "CRT_DIR",
+    "distance": 1
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 4194307,
+      "frameCount": 3,
+      "gfxDirType": 8
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 1049406,
+      "frameCount": 6,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "113": {
+   "name": "潘夜右护卫_雷电术",
+   "elem": "雷",
+   "castRange": {
+    "type": "CRT_LIMITED",
+    "distance": 10
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_雷电术",
+       "stage": "运行",
+       "modColor": "colorf::YELLOW + colorf::A_SHF(127)"
+      }
+     }
+    ]
+   }
+  },
+  "114": {
+   "name": "潘夜左护卫_死亡特效",
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 4194504,
+      "frameCount": 5,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "115": {
+   "name": "潘夜左护卫_火魔杖",
+   "castRange": {
+    "type": "CRT_DIR",
+    "distance": 1
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "stage": "运行",
+      "type": "附着",
+      "gfxID": 4194417,
+      "frameCount": 3,
+      "gfxDirType": 8
+     },
+     {
+      "stage": "裂解",
+      "type": "附着",
+      "gfxID": 1049366,
+      "frameCount": 6,
+      "gfxDirType": 1
+     }
+    ]
+   }
+  },
+  "116": {
+   "name": "潘夜左护卫_火球术",
+   "elem": "火",
+   "castRange": {
+    "type": "CRT_LIMITED",
+    "distance": 8
+   },
+   "gfxList": {
+    "_array": [
+     {
+      "ref": {
+       "name": "魔法特效_火球术",
+       "stage": "运行"
+      }
+     },
+     {
+      "ref": {
+       "name": "魔法特效_火球术",
+       "stage": "裂解"
+      }
+     }
+    ]
+   }
+  }
+ }
+}

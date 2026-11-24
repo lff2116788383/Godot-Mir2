@@ -1,0 +1,496 @@
+{
+ "_meta": {
+  "_source": "buffrecord.inc",
+  "_total_slots": 22,
+  "_valid_records": 21
+ },
+ "records": {
+  "1": {
+   "name": "治愈术",
+   "favor": 1,
+   "dispellable": 1,
+   "icon": {
+    "show": 1,
+    "gfxID": 402653315
+   },
+   "actList": {
+    "_array": [
+     {
+      "name": "HP",
+      "duration": 0,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(20)"
+      }
+     },
+     {
+      "name": "HP持续",
+      "duration": 6000,
+      "trigger": {
+       "on": "BATGR_TIME",
+       "tps": 2,
+       "arg": "buffArgWrapper<BuffValuePercentage>(20, 5)"
+      }
+     }
+    ]
+   }
+  },
+  "2": {
+   "name": "施毒术",
+   "favor": -1,
+   "dispellable": 1,
+   "icon": {
+    "show": 1,
+    "gfxID": 402653300
+   },
+   "actList": {
+    "_array": [
+     {
+      "name": "HP",
+      "duration": 0,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(-20)"
+      }
+     },
+     {
+      "name": "HP持续",
+      "duration": 6000,
+      "trigger": {
+       "on": "BATGR_TIME",
+       "tps": 2,
+       "arg": "buffArgWrapper<BuffValuePercentage>(0, -5)"
+      }
+     }
+    ]
+   }
+  },
+  "3": {
+   "name": "龙纹圣光",
+   "favor": 1,
+   "actList": {
+    "_array": [
+     {
+      "name": "恢复光环使能",
+      "aura": {
+       "radius": 10,
+       "linger": {
+        "in": 500,
+        "out": 500
+       }
+      }
+     }
+    ]
+   }
+  },
+  "4": {
+   "name": "恢复光环",
+   "favor": 1,
+   "icon": {
+    "show": 1,
+    "gfxID": 402653197
+   },
+   "actList": {
+    "_array": [
+     {
+      "name": "HP恢复",
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(1, 5)"
+      }
+     }
+    ]
+   }
+  },
+  "5": {
+   "name": "死亡威慑",
+   "favor": 1,
+   "actList": {
+    "_array": [
+     {
+      "name": "战栗使能",
+      "attackModifier": {
+       "prob": 100
+      }
+     }
+    ]
+   }
+  },
+  "6": {
+   "name": "战栗",
+   "favor": 0,
+   "icon": {
+    "show": 1,
+    "gfxID": 402653285
+   },
+   "actList": {
+    "_array": [
+     {
+      "name": "HP移动伤害",
+      "duration": 6000,
+      "trigger": {
+       "on": "BATGR_MOVE",
+       "arg": "buffArgWrapper<int>(20)"
+      }
+     }
+    ]
+   }
+  },
+  "7": {
+   "name": "吸血鬼的诅咒",
+   "favor": 1,
+   "actList": {
+    "_array": [
+     {
+      "name": "吸血光环使能",
+      "aura": {
+       "radius": 5,
+       "linger": {
+        "in": 500,
+        "out": 500
+       }
+      }
+     }
+    ]
+   }
+  },
+  "8": {
+   "name": "吸血光环",
+   "favor": 1,
+   "icon": {
+    "show": 1,
+    "gfxID": 402653469
+   },
+   "actList": {
+    "_array": [
+     {
+      "name": "吸血",
+      "attackModifier": {
+       "prob": 100
+      }
+     }
+    ]
+   }
+  },
+  "9": {
+   "name": "幽灵盾",
+   "favor": 1,
+   "dispellable": 1,
+   "icon": {
+    "show": 1,
+    "gfxID": 402653696
+   },
+   "actList": {
+    "_array": [
+     {
+      "name": "MAC下限",
+      "duration": 30000,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(2, 5)"
+      }
+     },
+     {
+      "name": "MAC上限",
+      "duration": 30000,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(2, 5)"
+      }
+     }
+    ]
+   }
+  },
+  "10": {
+   "name": "神圣战甲术",
+   "favor": 1,
+   "dispellable": 1,
+   "icon": {
+    "show": 1,
+    "gfxID": 402653746
+   },
+   "actList": {
+    "_array": [
+     {
+      "name": "AC下限",
+      "duration": 30000,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(2, 5)"
+      }
+     },
+     {
+      "name": "AC上限",
+      "duration": 30000,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(2, 5)"
+      }
+     }
+    ]
+   }
+  },
+  "11": {
+   "name": "金创药（小）",
+   "favor": 1,
+   "stackReplace": 1,
+   "actList": {
+    "_array": [
+     {
+      "name": "HP",
+      "duration": 0,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(10)"
+      }
+     },
+     {
+      "name": "HP持续",
+      "duration": 3000,
+      "trigger": {
+       "on": "BATGR_TIME",
+       "tps": 2,
+       "arg": "buffArgWrapper<BuffValuePercentage>(20, 1)"
+      }
+     }
+    ]
+   }
+  },
+  "12": {
+   "name": "金创药（中）",
+   "favor": 1,
+   "stackReplace": 1,
+   "actList": {
+    "_array": [
+     {
+      "name": "HP",
+      "duration": 0,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(20)"
+      }
+     },
+     {
+      "name": "HP持续",
+      "duration": 4000,
+      "trigger": {
+       "on": "BATGR_TIME",
+       "tps": 2,
+       "arg": "buffArgWrapper<BuffValuePercentage>(20, 1)"
+      }
+     }
+    ]
+   }
+  },
+  "13": {
+   "name": "金创药（大）",
+   "favor": 1,
+   "stackReplace": 1,
+   "actList": {
+    "_array": [
+     {
+      "name": "HP",
+      "duration": 0,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(40)"
+      }
+     },
+     {
+      "name": "HP持续",
+      "duration": 4000,
+      "trigger": {
+       "on": "BATGR_TIME",
+       "tps": 2,
+       "arg": "buffArgWrapper<BuffValuePercentage>(20, 1)"
+      }
+     }
+    ]
+   }
+  },
+  "14": {
+   "name": "金创药（特）",
+   "favor": 1,
+   "stackReplace": 1,
+   "actList": {
+    "_array": [
+     {
+      "name": "HP",
+      "duration": 0,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(60)"
+      }
+     },
+     {
+      "name": "HP持续",
+      "duration": 6000,
+      "trigger": {
+       "on": "BATGR_TIME",
+       "tps": 2,
+       "arg": "buffArgWrapper<BuffValuePercentage>(20, 1)"
+      }
+     }
+    ]
+   }
+  },
+  "15": {
+   "name": "魔法药（小）",
+   "favor": 1,
+   "stackReplace": 1,
+   "actList": {
+    "_array": [
+     {
+      "name": "MP",
+      "duration": 0,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(10)"
+      }
+     },
+     {
+      "name": "MP持续",
+      "duration": 3000,
+      "trigger": {
+       "on": "BATGR_TIME",
+       "tps": 2,
+       "arg": "buffArgWrapper<BuffValuePercentage>(20, 1)"
+      }
+     }
+    ]
+   }
+  },
+  "16": {
+   "name": "魔法药（中）",
+   "favor": 1,
+   "stackReplace": 1,
+   "actList": {
+    "_array": [
+     {
+      "name": "MP",
+      "duration": 0,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(20)"
+      }
+     },
+     {
+      "name": "MP持续",
+      "duration": 4000,
+      "trigger": {
+       "on": "BATGR_TIME",
+       "tps": 2,
+       "arg": "buffArgWrapper<BuffValuePercentage>(20, 1)"
+      }
+     }
+    ]
+   }
+  },
+  "17": {
+   "name": "魔法药（大）",
+   "favor": 1,
+   "stackReplace": 1,
+   "actList": {
+    "_array": [
+     {
+      "name": "MP",
+      "duration": 0,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(40)"
+      }
+     },
+     {
+      "name": "MP持续",
+      "duration": 4000,
+      "trigger": {
+       "on": "BATGR_TIME",
+       "tps": 2,
+       "arg": "buffArgWrapper<BuffValuePercentage>(20, 1)"
+      }
+     }
+    ]
+   }
+  },
+  "18": {
+   "name": "魔法药（特）",
+   "favor": 1,
+   "stackReplace": 1,
+   "actList": {
+    "_array": [
+     {
+      "name": "MP",
+      "duration": 0,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(60)"
+      }
+     },
+     {
+      "name": "MP持续",
+      "duration": 6000,
+      "trigger": {
+       "on": "BATGR_TIME",
+       "tps": 2,
+       "arg": "buffArgWrapper<BuffValuePercentage>(20, 1)"
+      }
+     }
+    ]
+   }
+  },
+  "19": {
+   "name": "太阳水",
+   "favor": 1,
+   "stackReplace": 1,
+   "actList": {
+    "_array": [
+     {
+      "name": "HP",
+      "duration": 0,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(70)"
+      }
+     },
+     {
+      "name": "MP",
+      "duration": 0,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(110)"
+      }
+     }
+    ]
+   }
+  },
+  "20": {
+   "name": "强效太阳水",
+   "favor": 1,
+   "stackReplace": 1,
+   "actList": {
+    "_array": [
+     {
+      "name": "HP",
+      "duration": 0,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(110)"
+      }
+     },
+     {
+      "name": "MP",
+      "duration": 0,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(110)"
+      }
+     }
+    ]
+   }
+  },
+  "21": {
+   "name": "万年雪霜",
+   "favor": 1,
+   "stackReplace": 1,
+   "actList": {
+    "_array": [
+     {
+      "name": "HP",
+      "duration": 0,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(210)"
+      }
+     },
+     {
+      "name": "MP",
+      "duration": 0,
+      "attributeModifier": {
+       "arg": "buffArgWrapper<BuffValuePercentage>(210)"
+      }
+     }
+    ]
+   }
+  }
+ }
+}
