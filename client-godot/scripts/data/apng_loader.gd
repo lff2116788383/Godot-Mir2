@@ -82,6 +82,18 @@ static func _split_apng(data: PackedByteArray) -> Array:
 		# 普通 PNG，直接返回原数据
 		return [data]
 
+	# 调色板 PNG（color type 3）必须保留 PLTE，可能还有 tRNS（透明度表）。
+	# 这两块是整图共享的，不属于某帧，重建时插在 IHDR 之后、IDAT 之前。
+	# 选人图库 74 张里有一部分就是调色板 PNG，丢了 PLTE 会报
+	# "IDAT: Missing PLTE before IDAT" 并整帧加载失败。
+	var plte := PackedByteArray()
+	var trns := PackedByteArray()
+	for c in chunks:
+		if c["type"] == "PLTE":
+			plte = c["data"]
+		elif c["type"] == "tRNS":
+			trns = c["data"]
+
 	# 按 fcTL 分帧：每帧的压缩数据 = 该 fcTL 之后到下一个 fcTL 之前的所有 IDAT/fdAT
 	var frame_datas: Array = []
 	var cur := PackedByteArray()
@@ -112,7 +124,7 @@ static func _split_apng(data: PackedByteArray) -> Array:
 	for fd in frame_datas:
 		if fd.is_empty():
 			continue
-		out.append(_build_png(ihdr, fd))
+		out.append(_build_png(ihdr, fd, plte, trns))
 	return out
 
 
@@ -142,10 +154,18 @@ static func _chunk_type(data: PackedByteArray, off: int) -> String:
 
 
 ## 用 IHDR + 压缩数据 组装一个标准 PNG
-static func _build_png(ihdr: PackedByteArray, idat: PackedByteArray) -> PackedByteArray:
+## PLTE / tRNS 是调色板 PNG 的必要块，必须在 IDAT 之前（PNG 规范 11.2.3）。
+## color type 3 缺 PLTE 会让解码器直接判为损坏。
+static func _build_png(ihdr: PackedByteArray, idat: PackedByteArray,
+		plte: PackedByteArray = PackedByteArray(),
+		trns: PackedByteArray = PackedByteArray()) -> PackedByteArray:
 	var png := PackedByteArray()
 	png.append_array(PackedByteArray([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))
 	png.append_array(_make_chunk("IHDR", ihdr))
+	if not plte.is_empty():
+		png.append_array(_make_chunk("PLTE", plte))
+	if not trns.is_empty():
+		png.append_array(_make_chunk("tRNS", trns))
 	png.append_array(_make_chunk("IDAT", idat))
 	png.append_array(_make_chunk("IEND", PackedByteArray()))
 	return png

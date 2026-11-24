@@ -116,7 +116,19 @@
 | `client/src/sdldevice.cpp:1533-1710` | `scripts/audio/audio_manager.gd` | ✅ | BGM 单轨 + SFX 128 轨、3D 定位 |
 | `client/src/progusedb.*` | `scripts/data/proguse_tex.gd` | ✅ | UI 图库 1509 张（此前误判为缺素材） |
 
-## 测试覆盖（665 项全过）
+| `client/src/processlogo.cpp/.hpp`（105 行） | `scripts/ui/login/ui_login_process.gd` | ✅ | 淡入淡出 r1/r2=0.3、总 5s |
+| `client/src/processlogin.cpp/.hpp`（317 行） | `scripts/ui/login/ui_login_process.gd` | ✅ | 800x600，4 钮、2 输入框、Tab 切换、密码星号 |
+| `client/src/processselectchar.cpp/.hpp`（482 行） | `scripts/ui/login/ui_select_char_process.gd` | ✅ | 4 钮、角色锚点 (430,300)、4 态动画机 |
+| `client/src/processcreatechar.cpp/.hpp`（384 行） | `scripts/ui/login/ui_create_char_process.gd` | ✅ | 3 职业钮、男女预览、女性战士 y+40 hack |
+| `client/src/processcreateaccount.cpp`（373 行） | `scripts/ui/login/ui_account_process.gd` | ✅ | 440x310 框，3 输入框 |
+| `client/src/processchangepassword.cpp`（440 行） | `scripts/ui/login/ui_account_process.gd` | ✅ | 440x331 框，4 输入框 |
+| `common/src/idstrf.cpp` | `scripts/ui/login/ui_account_process.gd` | ✅ | isEmail / isPassword（8 位+4 类各 1）/ isCharName |
+| `client/src/selectcharframecount.inc`（30 条） | `scripts/data/select_char_gfx.gd` | ✅ | (job,gender,anim) -> 帧数 |
+| `common/src/jobf.hpp` | `scripts/data/select_char_gfx.gd` | ✅ | firstJob/jobGfxIndex/jobName/jobValid |
+| `client/src/pngtexoffdb.hpp:55` humanKey | `scripts/data/select_char_gfx.gd` | ✅ | anim3-8 层9 影10 性11 职12-19 |
+| `client/src/client.cpp` 进程调度 | `scripts/ui/login/login_flow.gd` | ✅ | ProcessID 1-9 状态机 + 网络应答分发 |
+
+## 测试覆盖（885 项全过）
 
 | 测试 | 项数 | 覆盖 |
 |---|---|---|
@@ -145,6 +157,8 @@
 | 纹理缓存 | ✅ | LRU，命中率 94.9% |
 | `test_c7_c8.gd` | 235 | 17 个新面板几何、状态机、音效 ID 合成、3D 定位、素材可达 |
 | `c7_c8_scene.gd` | 40 | 13 面板装配、控制栏贴底布局、音频 Autoload、UI 贴图实载（场景内） |
+| `test_c9.gd` | 205 | Logo 三段淡入淡出、登录布局、选人帧表/图库、建号、账号密码校验、APNG 调色板 |
+| `c9net_scene.gd` | 15 | 完整链路：连接→登入→查人→进游戏（需 mock 服务端） |
 
 ## C7+C8 关键结论
 
@@ -157,3 +171,17 @@
 | **魔法音效** | `0x04000000 + seffBase*16 + stageIndex`，seffBase 已从 .inc 回填 53 条 |
 | **3D 定位** | distance 用**欧氏距离**（不是切比雪夫），angle = 90 - 180*atan2(-dGY,dGX)/π |
 | **headless 音频** | 无音频驱动时建 128 个 AudioStreamPlayer 会让 Godot 静默退出（无任何输出），必须显式跳过 |
+| `c9net_scene.gd` | 15 | 完整链路：连接→登入→查人→进游戏（需 mock 服务端） |
+
+## C9 关键结论
+
+| 项 | 结论 |
+|---|---|
+| **选人图库编码** | 74 张 APNG，`key = anim<<3 \| layer<<9 \| shadow<<10 \| gender<<11 \| job<<12` |
+| **gender 位（重要）** | **1 = 男，0 = 女**。初版写反了，导致帧表与实载整体互换；用「战士男 anim1=20 帧 vs 女=11 帧」校准 |
+| **调色板 PNG** | 31 张 shadow 层图是 colorType 3（调色板）。APNG 拆帧重建时必须带 PLTE（+ 可选 tRNS），否则报 `IDAT: Missing PLTE before IDAT` |
+| **CM 编码** | type 1 消息（CM_LOGIN 等）是「掩码 + 压缩 body」，不是裸 body；必须走 `net.send()` 让它按 sm_table 选路 |
+| **协议体尺寸** | CM_LOGIN 136 / CM_CREATECHAR 70 / CM_DELETECHAR 68 / CM_CREATEACCOUNT 203 / CM_CHANGEPASSWORD 201 |
+| **画布适配** | 原版逻辑分辨率固定 800x600，Godot 下需 `scale = min(vw/800, vh/600)` + 居中，点坐标再反向换算 |
+| **女性战士** | 建号界面 y 要 +40（源码 TODO hack，注释写明「seems offset-y is mis-aligned」） |
+| **按钮显隐** | 选人界面「开始/创建/删除」三个按钮都 = `hasChar()`，无角色时只有「退出」可点 |

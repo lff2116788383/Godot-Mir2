@@ -28,9 +28,19 @@ var fx: FightEffects = null
 var _inventory = null
 
 const SdInventory := preload("res://scripts/item/sd_inventory.gd")
+const LoginFlowRef := preload("res://scripts/ui/login/login_flow.gd")
+
+## 登录链路（--login 模式启用）
+var login_flow: LoginFlowRef = null
 
 
 func _ready() -> void:
+	# --login：从 Logo → 登录 → 选人 → 建号 走完整链路（C9）
+	if OS.get_cmdline_user_args().find("--login") >= 0:
+		await _start_login_flow()
+		_maybe_run_test()
+		return
+
 	map_view.set_camera(cam)
 
 	# 按 maprecord.inc 第 1 条：比奇县_0 -> 0.bin
@@ -222,6 +232,11 @@ func _maybe_run_test() -> void:
 		add_child(t0)
 		await t0.run(self)
 		return
+	if name == "c9c8":
+		var t9b: Node = load("res://tools/c9net_scene.gd").new()
+		add_child(t9b)
+		await t9b.run(self)
+		return
 	if name == "c7c8":
 		var t7: Node = load("res://tools/c7_c8_scene.gd").new()
 		add_child(t7)
@@ -335,6 +350,8 @@ func _on_player_grid_changed(g: Vector2i) -> void:
 
 ## 相机每帧跟随主角，移动过程中平滑推进
 func _process(_dt: float) -> void:
+	if login_flow != null and login_flow.in_login_flow():
+		return
 	if _player != null and cam != null:
 		cam.position = _player.position
 
@@ -349,6 +366,10 @@ func _update_hud() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# 登录链路优先吃掉所有输入
+	if login_flow != null and login_flow.in_login_flow():
+		login_flow.handle_input(event)
+		return
 	if _map == null:
 		return
 	# UI 优先处理（对应原版 GUIManager::processEventDefault 先于地图）
@@ -399,3 +420,57 @@ func _maybe_autoshot() -> void:
 	var err := img.save_png(out_path)
 	print("[shot] ", out_path, " err=", err, " ", img.get_width(), "x", img.get_height())
 	get_tree().quit(0)
+
+
+# ==================== C9 登录链路 ====================
+
+## --login：从 Logo 开始走完整登录链路
+## 这是复刻 client.cpp 的进程状态机：LOGO → LOGIN → SELECTCHAR → RUN
+## 内含 await，调用方必须用 await
+func _start_login_flow() -> void:
+	# 登录态不需要地图，先把渲染层与 HUD 收起来
+	if map_view != null:
+		map_view.visible = false
+	if hud != null:
+		hud.visible = false
+
+	login_flow = LoginFlowRef.new()
+	login_flow.name = "LoginFlow"
+	add_child(login_flow)
+
+	# 建网络对象并连服务端（默认 127.0.0.1:7000，mock 服务端）
+	net = MirClient.new()
+	net.name = "LoginNet"
+	add_child(net)
+	login_flow.bind_net(net)
+
+	var host := "127.0.0.1"
+	var port := 7000
+	var args := OS.get_cmdline_user_args()
+	var hp := args.find("--server")
+	if hp >= 0 and hp + 1 < args.size():
+		var parts: PackedStringArray = args[hp + 1].split(":")
+		host = parts[0]
+		if parts.size() > 1:
+			port = int(parts[1])
+
+	var ok: bool = await net.connect_to(host, port)
+	print("[C9] 登录链路启动，连服务端 %s:%d -> %s" % [host, port, str(ok)])
+
+	# 进游戏后交棒
+	login_flow.run_entered.connect(_on_run_entered)
+	login_flow.conn_error.connect(func(reason): print("[C9] 连接错误: ", reason))
+
+
+## SM_ONLINEOK 到达后接管进游戏
+func _on_run_entered(online_body: PackedByteArray) -> void:
+	print("[C9] 进入游戏，SM_ONLINEOK %d 字节" % online_body.size())
+	# 收起登录层
+	if login_flow != null:
+		login_flow.visible = false
+		if login_flow._canvas != null:
+			login_flow._canvas.visible = false
+	if hud != null:
+		hud.visible = true
+	if map_view != null:
+		map_view.visible = true
