@@ -14,7 +14,7 @@
 | B5 | 物品逻辑 | L0 | ✅ | ~5 | ~1200 |
 | B6 | 怪物帧表 + 基类逻辑 | L0 | ✅ | 40 | ~3000 |
 | B7 | 界面逻辑（背包/聊天/小地图） | L4 | 🟨 | 28 | ~9000 |
-| B8 | XML 排版引擎 | L0 | ⬜ | 6 | ~3450 |
+| B8 | XML 排版引擎 | L0 | 🟨 | 6 | ~3450 |
 | B9 | 渲染与输入（Godot 重写） | L2/L3 | ⬜ | 按需 | ~8000 |
 | B10 | 统一联调 | — | ⬜ | — | — |
 
@@ -47,6 +47,8 @@
 | `common/src/serdesmsg.cpp`（SDInventory） | `scripts/item/sd_inventory.gd` | ✅ | 背包容器：堆叠/seqID/删除/合并 |
 | `client/src/messagestackboard.cpp` | `scripts/ui/message_stack.gd` | ✅ | 消息栈：超限移除最旧 |
 | `client/src/minimapboard.cpp` | `scripts/ui/mini_map.gd` | ✅ | 小地图：缩放锚点 + 边界夹取 |
+| `client/src/token.hpp` | `scripts/ui/xml_token.gd` | ✅ | 排版单元 W1/W/W2/H1/H2 模型 |
+| `client/src/xmltypeset.cpp`（核心） | `scripts/ui/xml_typeset.gd` | 🟨 | 换行/对齐/填充/坐标（内容解析待 B9） |
 | 40 个 `client*.hpp`（帧表部分） | `data/monster_frames.json`<br>`scripts/actor/monster_frames.gd` | ✅ | 12 个类自定义帧表（脚本提取） |
 | `client/src/clientmonster.cpp`<br>`client/src/clientstandmonster.hpp` | `scripts/actor/client_monster.gd` | ✅ | 默认帧表 + gfxID 合成 + standMode |
 | `common/src/*.inc`（5 个） | `data/*.json` | ✅ | 1258 物品/364 怪物/603 地图/116 魔法/21 Buff |
@@ -59,6 +61,7 @@
 | `test_data.gd` | 51 | 物品表 1258 条、UID 位布局、ActionNode 28B 编解码、魔法文件名补码、物品布局 |
 | `test_monster.gd` | 28 | 默认帧表、TaoDog 双状态、Zuma 帧重定向、贴图键合成 |
 | `test_ui.gd` | 39 | 背包堆叠/seqID/删除/合并、消息栈、小地图换算 |
+| `test_typeset.gd` | 20 | Token 模型、换行判定、三种对齐、两端填充、垂直排版 |
 
 ## 已完成但需回归的
 
