@@ -22,10 +22,10 @@
 | C05 | `server/src/server.sql` | `internal/storage` | B2 | ported | schema 原样嵌入 |
 | C06 | 账号、角色、物品、行会、拍卖、摆摊、邮件数据库代码 | `internal/storage` | B2 | adapted | 持久化和数据访问完成；买断税务/投递编排归 B6 |
 | C07 | `actorpool.*`、`delaydriver.*`、`dispatcher.*` | `internal/actor` | B3 | pending | 地图串行执行优先 |
-| C08 | `netdriver.*`、`actornetdriver.*`、`servicecorenet.*`、`serverpeer.*` | `internal/transport` | B3 | pending | 保留旧 TCP 协议 |
-| C09 | `servermap.*`、`servermapop.*` | `internal/world` | B4 | in-progress | 网格/占用/寻路/移动完成；地图文件加载与 AOI 待补 |
-| C10 | `battleobject.*`、`monster.*`、`buff*.*`、怪物子类 | `internal/world` | B4 | in-progress | 伤害结算/Buff/仇恨/安全区/刷新完成；协程与子类特化待补 |
-| C11 | `player.*`、`playerop.*`、`playernet.*`、背包和物品逻辑 | `internal/game` | B5 | pending | |
+| C08 | `netdriver.*`、`actornetdriver.*`、`servicecorenet.*`、`serverpeer.*` | `internal/transport`、`internal/game` | B3/B4 | partial | 登录链路 7 条消息已接（CM_LOGIN/QUERYCHAR/ONLINE/CREATEACCOUNT/CHANGEPASSWORD/CREATECHAR/DELETECHAR）；peer 多进程待 B6 |
+| C09 | `servermap.*`、`servermapop.*` | `internal/world` | B4 | done | 网格/占用/寻路/移动/地图 .bin 加载/AOI 观察者圈/地面物品/火墙全部完成 |
+| C10 | `battleobject.*`、`monster.*`、`buff*.*`、怪物子类 | `internal/world` | B4 | partial | 伤害结算/Buff/仇恨/安全区/刷新完成；19 个怪物子类与 buffact 待补 |
+| C11 | `player.*`、`playerop.*`、`playernet.*`、背包和物品逻辑 | `internal/game` | B5 | pending | 登录链路已通，玩家主体 7,096 行未开始 |
 | C12 | `serverluacoroutinerunner.*`、`serverluamodule.*`、Lua 脚本 | `internal/script` | B5 | pending | 默认复用原 Lua 脚本 |
 | C13 | `npchar.*`、`npcharop.*`、NPC 脚本 | `internal/game`、`internal/script` | B5 | pending | |
 | C14 | `quest.*`、`questdb.*`、`questop.*`、任务脚本 | `internal/game`、`internal/script` | B5 | pending | 协程语义高风险 |
@@ -221,3 +221,42 @@
 - `servermap.cpp` 的 AOI/视野广播、地图 `.bin` 加载未做（属于 B4 剩余）；
 - Buff 的 act/aura 细分（`buffact*`）只保留计数语义，细化在 B5。
 
+### B4 收尾：AOI / 地图加载 / 地面物品 / 火墙 / 登录链路
+
+状态：**世界运行时完成，登录链路已与客户端联调通过**
+
+完成内容：
+
+- `internal/world/maploader.go`：地图 `.bin` 加载（末尾 zstd 标记、端序字节、
+  位域拆成独立字段）。实测 map 0 解析结果与客户端逐字节验证值完全一致：
+  `800x800 walkable=350478 (54.8%) objects ground=105190 over0=52074 lights=115`
+- `internal/world/aoi.go`：AOI 观察者圈（`doCircle` 三重条件、半径 `(r-1)²`、
+  增量移动、视野变化、动作广播去重）
+- `internal/world/ground_item.go`：地面物品（同批共享 groundSeq、**120 秒**整批过期、
+  尾部优先拾取、只收集可走格）
+- `internal/world/firewall.go`：火墙（`dps` 是每秒攻击次数、
+  `attackGap = max(1, 1000/dps)`、只烧同格玩家与怪物）
+- `internal/common/uid.go`：UID 编码（位布局 type@59 id@35 peer@31 seq@0）
+- `internal/game/session.go`：登录会话（三阶段串行、多重登录判定）
+- `internal/game/login.go`：7 条登录消息处理器
+- `internal/game/wire.go` + `server_handler.go`：transport 适配与路由注册
+- `cmd/mir2-server/main.go`：从「只回 PING」改为真正的登录服务
+- `tools/seed`：建测试账号/角色的工具
+
+**真服务端联调结果**：客户端 `--login --run-test c9c8` 连本服务端，
+15 项断言全过，`SM_ONLINEOK` 177 字节 —— 与原版/mock 完全一致。
+
+关键行为锁定（易错点）：
+
+| 项 | 结论 |
+|---|---|
+| AOI 半径语义 | `doCircle(cx,cy,r)` 用 `LDistance2 <= (r-1)²`，**实际半径 r-1**；LDistance2 是**欧氏距离平方**不是切比雪夫 |
+| 地图瓦片总数 | map 0 有 159,997/160,000 有效块，缺的 3 块是地图本身内容 |
+| LAND 可走判定 | 序列化后 canWalk 是**独立字节**，不是位域里的 bit7 |
+| 地面物品过期 | 固定 **120 秒**，按 groundSeq **整批**清除 |
+| 火墙 dps | 是**每秒攻击次数**不是伤害值，`attackGap = max(1, 1000/dps)` |
+| 火墙目标 | 只烧**同格**玩家与怪物，不含创造者与 NPC |
+| 玩家 UID | **特例**：`(5<<59) | dbid`，dbid 在**最低位**，不走 id 段 |
+| 任务/Lua 对象 UID | 同上，id 在最低位 |
+| 登录校验 | **不校验** id/password 格式（原版注释明确允许 test/123456） |
+| 会话清理 | 断线必须 `Drop(channelID)`，否则同账号重连被判 MULTILOGIN |

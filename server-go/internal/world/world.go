@@ -119,38 +119,105 @@ func (w *World) Execute(ctx context.Context, mapID uint32, command mapCommand) (
 	}
 }
 
-func (w *World) AddEntity(ctx context.Context, mapID uint32, entity Entity) error {
-	_, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
-		return nil, state.AddEntity(entity)
+// AddEntity 把实体加入地图，返回 AOI 事件（供上层转成 AM_OBSERVE）。
+func (w *World) AddEntity(ctx context.Context, mapID uint32, entity Entity) ([]ObserverEvent, error) {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return state.AddEntity(entity)
 	}))
-	return err
+	if err != nil {
+		return nil, err
+	}
+	events, _ := value.([]ObserverEvent)
+	return events, nil
 }
 
-func (w *World) RemoveEntity(ctx context.Context, mapID uint32, uid uint64) (Entity, bool, error) {
+func (w *World) RemoveEntity(ctx context.Context, mapID uint32, uid uint64) (Entity, bool, []ObserverEvent, error) {
 	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
-		entity, ok := state.RemoveEntity(uid)
+		entity, ok, events := state.RemoveEntity(uid)
 		if !ok {
-			return entity, ErrEntityNotFound
+			return removeEntityResult{}, nil
 		}
-		return entity, nil
+		return removeEntityResult{Entity: entity, Events: events}, nil
 	}))
-	if errors.Is(err, ErrEntityNotFound) {
-		return Entity{}, false, nil
-	}
 	if err != nil {
-		return Entity{}, false, err
+		return Entity{}, false, nil, err
 	}
-	return value.(Entity), true, nil
+	result, ok := value.(removeEntityResult)
+	if !ok {
+		return Entity{}, false, nil, nil
+	}
+	return result.Entity, true, result.Events, nil
 }
 
-func (w *World) MoveEntity(ctx context.Context, mapID uint32, uid uint64, x, y, maxStep int) (Point, error) {
+// removeEntityResult 让「实体不存在」也能正常穿过命令队列。
+type removeEntityResult struct {
+	Entity Entity
+	Events []ObserverEvent
+}
+
+func (w *World) MoveEntity(ctx context.Context, mapID uint32, uid uint64, x, y, maxStep int) (Point, []ObserverEvent, error) {
 	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
-		return state.MoveEntity(uid, x, y, maxStep)
+		from, moveErr, events := state.MoveEntity(uid, x, y, maxStep)
+		return moveResult{From: from, Events: events}, moveErr
 	}))
 	if err != nil {
-		return Point{}, err
+		return Point{}, nil, err
 	}
-	return value.(Point), nil
+	result, _ := value.(moveResult)
+	return result.From, result.Events, nil
+}
+
+type moveResult struct {
+	From   Point
+	Events []ObserverEvent
+}
+
+// SetViewRange 调整实体视野，返回观察圈变化事件。
+func (w *World) SetViewRange(ctx context.Context, mapID uint32, uid uint64, viewRange int) ([]ObserverEvent, error) {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return state.SetViewRange(uid, viewRange), nil
+	}))
+	if err != nil {
+		return nil, err
+	}
+	events, _ := value.([]ObserverEvent)
+	return events, nil
+}
+
+// ForwardAction 返回应该收到某个实体动作的观察者 uid 列表。
+func (w *World) ForwardAction(ctx context.Context, mapID uint32, selfUID uint64, srcX, srcY, dstX, dstY int) ([]uint64, error) {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return state.ForwardAction(selfUID, srcX, srcY, dstX, dstY), nil
+	}))
+	if err != nil {
+		return nil, err
+	}
+	observers, _ := value.([]uint64)
+	return observers, nil
+}
+
+// Advance 推进地图时钟，返回本 tick 的世界事件。
+func (w *World) Advance(ctx context.Context, mapID uint32, nowMS int64) ([]TickEvent, error) {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return state.Advance(nowMS), nil
+	}))
+	if err != nil {
+		return nil, err
+	}
+	events, _ := value.([]TickEvent)
+	return events, nil
+}
+
+// Combat 执行一次完整伤害结算（roll → 命中 → 减伤 → 扣血 → 仇恨）。
+func (w *World) Combat(ctx context.Context, mapID uint32, attackerUID, targetUID uint64, magicID int) (AttackResult, error) {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return state.Combat(attackerUID, targetUID, magicID, nil)
+	}))
+	if err != nil {
+		return AttackResult{}, err
+	}
+	result, _ := value.(AttackResult)
+	return result, nil
 }
 
 func (w *World) FindPath(ctx context.Context, mapID uint32, uid uint64, target Point) ([]Point, error) {

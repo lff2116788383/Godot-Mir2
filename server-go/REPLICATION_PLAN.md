@@ -1,6 +1,6 @@
 # mir2x server-go 复刻方案
 
-> 状态：执行中；B0-B3 已完成，B4 运行时骨架完成（AOI/地图加载/子类特化待补）
+> 状态：执行中；B0-B4 已完成（世界运行时 + 登录链路与客户端联调通过）；B5 待开始
 > 目标分支：`server-go`  
 > 目标目录：`server-go/`  
 > 参考服务端：`E:\Desktop\game\mir2x\server`  
@@ -258,13 +258,21 @@ server-go/
 - 怪物记录、掉落互斥链表、AI 冷却、2 秒路径缓存、视野、行为模式、刷新管理器；
 - 世界时钟与 tick 事件（buff 过期、刷新）。
 
-待补（B4 收尾）：
+已补完（B4 收尾）：
 
-- 地图 `.bin` 加载与 AOI/视野广播（`servermap.cpp`）；
-- `BattleObject` 协程化的动作队列（`requestMove`/`requestJump`/`requestMapSwitch`）；
-- 34 个怪物子类的 AI 差异核对；
-- `buffact*` 的 act/aura 细分；
-- 复活（`SM_REVIVE`）与昼夜。
+- 地图 `.bin` 加载（`maploader.go`），与客户端解析结果逐值一致；
+- AOI 观察者圈与视野广播（`aoi.go`）；
+- 地面物品与 120 秒整批过期（`ground_item.go`）；
+- 火墙与 dps 周期灼烧（`firewall.go`）；
+- UID 编码（`common/uid.go`）；
+- 登录链路 7 条消息 + 会话管理（`game/`），**已与客户端联调通过**。
+
+仍待补（移入后续批次）：
+
+- `BattleObject` 协程化的动作队列 -> B5 与 session 联调时补；
+- 19 个怪物子类的 AI 差异 -> B6；
+- `buffact*` 的 act/aura 细分 -> B6；
+- 复活（`SM_REVIVE`）与昼夜 -> B5。
 
 重点源文件包括：
 

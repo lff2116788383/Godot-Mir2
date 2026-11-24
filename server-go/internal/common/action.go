@@ -16,6 +16,30 @@ const (
 	ActionNodeWireSize = 28
 )
 
+// 方向常量（protocoldef.hpp 的 DIR_*，与客户端 protocol_def.gd:16-29 一致）。
+//
+//	DIR_BEGIN=1, DIR_UP=1, UP_RIGHT=2, RIGHT=3, DOWN_RIGHT=4,
+//	DOWN=5, DOWN_LEFT=6, LEFT=7, UP_LEFT=8, DIR_END=9
+//
+// ★ 0 是 DIR_NONE（无方向），不是「上」。
+const (
+	DirectionNone      uint8 = 0
+	DirectionUp        uint8 = 1
+	DirectionUpRight   uint8 = 2
+	DirectionRight     uint8 = 3
+	DirectionDownRight uint8 = 4
+	DirectionDown      uint8 = 5
+	DirectionDownLeft  uint8 = 6
+	DirectionLeft      uint8 = 7
+	DirectionUpLeft    uint8 = 8
+	DirectionEnd       uint8 = 9
+)
+
+// DirectionValid 判断方向值是否合法。
+func DirectionValid(d uint8) bool {
+	return d >= DirectionUp && d < DirectionEnd
+}
+
 // ActionType values are kept identical to the legacy ActionType enum.
 type ActionType int
 

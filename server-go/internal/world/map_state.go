@@ -57,6 +57,10 @@ type Entity struct {
 	// DropSettled 掉落是否已结算（防止死亡事件重复触发掉落）
 	DropSettled bool
 
+	// ViewRange 视野半径（格）。0 表示不观察任何格（NPC 常见）。
+	// 玩家的 SM_VIEWRANGE 会改它，进而调 ResizeGridObserverCircle。
+	ViewRange int
+
 	// 受击/攻击用的属性（由怪物/玩家记录填充）
 	Stats CombatStats
 }
@@ -72,6 +76,14 @@ type CellState struct {
 	Locked      bool
 	Occupants   map[uint64]struct{}
 	GroundItems []uint64
+
+	// Observers 当前视野覆盖本格的实体 uid（servermap.hpp:MapGrid::observerList）。
+	// AOI 的核心结构：动作广播时只发给这个列表，不必扫圆。
+	Observers []uint64
+
+	// FireWalls 铺在本格的火墙（servermap.hpp:MapGrid::fireWallList）。
+	// 同一格可叠多层，按 GroundSeq 区分。
+	FireWalls []FireWall
 }
 
 // MapState is mutable world state and is only executed by one map actor.
@@ -91,6 +103,13 @@ type MapState struct {
 
 	// Zone 本图安全区（SDSafeZone 合并结果）
 	Zone SafeZone
+
+	// groundSeq 掉落批次计数器（servermap.hpp:m_groundSeq，从 1 开始）。
+	// 同批掉落共享一个批次号，过期时整批清除。
+	groundSeq uint64
+	// groundItems 地面上所有物品明细，与各 CellState.GroundItems 保持同步。
+	// CellState 里只存 itemID 供 AOI 快速下发，明细放这里以便按批次过期。
+	groundItems []GroundItem
 }
 
 func NewMapState(id uint32, data *MapData) (*MapState, error) {
@@ -135,19 +154,24 @@ func (m *MapState) MutateEntity(uid uint64, fn func(*Entity) error) error {
 	return fn(entity)
 }
 
-func (m *MapState) AddEntity(entity Entity) error {
+// AddEntity 把实体加入地图，并建立它的观察圈。
+//
+// 返回的 AOI 事件需要由上层转成 AM_OBSERVE 通知观察者：
+//   - 该格已有的观察者要知道新实体出现了（COAppear）
+//   - 新实体要知道它视野内的所有实体（由 UpdateGridObserverCircle 产生）
+func (m *MapState) AddEntity(entity Entity) ([]ObserverEvent, error) {
 	if _, exists := m.Entities[entity.UID]; exists {
-		return ErrEntityExists
+		return nil, ErrEntityExists
 	}
 	if !m.Data.InBounds(entity.Point()) {
-		return ErrInvalidCoordinate
+		return nil, ErrInvalidCoordinate
 	}
 	cell, err := m.cell(entity.X, entity.Y)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if cell.Locked || len(cell.Occupants) != 0 {
-		return ErrGridOccupied
+		return nil, ErrGridOccupied
 	}
 	entity.Direction = DirectionFromDelta(0, 0)
 	if !entity.Direction.Valid() {
@@ -164,21 +188,43 @@ func (m *MapState) AddEntity(entity Entity) error {
 		cell.Occupants = make(map[uint64]struct{})
 	}
 	cell.Occupants[entity.UID] = struct{}{}
-	return nil
+
+	// 建立观察圈：新实体开始观察它视野内的格
+	var events []ObserverEvent
+	if entityCopy.ViewRange > 0 {
+		events = append(events, m.UpdateGridObserverCircle(entity.UID, entityCopy.ViewRange, entity.X, entity.Y, true)...)
+	}
+	// 反向通知：已在该格观察的实体要知道它来了
+	events = append(events, m.NotifyCOAppear(entity.UID, entity.X, entity.Y)...)
+	return events, nil
 }
 
-func (m *MapState) RemoveEntity(uid uint64) (Entity, bool) {
+// RemoveEntity 移除实体，并拆除它的观察圈。
+//
+// 返回的 AOI 事件用于通知残留的观察者它消失了（CODisappear）。
+func (m *MapState) RemoveEntity(uid uint64) (Entity, bool, []ObserverEvent) {
 	entity, ok := m.Entities[uid]
 	if !ok {
-		return Entity{}, false
+		return Entity{}, false, nil
 	}
+
+	var events []ObserverEvent
+	// 先通知该格的观察者：它要消失了（此时它还在 Occupants 里，但通知会跳过自己）
+	events = append(events, m.NotifyCODisappear(uid, entity.X, entity.Y)...)
+
+	// 拆除观察圈
+	if entity.ViewRange > 0 {
+		events = append(events, m.UpdateGridObserverCircle(uid, entity.ViewRange, entity.X, entity.Y, false)...)
+	}
+
 	if cell, err := m.cell(entity.X, entity.Y); err == nil {
 		delete(cell.Occupants, uid)
 	}
 	delete(m.Entities, uid)
-	return *entity, true
+	return *entity, true, events
 }
 
+// CanOccupy 判断某格能否被 ignoreUID 占据。
 func (m *MapState) CanOccupy(ignoreUID uint64, x, y int) bool {
 	cell, err := m.cell(x, y)
 	if err != nil || cell.Locked {
@@ -195,33 +241,47 @@ func (m *MapState) CanOccupy(ignoreUID uint64, x, y int) bool {
 	return true
 }
 
-func (m *MapState) MoveEntity(uid uint64, x, y, maxStep int) (Point, error) {
+// MoveEntity 移动实体，并增量更新 AOI 与观察者感知。
+//
+// 返回 (起点, 错误, AOI 事件)。
+// 移动成功时产生三类事件：
+//   - 自身观察圈的增量（离开的格 / 进入的格）
+//   - 旧格观察者的 CODisappear
+//   - 新格观察者的 COAppear
+func (m *MapState) MoveEntity(uid uint64, x, y, maxStep int) (Point, error, []ObserverEvent) {
 	entity, ok := m.Entities[uid]
 	if !ok {
-		return Point{}, ErrEntityNotFound
+		return Point{}, ErrEntityNotFound, nil
 	}
 	from := entity.Point()
 	to := Point{X: x, Y: y}
 	if from.Equal(to) {
-		return from, nil
+		return from, nil, nil
 	}
 	if !m.Data.InBounds(to) {
-		return from, ErrInvalidCoordinate
+		return from, ErrInvalidCoordinate, nil
 	}
 	if !HopValid(maxStep, from, to) || !lineClear(m, from, to, uid) {
-		return from, ErrInvalidMove
+		return from, ErrInvalidMove, nil
 	}
 	if !m.CanOccupy(uid, x, y) {
-		return from, ErrGridOccupied
+		return from, ErrGridOccupied, nil
 	}
 	oldCell, err := m.cell(from.X, from.Y)
 	if err != nil {
-		return from, err
+		return from, err, nil
 	}
 	newCell, err := m.cell(to.X, to.Y)
 	if err != nil {
-		return from, err
+		return from, err, nil
 	}
+
+	var events []ObserverEvent
+	// 1. 旧格观察者失去视线（必须在移动前取，此时 self 还在旧格 observerList 里也没关系，
+	//    因为在旧格观察的其他人不会因自己移动而失去自己 —— 他们看到的是这格）
+	events = append(events, m.NotifyCODisappear(uid, from.X, from.Y)...)
+
+	// 2. 换格
 	delete(oldCell.Occupants, uid)
 	if newCell.Occupants == nil {
 		newCell.Occupants = make(map[uint64]struct{})
@@ -229,7 +289,35 @@ func (m *MapState) MoveEntity(uid uint64, x, y, maxStep int) (Point, error) {
 	newCell.Occupants[uid] = struct{}{}
 	entity.Direction = DirectionBetween(from, to)
 	entity.X, entity.Y = x, y
-	return from, nil
+
+	// 3. 自身观察圈增量
+	if entity.ViewRange > 0 {
+		events = append(events, m.MoveGridObserverCircle(uid, entity.ViewRange, from.X, from.Y, x, y)...)
+	}
+
+	// 4. 新格观察者获得视线
+	events = append(events, m.NotifyCOAppear(uid, x, y)...)
+	return from, nil, events
+}
+
+// SetViewRange 调整实体视野，返回观察圈变化事件。
+func (m *MapState) SetViewRange(uid uint64, newRange int) []ObserverEvent {
+	entity, ok := m.Entities[uid]
+	if !ok {
+		return nil
+	}
+	if newRange < 0 {
+		newRange = 0
+	}
+	if newRange > MaxViewRange {
+		newRange = MaxViewRange
+	}
+	old := entity.ViewRange
+	if old == newRange {
+		return nil
+	}
+	entity.ViewRange = newRange
+	return m.ResizeGridObserverCircle(uid, entity.X, entity.Y, old, newRange)
 }
 
 func lineClear(m *MapState, from, to Point, uid uint64) bool {
@@ -439,6 +527,22 @@ func (m *MapState) Advance(nowMS int64) []TickEvent {
 		}
 	}
 
+	// 3. 地面物品过期（原版 120 秒定时清除）
+	for _, ev := range m.ExpireGroundItems() {
+		events = append(events, TickEvent{Kind: "ground_item_expire", X: ev.X, Y: ev.Y})
+	}
+
+	// 4. 火墙：到期移除 + 按 dps 周期灼烧
+	fwHits, fwExpired := m.TickFireWalls()
+	for _, hit := range fwHits {
+		events = append(events, TickEvent{
+			Kind: "firewall_hit", UID: hit.TargetUID, X: hit.X, Y: hit.Y, Amount: hit.Damage,
+		})
+	}
+	for _, p := range fwExpired {
+		events = append(events, TickEvent{Kind: "firewall_expire", X: p.X, Y: p.Y})
+	}
+
 	return events
 }
 
@@ -463,6 +567,11 @@ type AttackResult struct {
 // 与原来的 Attack（直接传 damage）相比，这才是原版真实的链路。
 // Attack 保留给测试与简化调用。
 func (m *MapState) Combat(attackerUID, targetUID uint64, magicID int, r *rand.Rand) (AttackResult, error) {
+	if r == nil {
+		// 外部（World.Combat）不一定持有随机源，这里用默认源，
+		// 避免调用方漏传导致 panic。
+		r = rand.New(rand.NewSource(m.NowMS))
+	}
 	attacker, ok := m.Entities[attackerUID]
 	if !ok {
 		return AttackResult{}, ErrEntityNotFound

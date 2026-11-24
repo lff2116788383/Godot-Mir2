@@ -28,7 +28,7 @@ func newTestMap(t *testing.T) *MapState {
 
 func addTestEntity(t *testing.T, st *MapState, uid uint64, x, y int, hp int32, stats CombatStats) {
 	t.Helper()
-	err := st.AddEntity(Entity{
+	_, err := st.AddEntity(Entity{
 		UID: uid, Type: EntityMonster, Name: "mob",
 		X: x, Y: y, HP: hp, MaxHP: hp, Stats: stats,
 	})
