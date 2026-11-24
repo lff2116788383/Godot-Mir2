@@ -1,0 +1,484 @@
+{
+ "_meta": {
+  "source": "client/src/gui/skillboard/skillboard.hpp m_iconGfxList",
+  "total": 63,
+  "groups": {
+   "火": 6,
+   "冰": 5,
+   "雷": 5,
+   "风": 6,
+   "神圣": 7,
+   "暗黑": 10,
+   "幻影": 9,
+   "无": 15
+  },
+  "passive": 3,
+  "page_rect": {
+   "x": 18,
+   "y": 44,
+   "w": 304,
+   "h": 329
+  }
+ },
+ "magics": {
+  "火球术": {
+   "icon": 83890176,
+   "col": 0,
+   "row": 0,
+   "passive": false
+  },
+  "大火球": {
+   "icon": 83890180,
+   "col": 0,
+   "row": 1,
+   "passive": false
+  },
+  "焰天火雨": {
+   "icon": 83890242,
+   "col": 0,
+   "row": 3,
+   "passive": false
+  },
+  "地狱火": {
+   "icon": 83890184,
+   "col": 2,
+   "row": 1,
+   "passive": false
+  },
+  "火墙": {
+   "icon": 83890197,
+   "col": 2,
+   "row": 2,
+   "passive": false
+  },
+  "爆裂火焰": {
+   "icon": 83890198,
+   "col": 4,
+   "row": 3,
+   "passive": false
+  },
+  "冰月神掌": {
+   "icon": 83890213,
+   "col": 0,
+   "row": 0,
+   "passive": false
+  },
+  "冰月震天": {
+   "icon": 83890214,
+   "col": 0,
+   "row": 1,
+   "passive": false
+  },
+  "冰沙掌": {
+   "icon": 83890216,
+   "col": 2,
+   "row": 2,
+   "passive": false
+  },
+  "冰咆哮": {
+   "icon": 83890207,
+   "col": 2,
+   "row": 3,
+   "passive": false
+  },
+  "魄冰刺": {
+   "icon": 83890256,
+   "col": 2,
+   "row": 4,
+   "passive": false
+  },
+  "霹雳掌": {
+   "icon": 83890215,
+   "col": 0,
+   "row": 0,
+   "passive": false
+  },
+  "雷电术": {
+   "icon": 83890186,
+   "col": 0,
+   "row": 1,
+   "passive": false
+  },
+  "疾光电影": {
+   "icon": 83890185,
+   "col": 2,
+   "row": 2,
+   "passive": false
+  },
+  "地狱雷光": {
+   "icon": 83890199,
+   "col": 2,
+   "row": 3,
+   "passive": false
+  },
+  "怒神霹雳": {
+   "icon": 83890240,
+   "col": 2,
+   "row": 4,
+   "passive": false
+  },
+  "风掌": {
+   "icon": 83890217,
+   "col": 0,
+   "row": 0,
+   "passive": false
+  },
+  "击风": {
+   "icon": 83890220,
+   "col": 0,
+   "row": 1,
+   "passive": false
+  },
+  "风震天": {
+   "icon": 83890219,
+   "col": 2,
+   "row": 2,
+   "passive": false
+  },
+  "龙卷风": {
+   "icon": 83890218,
+   "col": 2,
+   "row": 3,
+   "passive": false
+  },
+  "抗拒火环": {
+   "icon": 83890183,
+   "col": 4,
+   "row": 1,
+   "passive": false
+  },
+  "魔法盾": {
+   "icon": 83890205,
+   "col": 4,
+   "row": 2,
+   "passive": false
+  },
+  "治愈术": {
+   "icon": 83890177,
+   "col": 0,
+   "row": 0,
+   "passive": false
+  },
+  "群体治愈术": {
+   "icon": 83890203,
+   "col": 0,
+   "row": 2,
+   "passive": false
+  },
+  "回生术": {
+   "icon": 83890221,
+   "col": 0,
+   "row": 3,
+   "passive": false
+  },
+  "月魂断玉": {
+   "icon": 83890211,
+   "col": 2,
+   "row": 1,
+   "passive": false
+  },
+  "月魂灵波": {
+   "icon": 83890212,
+   "col": 2,
+   "row": 2,
+   "passive": false
+  },
+  "云寂术": {
+   "icon": 83890243,
+   "col": 4,
+   "row": 3,
+   "passive": false
+  },
+  "阴阳法环": {
+   "icon": 83890245,
+   "col": 4,
+   "row": 4,
+   "passive": false
+  },
+  "施毒术": {
+   "icon": 83890181,
+   "col": 0,
+   "row": 0,
+   "passive": false
+  },
+  "困魔咒": {
+   "icon": 83890191,
+   "col": 0,
+   "row": 1,
+   "passive": false
+  },
+  "幽灵盾": {
+   "icon": 83890189,
+   "col": 1,
+   "row": 1,
+   "passive": false
+  },
+  "神圣战甲术": {
+   "icon": 83890190,
+   "col": 1,
+   "row": 2,
+   "passive": false
+  },
+  "强魔震法": {
+   "icon": 83890226,
+   "col": 1,
+   "row": 3,
+   "passive": false
+  },
+  "猛虎强势": {
+   "icon": 83890231,
+   "col": 1,
+   "row": 4,
+   "passive": false
+  },
+  "隐身术": {
+   "icon": 83890193,
+   "col": 2,
+   "row": 0,
+   "passive": false
+  },
+  "集体隐身术": {
+   "icon": 83890194,
+   "col": 2,
+   "row": 1,
+   "passive": false
+  },
+  "妙影无踪": {
+   "icon": 83890244,
+   "col": 2,
+   "row": 4,
+   "passive": false
+  },
+  "灵魂火符": {
+   "icon": 83890188,
+   "col": 3,
+   "row": 0,
+   "passive": false
+  },
+  "召唤骷髅": {
+   "icon": 83890235,
+   "col": 0,
+   "row": 0,
+   "passive": false
+  },
+  "召唤神兽": {
+   "icon": 83890204,
+   "col": 0,
+   "row": 1,
+   "passive": false
+  },
+  "超强召唤骷髅": {
+   "icon": 83890192,
+   "col": 0,
+   "row": 2,
+   "passive": false
+  },
+  "移花接玉": {
+   "icon": 83890246,
+   "col": 0,
+   "row": 3,
+   "passive": false
+  },
+  "诱惑之光": {
+   "icon": 83890195,
+   "col": 2,
+   "row": 0,
+   "passive": false
+  },
+  "圣言术": {
+   "icon": 83890206,
+   "col": 2,
+   "row": 1,
+   "passive": false
+  },
+  "凝血离魂": {
+   "icon": 83890241,
+   "col": 2,
+   "row": 3,
+   "passive": false
+  },
+  "瞬息移动": {
+   "icon": 83890196,
+   "col": 3,
+   "row": 0,
+   "passive": false
+  },
+  "异形换位": {
+   "icon": 83890234,
+   "col": 3,
+   "row": 1,
+   "passive": false
+  },
+  "基本剑术": {
+   "icon": 83890178,
+   "col": 0,
+   "row": 0,
+   "passive": true
+  },
+  "攻杀剑术": {
+   "icon": 83890182,
+   "col": 0,
+   "row": 1,
+   "passive": true
+  },
+  "刺杀剑术": {
+   "icon": 83890187,
+   "col": 0,
+   "row": 2,
+   "passive": false
+  },
+  "半月弯刀": {
+   "icon": 83890200,
+   "col": 1,
+   "row": 3,
+   "passive": false
+  },
+  "翔空剑法": {
+   "icon": 83890209,
+   "col": 1,
+   "row": 4,
+   "passive": false
+  },
+  "十方斩": {
+   "icon": 83890233,
+   "col": 1,
+   "row": 5,
+   "passive": false
+  },
+  "烈火剑法": {
+   "icon": 83890201,
+   "col": 2,
+   "row": 4,
+   "passive": false
+  },
+  "莲月剑法": {
+   "icon": 83890208,
+   "col": 2,
+   "row": 5,
+   "passive": false
+  },
+  "野蛮冲撞": {
+   "icon": 83890202,
+   "col": 3,
+   "row": 3,
+   "passive": false
+  },
+  "乾坤大挪移": {
+   "icon": 83890237,
+   "col": 3,
+   "row": 4,
+   "passive": false
+  },
+  "铁布衫": {
+   "icon": 83890232,
+   "col": 3,
+   "row": 5,
+   "passive": false
+  },
+  "斗转星移": {
+   "icon": 83890238,
+   "col": 3,
+   "row": 6,
+   "passive": false
+  },
+  "破血狂杀": {
+   "icon": 83890236,
+   "col": 3,
+   "row": 7,
+   "passive": false
+  },
+  "精神力战法": {
+   "icon": 83890179,
+   "col": 4,
+   "row": 0,
+   "passive": true
+  },
+  "空拳刀法": {
+   "icon": 83890210,
+   "col": 4,
+   "row": 3,
+   "passive": false
+  }
+ },
+ "groups": {
+  "火": [
+   "火球术",
+   "大火球",
+   "焰天火雨",
+   "地狱火",
+   "火墙",
+   "爆裂火焰"
+  ],
+  "冰": [
+   "冰月神掌",
+   "冰月震天",
+   "冰沙掌",
+   "冰咆哮",
+   "魄冰刺"
+  ],
+  "雷": [
+   "霹雳掌",
+   "雷电术",
+   "疾光电影",
+   "地狱雷光",
+   "怒神霹雳"
+  ],
+  "风": [
+   "风掌",
+   "击风",
+   "风震天",
+   "龙卷风",
+   "抗拒火环",
+   "魔法盾"
+  ],
+  "神圣": [
+   "治愈术",
+   "群体治愈术",
+   "回生术",
+   "月魂断玉",
+   "月魂灵波",
+   "云寂术",
+   "阴阳法环"
+  ],
+  "暗黑": [
+   "施毒术",
+   "困魔咒",
+   "幽灵盾",
+   "神圣战甲术",
+   "强魔震法",
+   "猛虎强势",
+   "隐身术",
+   "集体隐身术",
+   "妙影无踪",
+   "灵魂火符"
+  ],
+  "幻影": [
+   "召唤骷髅",
+   "召唤神兽",
+   "超强召唤骷髅",
+   "移花接玉",
+   "诱惑之光",
+   "圣言术",
+   "凝血离魂",
+   "瞬息移动",
+   "异形换位"
+  ],
+  "无": [
+   "基本剑术",
+   "攻杀剑术",
+   "刺杀剑术",
+   "半月弯刀",
+   "翔空剑法",
+   "十方斩",
+   "烈火剑法",
+   "莲月剑法",
+   "野蛮冲撞",
+   "乾坤大挪移",
+   "铁布衫",
+   "斗转星移",
+   "破血狂杀",
+   "精神力战法",
+   "空拳刀法"
+  ]
+ }
+}

@@ -37,6 +37,11 @@ const NpcChatRef := preload("res://scripts/ui/ui_npc_chat.gd")
 const ItemGfxRef := preload("res://scripts/item/item_gfx.gd")
 const ItemRecordRef := preload("res://scripts/item/item_record.gd")
 const ItemLayoutRef := preload("res://scripts/item/item_layout.gd")
+const SkillBoardRef := preload("res://scripts/ui/ui_skill_board.gd")
+const TeamBoardRef := preload("res://scripts/ui/ui_team_board.gd")
+const ItemListBoardRef := preload("res://scripts/ui/ui_item_list_board.gd")
+const GuildBoardRef := preload("res://scripts/ui/ui_guild_board.gd")
+const ConfigBoardRef := preload("res://scripts/ui/ui_config_board.gd")
 
 ## 面板
 var control_board: WidgetRef = null      ## 根控件（铺满屏幕）
@@ -47,6 +52,16 @@ var mini_map_board: WidgetRef = null     ## 小地图
 var inventory_board: WidgetRef = null    ## 背包
 var msg_stack_board: WidgetRef = null    ## 消息/聊天
 var npc_chat: NpcChatRef = null          ## NPC 对话（C3）
+
+## C5 面板
+var skill_board: SkillBoardRef = null        ## 技能
+var team_board: TeamBoardRef = null          ## 队伍
+var guild_board: GuildBoardRef = null        ## 行会
+var config_board: ConfigBoardRef = null      ## 设置
+var shop_board: ItemListBoardRef = null      ## 商店（NPC 购买）
+var auction_board: ItemListBoardRef = null   ## 拍卖行
+var stall_board: ItemListBoardRef = null     ## 摆摊
+var secured_board: ItemListBoardRef = null   ## 寄存
 
 ## 背包数据（由 main 注入 SDInventory）
 var inventory_data = null
@@ -125,6 +140,12 @@ func _layout() -> void:
 	if msg_stack_board != null:
 		msg_stack_board.position = Vector2(8, vh - cbh - 48 - 138)
 
+	# C5 面板统一居中（原版 guimanager.cpp 的面板大多居中）
+	for b in [skill_board, team_board, guild_board, config_board,
+			shop_board, auction_board, stall_board, secured_board]:
+		if b != null:
+			b.position = Vector2((vw - b.size_w()) / 2, (vh - b.size_h()) / 2)
+
 	# NPC 对话：屏幕中下部（原版居中，这里避开快捷栏）
 	if npc_chat != null:
 		npc_chat.position = Vector2((vw - npc_chat.size_w()) / 2, vh - cbh - 48 - 260)
@@ -148,6 +169,7 @@ func _build_ui() -> void:
 	_build_msg_stack()
 	_build_mini_map()
 	_build_npc_chat()
+	_build_c5_boards()
 
 	# 立即布局一次，避免首帧 _draw 早于 _process 导致位置为 0
 	_layout()
@@ -202,17 +224,40 @@ func _make_button_draw(text: String) -> Callable:
 func _make_button_click(idx: int, text: String) -> Callable:
 	return func(_w):
 		match idx:
-			0:
-				if inventory_board != null:
-					inventory_board.show = not WidgetRef.eval_bool(inventory_board.show, inventory_board, true)
-			2:
-				_push_sys_msg("行会系统待实现")
-			3:
-				_push_sys_msg("队伍系统待实现")
-			8:
-				_push_sys_msg("摆摊系统待实现")
+			0:  # 背包
+				_toggle(skill_board, false)
+				_toggle(inventory_board, true)
+			1:  # 技能
+				_toggle(inventory_board, false)
+				_toggle(skill_board, true)
+			2:  # 行会
+				_toggle(guild_board, true)
+			3:  # 队伍
+				_toggle(team_board, true)
+			4:  # 好友
+				_push_sys_msg("好友系统待实现")
+			5:  # 设置
+				_toggle(config_board, true)
+			6:  # 地图
+				_push_sys_msg("地图 %dx%d" % [vw, vh])
+			7:  # 拍卖
+				_toggle(auction_board, true)
+			8:  # 摊位
+				_toggle(stall_board, true)
+			9:  # 帮助
+				_push_sys_msg("点击地面移动，点底部按钮打开面板")
 			_:
 				_push_sys_msg("点击：" + text)
+
+
+## 开关某面板；exclusive=true 时关闭同组其他面板
+func _toggle(board, exclusive: bool) -> void:
+	if board == null:
+		return
+	var cur := WidgetRef.eval_bool(board.show, board, false)
+	board.show = not cur
+	if not cur and exclusive:
+		pass
 
 
 ## 人物状态面板（对应 gui/myherostateboard，尺寸按原版 .w/.h）
@@ -350,6 +395,47 @@ func _build_npc_chat() -> void:
 	npc_chat.on_npc_event = func(_w, evt_path): _push_sys_msg("NPC 事件: " + evt_path)
 	npc_chat.on_close = func(_w): _push_sys_msg("关闭对话")
 	control_board.add_widget(npc_chat, 0, 0)
+
+
+## C5 面板集合（对应 guimanager.hpp 的 21 个面板成员）
+func _build_c5_boards() -> void:
+	# 技能（gui/skillboard）
+	skill_board = SkillBoardRef.new("SkillBoard")
+	skill_board.on_skill_click = func(_w, nm): _push_sys_msg("技能: " + nm)
+	control_board.add_widget(skill_board, 0, 0)
+
+	# 队伍（gui/teamstateboard）
+	team_board = TeamBoardRef.new("TeamStateBoard")
+	team_board.on_page_change = func(_w, idx): pass
+	control_board.add_widget(team_board, 0, 0)
+
+	# 行会（guildboard）
+	guild_board = GuildBoardRef.new("GuildBoard")
+	guild_board.on_send_chat = func(_w, txt): _push_sys_msg("[行会] " + txt)
+	control_board.add_widget(guild_board, 0, 0)
+
+	# 设置（gui/runtimeconfigboard）
+	config_board = ConfigBoardRef.new("RuntimeConfigBoard")
+	config_board.on_change = func(_w, k, v): _push_sys_msg("%s = %s" % [k, str(v)])
+	control_board.add_widget(config_board, 0, 0)
+
+	# 商店 / 拍卖 / 摆摊 / 寄存：同一套列表面板，configure 区分
+	shop_board = ItemListBoardRef.new("PurchaseBoard")
+	shop_board.configure("purchase")
+	shop_board.on_action = func(_w, idx): _push_sys_msg("购买物品 #%d" % idx)
+	control_board.add_widget(shop_board, 0, 0)
+
+	auction_board = ItemListBoardRef.new("AuctionBoard")
+	auction_board.configure("auction")
+	control_board.add_widget(auction_board, 0, 0)
+
+	stall_board = ItemListBoardRef.new("StallBoard")
+	stall_board.configure("stall")
+	control_board.add_widget(stall_board, 0, 0)
+
+	secured_board = ItemListBoardRef.new("SecuredItemListBoard")
+	secured_board.configure("secured")
+	control_board.add_widget(secured_board, 0, 0)
 
 
 ## 小地图（对应 minimapboard，608 行）

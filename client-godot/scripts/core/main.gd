@@ -119,9 +119,13 @@ func _maybe_demo() -> void:
 		fx.on_magic_damage(_player.grid.x - 2, _player.grid.y, 256)
 		fx.on_heal(_player.grid.x, _player.grid.y - 2, 30)
 		fx.on_miss(_player.grid.x + 3, _player.grid.y + 1)
-	# 打开背包看物品区
-	if ui.inventory_board != null:
-		ui.inventory_board.show = true
+	# 打开技能面板（C5 产物，63 个魔法图标分 8 组）
+	if ui.skill_board != null:
+		ui.skill_board.show = true
+		ui.skill_board.learn("火球术")
+		ui.skill_board.learn("治愈术")
+		ui.skill_board.learn("雷电术")
+		ui.skill_board.learn("基本剑术")
 	# 系统消息
 	ui._push_sys_msg("欢迎来到比奇县")
 	ui._push_sys_msg("按 F1 打开背包")
@@ -217,6 +221,12 @@ func _maybe_run_test() -> void:
 		var t0: Node = load("res://tools/_dbg3.gd").new()
 		add_child(t0)
 		await t0.run(self)
+		return
+	if name == "c5c6":
+		var t5: Node = load("res://tools/c5_c6_scene.gd").new()
+		add_child(t5)
+		await t5.run(self)
+		get_tree().quit(0)
 		return
 	if name == "c3c4":
 		var tc: Node = load("res://tools/c3_c4_scene.gd").new()

@@ -15,6 +15,8 @@ static var _loaded := false
 ## 详见 data/monster_frames.json 与 tools/extract_monster_frames.py
 static var _gfx_class_map: Dictionary = {}
 
+const MonsterBehaviorsRef := preload("res://scripts/actor/monster_behaviors.gd")
+
 
 static func load_data(path: String = "res://data/monsterrecord.json") -> bool:
 	if _loaded:
@@ -64,18 +66,34 @@ static func name_of(monster_id: int) -> String:
 	return str(get_record(monster_id).get("name", ""))
 
 
-## 查该怪物是否有自定义帧表类
-## 返回值用作 MonsterFrames.frame_info 的 class 参数
+## 查该怪物对应的 C++ 类名（ClientTaoDog 之类）
+## 返回值用作 MonsterFrames.frame_info / MonsterBehaviors.of 的 class 参数
+## 优先用行为表的「怪物名 -> 类名」索引（31 个类都有），
+## 帧表只有 12 个类，覆盖不全，所以不能只靠它
 static func gfx_class_of(monster_id: int, mr: Dictionary = {}) -> String:
 	if mr.is_empty():
 		mr = get_record(monster_id)
 	var nm := str(mr.get("name", ""))
-	# 帧表 JSON 的键是 C++ 类名，如 ClientTaoDog
-	# 这里按怪物名反查：monster_frames.json 里每个类都记了 monster_name
+	# 去掉尾部数字（clientmonster.cpp:83 的规则，如「夜行鬼09」-> 「夜行鬼」）
+	var base_nm := nm
+	while not base_nm.is_empty() and base_nm[base_nm.length() - 1] >= "0" 			and base_nm[base_nm.length() - 1] <= "9":
+		base_nm = base_nm.substr(0, base_nm.length() - 1)
+
+	# 1) 行为表索引（覆盖最全）
+	var cls := MonsterBehaviorsRef.class_of_monster(nm)
+	if not cls.is_empty():
+		return cls
+	cls = MonsterBehaviorsRef.class_of_monster(base_nm)
+	if not cls.is_empty():
+		return cls
+
+	# 2) 回退到帧表里的 monster_name
 	for cls_name in _gfx_class_map.keys():
 		var entry = _gfx_class_map[cls_name]
-		if entry is Dictionary and str(entry.get("monster_name", "")) == nm:
-			return cls_name
+		if entry is Dictionary:
+			var en := str(entry.get("monster_name", ""))
+			if en == nm or en == base_nm:
+				return cls_name
 	return ""
 
 

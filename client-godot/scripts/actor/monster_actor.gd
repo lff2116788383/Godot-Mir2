@@ -22,6 +22,7 @@ const SysConstRef := preload("res://scripts/core/sys_const.gd")
 const CreatureMovableRef := preload("res://scripts/action/creature_movable.gd")
 const MonsterRecordRef := preload("res://scripts/item/monster_record.gd")
 const UidRef := preload("res://scripts/core/uid.gd")
+const BehaviorsRef := preload("res://scripts/actor/monster_behaviors.gd")
 
 ## 格尺寸
 const GRID_X := 48
@@ -48,6 +49,10 @@ var facing: int = 0
 ## 是否已死（停止推进）
 var dead := false
 
+## 行为描述（来自 monster_behaviors.json，C6 产物）
+## 决定：攻击用 ATTACK0/ATTACK1、有无趴站切换、特殊动作
+var behavior: Dictionary = {}
+
 ## 地图上下文（由 CoManager 注入）
 var _can_move: Callable = Callable()
 var _make_finder: Callable = Callable()
@@ -62,7 +67,16 @@ func setup(p_assets_root: String, uid: int, monster_id: int) -> bool:
 		return false
 	logic = ClientMonsterRef.new()
 	# 原版按怪物名选子类；这里用 v2 类名提取（client_monster.gd 已实现）
-	logic.setup(uid, mr, MonsterRecordRef.gfx_class_of(monster_id, mr))
+	var gfx_cls := MonsterRecordRef.gfx_class_of(monster_id, mr)
+	logic.setup(uid, mr, gfx_cls)
+	# C6：读行为差异表（32 个类的差异全在这里）
+	# 注意：19 个类本身就是「纯默认行为」，没有自定义项，
+	# 此时 gfx_cls 为空，仍要拿到默认行为描述而不是空字典
+	behavior = BehaviorsRef.of(gfx_cls) if not gfx_cls.is_empty() else BehaviorsRef.of("")
+	# 补上怪物名，便于日志与统计
+	if behavior.is_empty():
+		behavior = BehaviorsRef.of("")
+	behavior["monster_name"] = MonsterRecordRef.name_of(monster_id)
 	_spr = Sprite2D.new()
 	_spr.centered = false
 	_spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -238,7 +252,9 @@ func _on_action_jump(action) -> void:
 ## clientmonster.cpp:492 onActionTransf
 ## 原版对怪物直接 panic，这里按「切 standMode」处理（对应 ClientStandMonster）
 func _on_action_transf(action) -> void:
-	if logic != null:
+	# 只有 7 个类有趴站切换（TaoDog/ZumaTaurus/CannibalPlant 等），
+	# 其余类收到 TRANSF 时应忽略（原版基类抛 panic，这里温和处理）
+	if logic != null and bool(behavior.get("has_stand_mode", false)):
 		logic.stand_mode = not logic.stand_mode
 	_refresh_texture()
 

@@ -22,6 +22,8 @@
 | C2 | 主界面（底部栏/快捷栏/小地图/消息/背包） | L4 | ✅ | 2 | ~600 |
 | C3 | XML 解析 + NPC 对话面板 | L0+L4 | ✅ | 4 | ~800 |
 | C4 | 战斗表现（飘字/淡出/受击）+ 物品图标 | L2 | ✅ | 3 | ~600 |
+| C5 | 面板：技能/队伍/行会/设置/物品列表（5 类） | L4 | ✅ | 8 | ~2400 |
+| C6 | 32 个怪物类行为差异（数据化） | L0 | ✅ | 3 | ~900 |
 | B10 | 统一联调（mock 服务端） | — | ✅ | — | — |
 
 ## B1 明细
@@ -83,6 +85,12 @@
 | `client/src/gui/npcchatboard` | `scripts/ui/ui_npc_chat.gd` | ✅ | NPC 对话面板 |
 | `client/src/ascendstr.cpp` | `scripts/actor/fight_effects.gd` | ✅ | 飘字轨迹/淡出/死亡 |
 | `client/src/inventoryboard.cpp:182-200` | `scripts/item/item_gfx.gd` | ✅ | 物品图标（pkgGfxID\|0x01000000） |
+| `client/src/gui/skillboard` | `scripts/ui/ui_skill_board.gd` | ✅ | 63 魔法图标 × 8 组 × 坐标表 |
+| `client/src/gui/teamstateboard` | `scripts/ui/ui_team_board.gd` | ✅ | 600x440，5 页签 |
+| `client/src/guildboard` | `scripts/ui/ui_guild_board.gd` | ✅ | 3 页签，成员 13 行 |
+| `client/src/gui/runtimeconfigboard` | `scripts/ui/ui_config_board.gd` | ✅ | 4 分组 10 配置项 |
+| `client/src/itemlistboard`+`purchase`+`auction`+`stall` | `scripts/ui/ui_item_list_board.gd` | ✅ | 参数化复用 5 种面板 |
+| 32 个 `client*.cpp/.hpp` | `data/monster_behaviors.json`<br>`scripts/actor/monster_behaviors.gd` | ✅ | 行为差异数据化 |
 | 40 个 `client*.hpp`（帧表部分） | `data/monster_frames.json`<br>`scripts/actor/monster_frames.gd` | ✅ | 12 个类自定义帧表（脚本提取） |
 | `client/src/clientmonster.cpp`<br>`client/src/clientstandmonster.hpp` | `scripts/actor/client_monster.gd` | ✅ | 默认帧表 + gfxID 合成 + standMode |
 | `common/src/*.inc`（5 个） | `data/*.json` | ✅ | 1258 物品/364 怪物/603 地图/116 魔法/21 Buff |
@@ -104,6 +112,8 @@
 | `ui_selftest.gd` | 17 | 面板装配、按钮点击开关面板、布局位置（场景内运行） |
 | `test_c3_c4.gd` | 42 | XML 解析、排版换行、NPC 面板、飘字、物品图标 |
 | `c3_c4_scene.gd` | 13 | NPC 对话弹出、背包注入、飘字推进速率、死亡淡出（场景内） |
+| `test_c5_c6.gd` | 45 | 技能 63 图标、队伍 5 页、列表分页、行会、设置、行为表 |
+| `c5_c6_scene.gd` | 10 | 8 面板装配、按钮开关面板、行为描述加载（场景内） |
 
 ## 已完成但需回归的
 
