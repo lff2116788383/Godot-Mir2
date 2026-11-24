@@ -29,4 +29,16 @@ It reads the `_RSVD_register_clientmsg` and `_RSVD_register_servermsg` tables pl
 - all legacy message IDs;
 - message kind and fixed payload size metadata.
 
-Both generated outputs are checked in so normal Go development does not require the C++ toolchain.
+## Cereal object fixtures
+
+```powershell
+pwsh ./tools/protocol-fixtures/generate-serdes-fixtures.ps1
+```
+
+It compiles `serdes_fixture_probe.cpp` with cereal and writes raw `PortableBinaryOutputArchive` samples to:
+
+- `internal/protocol/testdata/serdes-golden.json`
+
+The probe mirrors the first batch of `serdesmsg.hpp` objects. Extend the probe whenever another object is migrated.
+
+All generated outputs are checked in so normal Go development does not require the C++ toolchain.

@@ -13,9 +13,12 @@ B0 已完成：工程骨架、参考基线、资源基线、迁移索引和批�
 B1 进行中：
 
 - 已完成消息 ID、消息属性表、TCP 分帧、varint、XOR 压缩；
-- 已完成 `ActionNode`、固定长度 client/server payload 类型和 wire codec；
+- 已完成全部 fixed client/server payload 类型和 wire codec；
 - 已完成 C++ ABI 布局 fixture 和固定消息尺寸全量对照测试；
-- 剩余 cereal PortableBinary、`serdesmsg.hpp` 可序列化对象和真实 golden packet。
+- 已完成 cereal PortableBinary writer/reader；
+- 已完成 `cerealf` 压缩标记、XOR 与 ZSTD 编解码；
+- 已完成第一批 13 个 `serdesmsg` 对象及 C++ golden fixture 对照测试；
+- 剩余其他 `serdesmsg` 对象、嵌套 variant/map/optional 组合和真实端到端报文。
 
 ## 常用命令
 

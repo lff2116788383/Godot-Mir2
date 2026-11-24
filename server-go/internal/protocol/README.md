@@ -10,6 +10,8 @@ Primary C++ references:
 - `server/src/netdriver.cpp`
 - `server/src/channel.cpp`
 - `common/src/zcompf.cpp`
+- `common/src/cerealf.hpp`
+- `common/src/serdesmsg.hpp`
 
 ## Frame format
 
@@ -55,6 +57,24 @@ pwsh ./tools/protocol-fixtures/generate-cpp-layout.ps1
 `CMChatMessageHeader`, `CMRequestLatestChatMessage`, `SMOnlineOK` and `SMCORecord` have explicit codecs because their bitfield/union layout cannot be represented by ordinary Go struct alignment.
 
 All fixed message payloads are tested against the C++ `sizeof` table.
+
+## Cereal PortableBinary and serialized messages
+
+`portable_binary.go` implements the layout emitted by `cereal::PortableBinaryOutputArchive`:
+
+- leading endian byte;
+- explicit-width little-endian integers;
+- one-byte bool;
+- uint64 size tags;
+- length-prefixed strings and byte vectors.
+
+`cereal.go` implements the `cerealf` envelope used by variable messages:
+
+- `CF_NONE` raw archive;
+- `CF_XOR` sparse XOR compression;
+- `CF_ZSTD` Zstandard compression.
+
+The first `serdesmsg.hpp` batch is implemented in `serdes_basic.go`. Its golden bytes are generated from a standalone C++ cereal probe and checked into `testdata/serdes-golden.json`.
 
 ## ABI-sensitive findings
 
