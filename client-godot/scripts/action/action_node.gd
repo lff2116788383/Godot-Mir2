@@ -274,7 +274,7 @@ static func make_mine(spd: int, px: int, py: int) -> ActionNode:
 	return n
 
 
-func to_string() -> String:
+func to_str() -> String:
 	return "ActionNode{t=%s spd=%d dir=%d (%d,%d)->(%d,%d) uid=%d}" % [
 		ActionType.action_name(type), speed, direction, x, y, aim_x, aim_y, aim_uid
 	]

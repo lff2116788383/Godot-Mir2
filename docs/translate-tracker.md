@@ -11,7 +11,7 @@
 | B2 | 数据表（5 个 .inc → JSON） | L0 | ✅ | 5 + 生成器 | 690KB |
 | B3 | 动作状态机（hero 动作部分） | L0 | ✅ | ~4 | ~2000 |
 | B4 | 魔法系统 | L0 | ✅ | ~8 | ~1400 |
-| B5 | 物品逻辑 | L0 | ⬜ | ~5 | ~1200 |
+| B5 | 物品逻辑 | L0 | ✅ | ~5 | ~1200 |
 | B6 | 40 个怪物特有逻辑 | L0 | ⬜ | 40 | ~3000 |
 | B7 | 28 个界面面板逻辑 | L4 | ⬜ | 28 | ~9000 |
 | B8 | XML 排版引擎 | L0 | ⬜ | 6 | ~3450 |
@@ -42,6 +42,8 @@
 | `client/src/fixedlocmagic.hpp` | `scripts/magic/fixed_loc_magic.gd` | ✅ | 固定型 + 火焰灰烬/火墙 |
 | `client/src/attachmagic.hpp` | `scripts/magic/attach_magic.gd` | ✅ | 附着型 + 雷电/法环/治疗 |
 | `client/src/magicdb.*` | `scripts/magic/magic_db.gd` | ✅ | 26位文件名补码解析（已用真实素材验证） |
+| `common/src/itemrecord.hpp` | `scripts/item/item_record.gd` | ✅ | 物品判定 + 穿戴校验 |
+| `client/src/itemflex.cpp`<br>`client/src/itembox.hpp`<br>`client/src/itemalign.hpp` | `scripts/item/item_layout.gd` | ✅ | 三种对齐布局 + 背包/腰带坐标 |
 | `common/src/*.inc`（5 个） | `data/*.json` | ✅ | 1258 物品/364 怪物/603 地图/116 魔法/21 Buff |
 
 ## 已完成但需回归的

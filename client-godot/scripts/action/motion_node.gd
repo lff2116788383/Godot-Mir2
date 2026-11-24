@@ -124,7 +124,7 @@ func gfx_frame(frame_opt: int = -1) -> int:
 	return frame if frame_opt < 0 else frame_opt
 
 
-func to_string() -> String:
+func to_str() -> String:
 	return "MotionNode{%s dir=%d spd=%d (%d,%d)->(%d,%d) f=%d/%d}" % [
 		MotionType.motion_name(type), direction, speed, x, y, end_x, end_y, frame, 0
 	]

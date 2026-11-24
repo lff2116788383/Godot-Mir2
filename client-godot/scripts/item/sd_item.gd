@@ -203,7 +203,7 @@ static func _u64(v: int) -> PackedByteArray:
 	return b
 
 
-func to_string() -> String:
+func to_str() -> String:
 	return "SDItem{id=%d seq=%d cnt=%d dur=%d/%d attrs=%d}" % [
 		item_id, seq_id, count, duration[0], duration[1], ext_attr_list.size()
 	]
