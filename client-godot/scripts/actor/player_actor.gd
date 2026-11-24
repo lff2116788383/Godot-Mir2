@@ -60,6 +60,12 @@ func _ready() -> void:
 	add_child(_visual)
 
 
+## 隐藏占位方块（接入真实贴图后调用）
+func hide_placeholder() -> void:
+	if _visual != null:
+		_visual.visible = false
+
+
 func set_grid(g: Vector2i, dir: int = -1) -> void:
 	grid = g
 	if _map_view != null:

@@ -11,6 +11,7 @@ const GRID_Y := 32
 
 var _map: MapLoader.MapData = null
 var _player: PlayerActor = null
+var _human: HumanActor = null
 var _spawn := Vector2i.ZERO
 var _load_ms := 0
 
@@ -77,6 +78,28 @@ func _create_player() -> void:
 	_player.set_grid(_spawn, PathFinder.DIR_DOWN)
 	_player.grid_changed.connect(_on_player_grid_changed)
 	cam.position = _player.position
+
+	# 挂人形外观（B9）：裸身站立，验证贴图链路
+	_player.hide_placeholder()      # 有真实贴图后不画红方块
+	_human = HumanActor.new()
+	_player.add_child(_human)
+	_human.setup(Game.assets_root)
+	# 贴图锚点在脚底，需上移使角色站在格中心
+	_human.anchor_offset = Vector2(-10, -48)
+	_human.set_appearance(0, 1, 0, 0, false)   # dress=0 裸身, hair=1, 无头盔武器, 女性
+
+	var idle = MotionNode.new()
+	idle.type = MotionType.MOTION_STAND
+	idle.direction = PathFinder.DIR_DOWN
+	idle.x = _spawn.x
+	idle.y = _spawn.y
+	_human.set_motion(idle)
+	print("[Main] 人形外观: dress=%d hair=%d 层可见: body0=%s body1=%s head=%s" % [
+		_human.dress, _human.hair,
+		str(_human.get_node("body0").visible),
+		str(_human.get_node("body1").visible),
+		str(_human.get_node("head").visible),
+	])
 
 
 ## 格子通行判定，对应 ProcessRun::checkPathGrid
