@@ -16,7 +16,7 @@
 | ID | C++/数据源 | Go 目标 | 批次 | 状态 | 备注 |
 |---|---|---|---|---|---|
 | C01 | `common/src` 基础常量、数学、坐标、路径、ID | `internal/common`、`internal/protocol` | B1 | in-progress | `ActionNode`、StaticBuffer、StaticVector 已完成 |
-| C02 | `protocoldef.hpp`、`clientmsg.hpp`、`servermsg.hpp`、`cerealf.hpp`、`serdesmsg.hpp` | `internal/protocol` | B1 | in-progress | 固定消息、PortableBinary、SDItem 和 96 个 serdes golden 对象已完成；仅余 3 个 Lua 变量类型 |
+| C02 | `protocoldef.hpp`、`clientmsg.hpp`、`servermsg.hpp`、`cerealf.hpp`、`serdesmsg.hpp` | `internal/protocol` | B1 | in-progress | 固定消息、PortableBinary、SDItem 和 100 个 serdes/Lua golden 对象已完成；94/94 声明类型全覆盖 |
 | C03 | `actormsg.hpp`、`actormsgpack.hpp`、`msgf.hpp` | `internal/actor`、`internal/protocol` | B1/B3 | pending | 消息包络与路由 |
 | C04 | `*.inc` 静态记录表 | `internal/common` 或生成代码 | B1/B2 | pending | 优先使用转换工具生成 |
 | C05 | `server/src/server.sql` | `internal/storage` | B2 | pending | 包含自定义 SQLite 函数 |
@@ -103,15 +103,18 @@
   - `SDTeamJobReq`、`SDTeamReq`、`SDTeamPlayer`；
   - `SDTeamCandidate`、`SDRequestJoinTeam`、`SDTeamMemberList`；
   - `SDTransferTeamLeader`、`SDTeamInfo`。
+- 第五批递归 Lua 变量对象：
+  - nil、array、table、integer、double、bool、string；
+  - `luaVarWrapper` 的 nil/非 nil pointer 语义；
+  - `SDRemoteCall`、`SDRemoteCallResult`、`SDSendNotify`。
 - 建立可重复生成的 C++ cereal golden fixture；
-- 对 96 个 serdes fixture 做 Go/C++ 字节级对照和反序列化测试；
-- 对 optional 缺省、空集合、map 多元素、Item/inventory/wear、runtime config、health 和 team helper 做边界测试；
+- 对 100 个 serdes/Lua fixture 做 Go/C++ 字节级对照和反序列化测试；
+- 对 optional 缺省、空集合、map 多元素、Item/inventory/wear、runtime config、health、team 和递归 Lua 类型做边界测试；
 - 协议与公共类型测试、race 测试通过。
 
 待完成：
 
-- `SDRemoteCall`、`SDRemoteCallResult`、`SDSendNotify` 的递归 Lua 变量结构；
+- 真实客户端/服务端端到端 packet 校验；
 - `serdesmsg.cpp` 中的辅助序列化逻辑；
-- 客户端/服务端真实 golden packet 样本；
 - 大批量协议对象的 fuzz/边界测试；
 - `std::unordered_map` 的顺序兼容说明与 fuzz 验证（Go 侧当前按 key 排序，语义兼容但多元素字节序列不保证与 C++ 迭代顺序一致）。

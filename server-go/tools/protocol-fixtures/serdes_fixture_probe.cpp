@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <set>
 #include <utility>
+#include <memory>
+#include <stdexcept>
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
@@ -411,6 +413,95 @@ struct SDTeamInfo {
     template<class Ar> void serialize(Ar & ar) { ar(leader,name,job,level,memberCount,req); }
 };
 
+struct LUAVar;
+struct LUAWrapper {
+    std::shared_ptr<LUAVar> value;
+};
+struct LUAEntry {
+    LUAWrapper key;
+    LUAWrapper value;
+};
+struct LUAVar {
+    int32_t kind = 0;
+    uint8_t nilPlaceholder = 0;
+    std::vector<LUAWrapper> array;
+    std::vector<LUAEntry> table;
+    int64_t integer = 0;
+    double number = 0;
+    bool boolean = false;
+    std::string str;
+};
+
+template<class Ar> void saveLuaVar(Ar & ar, const LUAVar &);
+template<class Ar> void saveLuaWrapper(Ar & ar, const LUAWrapper & wrapper)
+{
+    uint8_t valid = wrapper.value ? 1 : 0;
+    ar(valid);
+    if(valid){ saveLuaVar(ar, *wrapper.value); }
+}
+template<class Ar> void saveLuaVar(Ar & ar, const LUAVar & value)
+{
+    ar(value.kind);
+    switch(value.kind){
+        case 0: ar(value.nilPlaceholder); break;
+        case 1:
+            {
+                uint64_t size = value.array.size();
+                ar(size);
+                for(const auto &item: value.array){ saveLuaWrapper(ar, item); }
+                break;
+            }
+        case 2:
+            {
+                uint64_t size = value.table.size();
+                ar(size);
+                for(const auto &item: value.table){
+                    saveLuaWrapper(ar, item.key);
+                    saveLuaWrapper(ar, item.value);
+                }
+                break;
+            }
+        case 3: ar(value.integer); break;
+        case 4: ar(value.number); break;
+        case 5: ar(value.boolean); break;
+        case 6: ar(value.str); break;
+        default: throw std::runtime_error("bad lua kind");
+    }
+}
+
+static LUAWrapper wrapLua(const LUAVar &value)
+{
+    LUAWrapper wrapper;
+    wrapper.value = std::make_shared<LUAVar>(value);
+    return wrapper;
+}
+static LUAVar luaInteger(int64_t value){ LUAVar v; v.kind=3; v.integer=value; return v; }
+static LUAVar luaNumber(double value){ LUAVar v; v.kind=4; v.number=value; return v; }
+static LUAVar luaBool(bool value){ LUAVar v; v.kind=5; v.boolean=value; return v; }
+static LUAVar luaString(const std::string &value){ LUAVar v; v.kind=6; v.str=value; return v; }
+static LUAVar luaNilVar(){ LUAVar v; v.kind=0; return v; }
+
+struct LuaVarFixture {
+    LUAVar value;
+    template<class Ar> void serialize(Ar & ar){ saveLuaVar(ar, value); }
+};
+struct SDRemoteCallX {
+    std::string code; LUAVar args;
+    template<class Ar> void serialize(Ar & ar){ ar(code); saveLuaVar(ar, args); }
+};
+struct SDRemoteCallResultX {
+    std::vector<std::string> error; std::vector<LUAVar> varList;
+    template<class Ar> void serialize(Ar & ar){
+        ar(error);
+        uint64_t size = varList.size(); ar(size);
+        for(const auto &item: varList){ saveLuaVar(ar, item); }
+    }
+};
+struct SDSendNotifyX {
+    uint64_t key = 0; uint64_t seqID = 0; LUAVar varList; bool waitConsume = false;
+    template<class Ar> void serialize(Ar & ar){ ar(key, seqID); saveLuaVar(ar, varList); ar(waitConsume); }
+};
+
 template<class T> void dump(const char *name, const T & t) {
     std::ostringstream ss(std::ios::binary);
     { cereal::PortableBinaryOutputArchive ar(ss); ar(t); }
@@ -517,4 +608,10 @@ int main(){
     SDTeamMemberList teamMembers; teamMembers.teamLeader=42; teamMembers.memberList={teamPlayer,{43,21,2,"bob"}}; teamMembers.req=teamReq; dump("SDTeamMemberList", teamMembers);
     SDTransferTeamLeader transfer; transfer.memberList={42,43}; transfer.req=teamReq; dump("SDTransferTeamLeader", transfer);
     SDTeamInfo teamInfo; teamInfo.leader=42; teamInfo.name="party"; teamInfo.job=1; teamInfo.level=20; teamInfo.memberCount=2; teamInfo.req=teamReq; dump("SDTeamInfo", teamInfo);
+    LUAVar luaTable; luaTable.kind=2; luaTable.table.push_back({wrapLua(luaString("k")), wrapLua(luaInteger(7))});
+    LUAVar nestedLua; nestedLua.kind=1; nestedLua.array={wrapLua(luaInteger(42)), wrapLua(luaString("x")), wrapLua(luaBool(true)), LUAWrapper{}, wrapLua(luaTable)};
+    LuaVarFixture luaFixture; luaFixture.value=nestedLua; dump("LuaVarNested", luaFixture);
+    SDRemoteCallX remoteCall; remoteCall.code="return 1"; remoteCall.args=nestedLua; dump("SDRemoteCall", remoteCall);
+    SDRemoteCallResultX remoteResult; remoteResult.error={"e1","e2"}; remoteResult.varList={luaInteger(5),luaString("ok")}; dump("SDRemoteCallResult", remoteResult);
+    SDSendNotifyX sendNotify; sendNotify.key=0x1122334455667788ULL; sendNotify.seqID=0x0102030405060708ULL; sendNotify.varList=nestedLua; sendNotify.waitConsume=true; dump("SDSendNotify", sendNotify);
 }

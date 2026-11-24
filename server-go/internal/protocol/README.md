@@ -74,9 +74,9 @@ All fixed message payloads are tested against the C++ `sizeof` table.
 - `CF_XOR` sparse XOR compression;
 - `CF_ZSTD` Zstandard compression.
 
-The first four `serdesmsg.hpp` batches are implemented in `serdes_basic.go`, `serdes_second_batch.go`, `serdes_item_batch.go` and `serdes_team_runtime_batch.go`. They cover 96 golden fixtures generated from a standalone C++ cereal probe and checked into `testdata/serdes-golden.json`; 91 of 94 declared `serdesmsg.hpp` types are directly covered.
+The five `serdesmsg.hpp`/Lua batches are implemented in `serdes_basic.go`, `serdes_second_batch.go`, `serdes_item_batch.go`, `serdes_team_runtime_batch.go`, `lua_var.go` and `serdes_lua_batch.go`. They cover 100 golden fixtures generated from a standalone C++ cereal probe and checked into `testdata/serdes-golden.json`; all 94 declared `serdesmsg.hpp` types are directly covered.
 
-Current coverage includes player/guild/ranking DTOs, ground items/firewalls/safe zones, chat messages, NPC events, magic keys, peer configuration, core `SDItem`, inventory/equipment, direct trade, auction, stall, item storage, runtime config, health/buffs and team messages. Only the recursive Lua variable payloads remain.
+Current coverage includes player/guild/ranking DTOs, ground items/firewalls/safe zones, chat messages, NPC events, magic keys, peer configuration, core `SDItem`, inventory/equipment, direct trade, auction, stall, item storage, runtime config, health/buffs, team messages and the recursive Lua variant.
 
 Known ordering nuance: C++ `std::unordered_map` iteration order is implementation-defined. The Go encoder writes those maps in ascending key order, which is semantically compatible with cereal decoding but does not guarantee byte-for-byte equality for multi-entry unordered maps.
 

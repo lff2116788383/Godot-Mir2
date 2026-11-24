@@ -17,9 +17,9 @@ B1 进行中：
 - 已完成 C++ ABI 布局 fixture 和固定消息尺寸全量对照测试；
 - 已完成 cereal PortableBinary writer/reader；
 - 已完成 `cerealf` 压缩标记、XOR 与 ZSTD 编解码；
-- 已完成四批 `serdesmsg` 对象及 C++ golden fixture 对照测试；
-- 累计完成 96 个 C++ cereal golden 样本；94 个 `serdesmsg` 声明类型中已直接覆盖 91 个；
-- 仅剩 `SDRemoteCall`、`SDRemoteCallResult`、`SDSendNotify` 三个 Lua 变量相关类型，以及真实端到端报文。
+- 已完成五批 `serdesmsg`/Lua 对象及 C++ golden fixture 对照测试；
+- 累计完成 100 个 C++ cereal golden 样本；94 个 `serdesmsg` 声明类型已全部覆盖；
+- 协议声明类型迁移已全部完成；B1 剩余真实端到端 packet 校验、fuzz 和少量非协议公共类型。
 
 ## 常用命令
 
