@@ -53,6 +53,72 @@ const SM_DEADFADEOUT := 33
 const SM_CASTMAGIC := 38
 const SM_MISS := 37
 
+## ---- 状态类（对应 processrunnet.cpp 各 on_SM_*）----
+## ★ 码值一律从 sm_table.gd 读取，不凭记忆填
+const SM_EXP := 34
+const SM_INVENTORY := 55
+const SM_BELT := 56
+const SM_EQUIPWEAR := 65
+const SM_EQUIPWEARERROR := 66
+const SM_GRABWEAR := 67
+const SM_GRABWEARERROR := 68
+const SM_LEARNEDMAGICLIST := 26
+const SM_BUFFIDLIST := 36
+const SM_BUFF := 35
+const SM_VIEWRANGE := 104
+const SM_LOGOUTOK := 21
+const SM_REMOVEITEM := 58
+const SM_UPDATEITEM := 57
+const SM_QUESTDESPLIST := 81
+const SM_QUESTDESPUPDATE := 80
+const SM_PLAYERCONFIG := 24
+const SM_REVIVE := 103
+const SM_OFFLINE := 39
+const SM_STARTINPUT := 46
+const SM_PARTEXT := 52
+const SM_PLAYERBROADCAST := 84
+
+## ---- NPC / 聊天 ----
+## 注意 type 3 = 「带长度前缀的裸 body」，type 1 = 掩码压缩
+const SM_NPCXMLLAYOUT := 42
+const SM_NPCNAME := 105
+
+## ---- 地面与交互 ----
+const SM_PICKUPERROR := 40
+const SM_STRIKEGRID := 49
+const SM_SAFEZONELIST := 64
+const SM_GROUNDITEMIDLIST := 62
+const SM_GROUNDFIREWALLLIST := 63
+const SM_STARTINVOP := 45
+const SM_INVOPCOST := 48
+
+## ---- 交易 / 商店 ----
+const SM_NPCSELL := 43
+const SM_SELLITEMLIST := 50
+const SM_BUYSUCCEED := 60
+const SM_BUYERROR := 61
+const SM_AUCTIONITEMLIST := 87
+const SM_STALL := 106
+const SM_STALLERROR := 107
+const SM_PLAYERSTALL := 108
+const SM_STARTDIRECTTRADE := 97
+const SM_UPDATEDIRECTTRADE := 98
+const SM_CLOSEDIRECTTRADE := 100
+const SM_COMPLETEDIRECTTRADE := 99
+const SM_DIRECTTRADEERROR := 101
+
+## ---- 社交 ----
+const SM_TEAMINFO := 79
+const SM_TEAMMEMBERLIST := 76
+const SM_TEAMCANDIDATE := 77
+const SM_TEAMERROR := 78
+const SM_GUILDINFO := 112
+const SM_GUILDERROR := 111
+const SM_GUILDCHAT := 113
+const SM_GUILDWARLIST := 114
+const SM_FRIENDLIST := 25
+const SM_RANKINGLIST := 85
+
 const SM_TABLE := preload("res://scripts/net/sm_table.gd")
 
 var _tcp: StreamPeerTCP = null

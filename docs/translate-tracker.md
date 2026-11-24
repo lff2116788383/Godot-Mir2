@@ -128,7 +128,15 @@
 | `client/src/pngtexoffdb.hpp:55` humanKey | `scripts/data/select_char_gfx.gd` | ✅ | anim3-8 层9 影10 性11 职12-19 |
 | `client/src/client.cpp` 进程调度 | `scripts/ui/login/login_flow.gd` | ✅ | ProcessID 1-9 状态机 + 网络应答分发 |
 
-## 测试覆盖（885 项全过）
+| `client/src/processrun.cpp:2388 drawObject` | `scripts/data/map_objects.gd` | ✅ | 物件层：底部对齐格底、动画仅 5 个 fileIndex |
+| `client/src/processrun.cpp:295-425` 分层 | `scripts/data/map_object_layer.gd` | ✅ | 8 层顺序，角色夹在两批物件之间 |
+| `common/src/mir2xmapdata.hpp:CELL` | `scripts/data/map_loader.gd` | ✅ | LAND/LIGHT/2×OBJECT 全解析（157K 物件、115 光照） |
+| `client/src/processrunnet.cpp` on_SM_HEALTH 等 11 类 | `scripts/net/sd_msg_parser.gd` | ✅ | 状态/背包/腰带/装备/魔法/buff/视野 |
+| `client/src/processrunnet.cpp:466-486` | `scripts/net/sd_msg_parser.gd` | ✅ | 地面物品列表同步 |
+| `client/src/processrunnet.cpp:105-126,738-790` | `scripts/core/main.gd` | ✅ | 聊天/广播/裸文本/打击格/NPC |
+| `client/src/processrun.cpp:352-359` | `scripts/core/co_manager.gd` | ✅ | 角色按 y 排序（Godot y_sort） |
+
+## 测试覆盖（930 项全过）
 
 | 测试 | 项数 | 覆盖 |
 |---|---|---|
@@ -172,6 +180,7 @@
 | **3D 定位** | distance 用**欧氏距离**（不是切比雪夫），angle = 90 - 180*atan2(-dGY,dGX)/π |
 | **headless 音频** | 无音频驱动时建 128 个 AudioStreamPlayer 会让 Godot 静默退出（无任何输出），必须显式跳过 |
 | `c9net_scene.gd` | 15 | 完整链路：连接→登入→查人→进游戏（需 mock 服务端） |
+| `test_c10.gd` | 54 | 地图物件解析、状态消息解析、协议码一致性 |
 
 ## C9 关键结论
 

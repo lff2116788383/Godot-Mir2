@@ -202,6 +202,12 @@ func size() -> int:
 	return m_list.size()
 
 
+## 整包替换（SM_INVENTORY 用）
+## 对应 processrunnet.cpp:829 getInvPack().setInventory(...)
+func set_items(items: Array) -> void:
+	m_list = items.duplicate()
+
+
 func item_list() -> Array:
 	return m_list
 

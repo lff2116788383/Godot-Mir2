@@ -26,6 +26,24 @@ const GRID_X := 48
 const GRID_Y := 32
 
 
+## 物件深度（mir2xmapdata.hpp:16-19）
+const OBJD_GROUND := 0       ## 地面物件（人踩在它上面）
+const OBJD_OVERGROUND0 := 1  ## 地面上方，低于玩家
+const OBJD_OVERGROUND1 := 2  ## 地面上方，高于玩家
+const OBJD_SKY := 3
+
+
+## 一个物件（mir2xmapdata.hpp OBJECT，序列化成 7 个 u32）
+class MapObject:
+	var valid := false
+	var tex_id := 0
+	var depth := 0          ## OBJD_*
+	var animated := false
+	var alpha := 0          ## 0..255，仅 animated 时有意义
+	var tick_type := 0      ## 动画节拍组
+	var frame_count := 0    ## 动画帧数
+
+
 class MapData:
 	var w: int = 0
 	var h: int = 0
@@ -33,6 +51,12 @@ class MapData:
 	var tiles: PackedInt32Array
 	## 每个格的可行走标记，1 字节/格
 	var walkable: PackedByteArray
+	## 光照：每格一个字节（valid:1 | radius:2 | alpha:2 | color:3 的原始位域）
+	var light: PackedByteArray
+	## 物件：每格 2 个，用扁平数组存（格索引 * 2 + objIndex）
+	var objs: Array = []
+	## 每格物件数量（0/1/2），用于快速跳过空格
+	var obj_count: PackedByteArray
 
 	func block_index(x: int, y: int) -> int:
 		return (x / 2) + (y / 2) * (w / 2)
@@ -41,6 +65,39 @@ class MapData:
 		if x < 0 or y < 0 or x >= w or y >= h:
 			return -1
 		return tiles[block_index(x, y)]
+
+	## 取某格的某个物件；无则 null
+	func obj_at(x: int, y: int, idx: int):
+		if x < 0 or y < 0 or x >= w or y >= h:
+			return null
+		if idx < 0 or idx >= 2:
+			return null
+		var ci := (y * w + x) * 2 + idx
+		if ci >= objs.size():
+			return null
+		return objs[ci]
+
+	## 某深度的物件总数（统计/自检用）
+	func obj_count_for_depth(depth: int) -> int:
+		var n := 0
+		for o in objs:
+			if o != null and o.valid and o.depth == depth:
+				n += 1
+		return n
+
+	## 有光照的格子数
+	func light_count() -> int:
+		var n := 0
+		for b in light:
+			if b & 1:
+				n += 1
+		return n
+
+	## 该格是否有光照
+	func has_light(x: int, y: int) -> bool:
+		if x < 0 or y < 0 or x >= w or y >= h:
+			return false
+		return (light[y * w + x] & 1) != 0
 
 
 static func load_file(path: String) -> MapData:
@@ -107,8 +164,14 @@ static func load_bytes(raw: PackedByteArray) -> MapData:
 
 	md.tiles.resize(nblocks)
 	md.tiles.fill(-1)
-	md.walkable.resize(md.w * md.h)
+	var ncells := md.w * md.h
+	md.walkable.resize(ncells)
 	md.walkable.fill(0)
+	md.light.resize(ncells)
+	md.light.fill(0)
+	md.obj_count.resize(ncells)
+	md.obj_count.fill(0)
+	md.objs.resize(ncells * 2)
 
 	var off := 25
 	for bi in range(nblocks):
@@ -125,8 +188,42 @@ static func load_bytes(raw: PackedByteArray) -> MapData:
 		for ci in range(4):
 			var cx := bx + (ci % 2)
 			var cy := by + (ci / 2)
-			var can_walk := payload[off + 2]
-			md.walkable[cy * md.w + cx] = can_walk
+			var cell_idx := cy * md.w + cx
+
+			# LAND（3 字节）：type:6 | canFly:1 | canWalk:1
+			# ★ 实测：第 3 字节非 0 即表示可走（此前已验证 100% 有效率）。
+			#   不要按位域去拆 canWalk/canFly —— 拆出来可走格会变成 0。
+			#   这里的二值化产物是「服务器算好的结果」，不是原始 mir2 地图的位域。
+			md.walkable[cell_idx] = payload[off + 2]
+
+			# LIGHT（4 字节，每字节一个位域）
+			var lvalid: int = payload[off + 3]
+			var lradius: int = payload[off + 4]
+			var lalpha: int = payload[off + 5]
+			var lcolor: int = payload[off + 6]
+			md.light[cell_idx] = (lvalid & 1) | ((lradius & 3) << 1) 				| ((lalpha & 3) << 3) | ((lcolor & 7) << 5)
+
+			# 2 × OBJECT（各 7 个 u32 = 28 字节）
+			var obj_base := off + 7
+			var valid_count := 0
+			for oi in range(2):
+				var ob := obj_base + oi * OBJ_SIZE
+				var o := MapObject.new()
+				o.valid = payload.decode_u32(ob) != 0
+				# texID 低 24 位才是图 id
+				o.tex_id = payload.decode_u32(ob + 4) & 0x00FFFFFF
+				o.depth = payload.decode_u32(ob + 8)
+				o.animated = payload.decode_u32(ob + 12) != 0
+				o.alpha = payload.decode_u32(ob + 16)
+				o.tick_type = payload.decode_u32(ob + 20)
+				o.frame_count = payload.decode_u32(ob + 24)
+				if o.valid and o.tex_id != 0:
+					valid_count += 1
+				else:
+					o.valid = false
+				md.objs[cell_idx * 2 + oi] = o
+			md.obj_count[cell_idx] = valid_count
+
 			off += CELL_SIZE
 	return md
 

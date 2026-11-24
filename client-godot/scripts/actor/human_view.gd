@@ -222,9 +222,19 @@ func _on_space_move(action) -> void:
 
 # ==================== 队列推进 ====================
 
+## ★ 角色按 y 排序绘制（processrun.cpp:352-359 的 LocHashTable 语义）
+##
+## 原版把实体按格坐标分组后逐格绘制，效果等价于「y 越大越后画」。
+## Godot 里用 z_index 表达：z = y，同 y 由加入顺序决定 —— 与原版一致。
+## 这样"人站在树后会被树挡住、站在树前会挡住树"才对。
+## 范围检查：地图最多 800 行，z_index 上限 4096，够用。
 func _set_grid(x: int, y: int) -> void:
 	grid = Vector2i(x, y)
 	position = Vector2(x * GRID_X, y * GRID_Y)
+	# z 交给 Godot 的 y_sort（见 co_manager / main 里对父节点的设置），
+	# 这里不再手工算 z_index —— 手工取模会打断全局顺序。
+	# 角色与角色之间由 y_sort 按 position.y 排序，等价于原版按格 y 分组。
+	z_index = 0
 
 
 func _begin_next_motion() -> void:

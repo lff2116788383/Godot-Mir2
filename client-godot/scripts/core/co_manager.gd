@@ -278,6 +278,9 @@ func _create_npc_from_action(uid: int, action) -> void:
 
 
 func _register(uid: int, node: Node2D, record, kind: String) -> void:
+	# 实体之间按 y 排序（processrun.cpp:352-359 的 LocHashTable 语义）
+	# Godot 的 y_sort 用 position.y 比较，正好等价「y 大的后画」
+	y_sort_enabled = true
 	if node.has_method("set_walk_context"):
 		var ctx := walk_context()
 		node.set_walk_context(ctx["can_move"], ctx["make_finder"], ctx["max_step"])

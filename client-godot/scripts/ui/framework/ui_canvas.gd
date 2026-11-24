@@ -129,6 +129,19 @@ func draw_border(color: Color, x: int, y: int, w: int, h: int, width: int = 1) -
 	draw_line_c(color, x + w - 1, y, x + w - 1, y + h - 1, width)
 
 
+## 填充圆（原版没有单独的原语，SDL 用 drawCircle 系列；
+## 地图光照与部分特效需要，补在这里）
+func draw_circle_c(color: Color, cx: int, cy: int, r: int, filled: bool = true) -> void:
+	if clip_roi != null and clip_roi.empty():
+		return
+	if r <= 0:
+		return
+	if filled:
+		draw_circle(Vector2(cx, cy), float(r), color)
+	else:
+		draw_arc(Vector2(cx, cy), float(r), 0.0, TAU, maxi(12, r * 2), color, 1.0)
+
+
 ## ==================== 文字 ====================
 
 ## sdldevice.hpp:429  drawString(color, x, y, str)
