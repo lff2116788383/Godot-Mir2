@@ -15,8 +15,8 @@
 
 | ID | C++/数据源 | Go 目标 | 批次 | 状态 | 备注 |
 |---|---|---|---|---|---|
-| C01 | `common/src` 基础常量、数学、坐标、路径、ID | `internal/common`、`internal/protocol` | B1 | pending | 保留协议相关数值语义 |
-| C02 | `protocoldef.hpp`、`clientmsg.hpp`、`servermsg.hpp`、`serdesmsg.hpp` | `internal/protocol` | B1 | pending | 字节级兼容 |
+| C01 | `common/src` 基础常量、数学、坐标、路径、ID | `internal/common`、`internal/protocol` | B1 | in-progress | `ActionNode`、StaticBuffer、StaticVector 已完成 |
+| C02 | `protocoldef.hpp`、`clientmsg.hpp`、`servermsg.hpp`、`serdesmsg.hpp` | `internal/protocol` | B1 | in-progress | 固定消息已完成，cereal 可变消息待迁移 |
 | C03 | `actormsg.hpp`、`actormsgpack.hpp`、`msgf.hpp` | `internal/actor`、`internal/protocol` | B1/B3 | pending | 消息包络与路由 |
 | C04 | `*.inc` 静态记录表 | `internal/common` 或生成代码 | B1/B2 | pending | 优先使用转换工具生成 |
 | C05 | `server/src/server.sql` | `internal/storage` | B2 | pending | 包含自定义 SQLite 函数 |
@@ -64,7 +64,12 @@
 - 实现 `common.ActionNode` 28 字节 wire codec；
 - 实现基础 `StaticBuffer`、`StaticVector` 语义；
 - 从 C++ 头文件生成 ABI 布局 fixture，记录 MS bitfield ABI 的关键尺寸和位布局；
-- 协议与公共类型测试通过。
+- 迁移全部固定长度 client/server payload 类型；
+- 实现通用固定 payload wire 编解码；
+- 实现 ABI 敏感的 `CMChatMessageHeader`、`CMRequestLatestChatMessage`、`SMOnlineOK`、`SMCORecord` codec；
+- 实现 `StaticBuffer`、`StaticVector` 的 packed wire 表示；
+- 对全部固定长度消息做 Go 编码长度与 C++ `sizeof` 全量对照测试；
+- 协议与公共类型测试、race 测试通过。
 
 待完成：
 

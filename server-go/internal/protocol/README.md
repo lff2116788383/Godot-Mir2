@@ -48,6 +48,14 @@ pwsh ./tools/protocol-fixtures/generate-message-table.ps1
 pwsh ./tools/protocol-fixtures/generate-cpp-layout.ps1
 ```
 
+## Fixed payloads
+
+`client_payloads.go` and `server_payloads.go` contain the packed fixed-size payload structs. `wire.go` provides declaration-order encoding without Go alignment padding.
+
+`CMChatMessageHeader`, `CMRequestLatestChatMessage`, `SMOnlineOK` and `SMCORecord` have explicit codecs because their bitfield/union layout cannot be represented by ordinary Go struct alignment.
+
+All fixed message payloads are tested against the C++ `sizeof` table.
+
 ## ABI-sensitive findings
 
 The reference MinGW x64 build uses the MS bitfield ABI. Observed and tested facts:

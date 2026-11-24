@@ -10,7 +10,12 @@
 
 B0 已完成：工程骨架、参考基线、资源基线、迁移索引和批次检查脚本。
 
-B1 进行中：消息 ID、消息属性表、TCP 分帧、varint、XOR 压缩、`ActionNode` 和 C++ ABI 布局 fixture 已完成；固定长度消息负载类型和 cereal PortableBinary 负载仍在迁移。
+B1 进行中：
+
+- 已完成消息 ID、消息属性表、TCP 分帧、varint、XOR 压缩；
+- 已完成 `ActionNode`、固定长度 client/server payload 类型和 wire codec；
+- 已完成 C++ ABI 布局 fixture 和固定消息尺寸全量对照测试；
+- 剩余 cereal PortableBinary、`serdesmsg.hpp` 可序列化对象和真实 golden packet。
 
 ## 常用命令
 
@@ -20,6 +25,10 @@ go run ./cmd/mir2-server --version
 
 # 运行批次检查
 pwsh ./scripts/check.ps1
+
+# race 检查需要 CGO 和 C 编译器
+$env:CGO_ENABLED = '1'
+pwsh ./scripts/check.ps1 -Race
 ```
 
 ## 说明

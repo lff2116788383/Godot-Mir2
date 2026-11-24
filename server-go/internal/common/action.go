@@ -96,7 +96,7 @@ type ActionNode struct {
 }
 
 // AppendWire appends the packed 28-byte representation.
-func (n ActionNode) AppendWire(dst []byte) []byte {
+func (n ActionNode) AppendWire(dst []byte) ([]byte, error) {
 	start := len(dst)
 	dst = append(dst, make([]byte, ActionNodeWireSize)...)
 
@@ -110,7 +110,7 @@ func (n ActionNode) AppendWire(dst []byte) []byte {
 	binary.LittleEndian.PutUint16(dst[start+10:start+12], uint16(n.AimY))
 	binary.LittleEndian.PutUint64(dst[start+12:start+20], n.AimUID)
 	copy(dst[start+20:start+28], n.ExtParam[:])
-	return dst
+	return dst, nil
 }
 
 // ParseActionNode decodes one packed 28-byte ActionNode.
@@ -131,6 +131,16 @@ func ParseActionNode(src []byte) (ActionNode, error) {
 		AimUID:    binary.LittleEndian.Uint64(src[12:20]),
 		ExtParam:  [8]byte(src[20:28]),
 	}, nil
+}
+
+// ReadWire decodes one packed 28-byte ActionNode.
+func (n *ActionNode) ReadWire(src []byte) (int, error) {
+	parsed, err := ParseActionNode(src[:min(len(src), ActionNodeWireSize)])
+	if err != nil {
+		return 0, err
+	}
+	*n = parsed
+	return ActionNodeWireSize, nil
 }
 
 // FromUID returns the union member used by ACTION_HITTED.

@@ -28,6 +28,10 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'go build failed' }
 
     if ($Race) {
+        $cgo = (& go env CGO_ENABLED).Trim()
+        if ($cgo -ne '1') {
+            throw 'go test -race requires CGO_ENABLED=1 and a working C compiler'
+        }
         Write-Host '[extra] go test -race'
         & go test -race ./...
         if ($LASTEXITCODE -ne 0) { throw 'go test -race failed' }

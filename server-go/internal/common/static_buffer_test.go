@@ -8,7 +8,7 @@ import (
 func TestStaticBufferWireLayout(t *testing.T) {
 	t.Parallel()
 
-	buffer := NewStaticBuffer(64)
+	var buffer StaticBuffer[Cap64]
 	if err := buffer.Assign([]byte("abc")); err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +30,7 @@ func TestStaticBufferWireLayout(t *testing.T) {
 		t.Fatal("tail must be zero padded")
 	}
 
-	decoded := NewStaticBuffer(64)
+	var decoded StaticBuffer[Cap64]
 	n, err := decoded.ReadWire(wire)
 	if err != nil {
 		t.Fatal(err)
@@ -43,7 +43,7 @@ func TestStaticBufferWireLayout(t *testing.T) {
 func TestStaticVectorCapacity(t *testing.T) {
 	t.Parallel()
 
-	vector := NewStaticVector[uint32](2)
+	var vector StaticVector[uint32, testCap2]
 	if err := vector.Push(1); err != nil {
 		t.Fatal(err)
 	}
@@ -54,3 +54,7 @@ func TestStaticVectorCapacity(t *testing.T) {
 		t.Fatalf("push past capacity = %v", err)
 	}
 }
+
+type testCap2 struct{}
+
+func (testCap2) WireCapacity() int { return 2 }

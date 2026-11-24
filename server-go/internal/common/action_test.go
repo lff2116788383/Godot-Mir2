@@ -20,7 +20,10 @@ func TestActionNodeWireLayout(t *testing.T) {
 		AimUID:    0x1122334455667788,
 		ExtParam:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 	}
-	got := node.AppendWire(nil)
+	got, err := node.AppendWire(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	want, err := hex.DecodeString("870c0300feff0300fcff050088776655443322110102030405060708")
 	if err != nil {
 		t.Fatal(err)
@@ -58,7 +61,11 @@ func TestActionNodeCppBitfieldVectors(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if got := tc.node.AppendWire(nil)[:4]; !bytes.Equal(got, want) {
+			wired, err := tc.node.AppendWire(nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := wired[:4]; !bytes.Equal(got, want) {
 				t.Fatalf("flags = %x, want %x", got, want)
 			}
 		})
