@@ -76,7 +76,9 @@ const SYS_SEFFSIZE := 16
 
 # ---------------- 特殊值（sysconst.hpp:116-126） ----------------
 const SYS_U32NIL := 0xFFFFFFFF
-const SYS_U64NIL := 0xFFFFFFFFFFFFFFFF
+## GDScript 的 int 是有符号 64 位，无法表示 0xFFFFFFFFFFFFFFFF。
+## 原版用于「无效 uint64 uid」，这里用 -1（位模式完全相同）代替。
+const SYS_U64NIL := -1
 
 const SYS_MAXDBID := 0xFFFFFF00
 const SYS_CHATDBID_SYSTEM := SYS_MAXDBID + 1

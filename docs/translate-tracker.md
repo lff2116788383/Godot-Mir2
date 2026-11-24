@@ -9,7 +9,7 @@
 |---|---|---|---|---|---|
 | B1 | 协议 + 方向 + 动作节点 + UID + 结构 | L0 | ✅ | ~15 | ~2400 |
 | B2 | 数据表（5 个 .inc → JSON） | L0 | ✅ | 5 + 生成器 | 690KB |
-| B3 | 动作状态机（hero 动作部分） | L0 | ⬜ | ~4 | ~2000 |
+| B3 | 动作状态机（hero 动作部分） | L0 | ✅ | ~4 | ~2000 |
 | B4 | 魔法系统 | L0 | ⬜ | ~8 | ~1400 |
 | B5 | 物品逻辑 | L0 | ⬜ | ~5 | ~1200 |
 | B6 | 40 个怪物特有逻辑 | L0 | ⬜ | 40 | ~3000 |
@@ -33,7 +33,10 @@
 | `common/src/uidf.cpp`<br>`common/src/uidf.hpp` | `scripts/core/uid.gd` | ✅ | UID 位布局 |
 | `common/src/sditem.hpp` | `scripts/item/sd_item.gd` | ✅ | 物品结构 + 序列化 |
 | `common/src/sysconst.hpp` | `scripts/core/sys_const.gd` | ✅ | 系统常量全集 |
-| `common/src/statetrigger.hpp` | `scripts/action/state_trigger.gd` | ⬜ | 状态触发（B3 附带） |
+| `client/src/motionnode.hpp` | `scripts/action/motion_node.gd` | ✅ | 帧数表 + 帧推进 + 触发器 |
+| `client/src/creaturemovable.cpp` | `scripts/action/creature_movable.gd` | ✅ | 移动队列 + LDistance2 |
+| `client/src/hero.cpp:509-760` | `scripts/action/hero_action_parser.gd` | ✅ | parseAction 骨架（魔法特效留 B4） |
+| `common/src/statetrigger.hpp` | `scripts/action/state_trigger.gd` | ⬜ | 状态触发（随 B4） |
 | `common/src/*.inc`（5 个） | `data/*.json` | ✅ | 1258 物品/364 怪物/603 地图/116 魔法/21 Buff |
 
 ## 已完成但需回归的
