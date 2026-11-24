@@ -211,6 +211,141 @@ struct SDRankingList {
 using SDChatPeerList = std::vector<SDChatPeer>;
 using SDUIDList = std::vector<uint64_t>;
 
+struct SDItem {
+    uint32_t itemID = 0; uint32_t seqID = 0; size_t count = 1;
+    size_t duration[2] = {0,0};
+    std::unordered_map<int, std::string> extAttrList;
+    template<class Ar> void serialize(Ar & ar) { ar(itemID, seqID, count, duration[0], duration[1], extAttrList); }
+};
+struct SDDropItem {
+    int x = 0; int y = 0; SDItem item;
+    template<class Ar> void serialize(Ar & ar) { ar(x, y, item); }
+};
+struct SDDropItemList {
+    int x = 0; int y = 0; std::vector<SDItem> itemList;
+    template<class Ar> void serialize(Ar & ar) { ar(x, y, itemList); }
+};
+struct SDDropItemOdds {
+    SDItem item; size_t odds = 1;
+    template<class Ar> void serialize(Ar & ar) { ar(item, odds); }
+};
+struct SDDropOnDie {
+    uint64_t playerUID = 0; bool allowDefaultDrop = false; std::vector<SDDropItemOdds> itemList;
+    template<class Ar> void serialize(Ar & ar) { ar(playerUID, allowDefaultDrop, itemList); }
+};
+struct SDDropOnHit {
+    std::vector<SDDropItemOdds> itemList;
+    template<class Ar> void serialize(Ar & ar) { ar(itemList); }
+};
+struct SDBelt {
+    std::array<SDItem, 6> list;
+    template<class Ar> void serialize(Ar & ar) { ar(list); }
+};
+struct SDWear {
+    std::unordered_map<int, SDItem> m_list;
+    template<class Ar> void serialize(Ar & ar) { ar(m_list); }
+};
+struct SDShowSecuredItemList {
+    std::vector<SDItem> itemList;
+    template<class Ar> void serialize(Ar & ar) { ar(itemList); }
+};
+struct SDSellItem {
+    SDItem item; std::vector<SDCostItem> costList;
+    template<class Ar> void serialize(Ar & ar) { ar(item, costList); }
+};
+struct SDSellItemList {
+    uint64_t npcUID = 0; std::vector<SDSellItem> list;
+    template<class Ar> void serialize(Ar & ar) { ar(npcUID, list); }
+};
+struct SDAuctionItem {
+    uint64_t auctionID = 0; SDChatPeer seller; std::string note; size_t timeLeft = 0; size_t price = 0; SDItem item;
+    template<class Ar> void serialize(Ar & ar) { ar(auctionID, seller, note, timeLeft, price, item); }
+};
+struct SDAuctionItemList {
+    int category = 0; std::vector<SDAuctionItem> itemList;
+    template<class Ar> void serialize(Ar & ar) { ar(category, itemList); }
+};
+struct SDUpdateItem {
+    SDItem item;
+    template<class Ar> void serialize(Ar & ar) { ar(item); }
+};
+struct SDInventory {
+    std::vector<SDItem> m_list;
+    template<class Ar> void serialize(Ar & ar) { ar(m_list); }
+};
+struct SDGrantItemList {
+    uint64_t playerUID = 0; std::vector<SDItem> itemList;
+    template<class Ar> void serialize(Ar & ar) { ar(playerUID, itemList); }
+};
+struct SDItemGrant {
+    size_t gold = 0; SDInventory inventory;
+    template<class Ar> void serialize(Ar & ar) { ar(gold, inventory); }
+};
+struct SDDirectTradeItem {
+    uint32_t itemID = 0; uint32_t seqID = 0; size_t count = 0;
+    template<class Ar> void serialize(Ar & ar) { ar(itemID, seqID, count); }
+};
+struct SDDirectTradeOfferRequest {
+    uint64_t uid = 0; size_t gold = 0; bool locked = false; std::vector<SDDirectTradeItem> itemList;
+    template<class Ar> void serialize(Ar & ar) { ar(uid, gold, locked, itemList); }
+};
+struct SDDirectTradeOffer {
+    uint64_t uid = 0; size_t gold = 0; bool locked = false; bool confirmed = false; std::vector<SDItem> itemList;
+    template<class Ar> void serialize(Ar & ar) { ar(uid, gold, locked, confirmed, itemList); }
+};
+struct SDDirectTradeResult {
+    uint64_t uid = 0; size_t gold = 0; SDInventory inventory;
+    template<class Ar> void serialize(Ar & ar) { ar(uid, gold, inventory); }
+};
+struct SDEquipWear {
+    uint64_t uid = 0; int wltype = 0; SDItem item;
+    template<class Ar> void serialize(Ar & ar) { ar(uid, wltype, item); }
+};
+struct SDGrabWear {
+    int wltype = 0; SDItem item;
+    template<class Ar> void serialize(Ar & ar) { ar(wltype, item); }
+};
+struct SDEquipBelt {
+    int slot = -1; SDItem item;
+    template<class Ar> void serialize(Ar & ar) { ar(slot, item); }
+};
+struct SDGrabBelt {
+    int slot = -1; SDItem item;
+    template<class Ar> void serialize(Ar & ar) { ar(slot, item); }
+};
+struct SDBuyCost {
+    SDItem item; std::vector<SDCostItem> costList;
+    template<class Ar> void serialize(Ar & ar) { ar(item, costList); }
+};
+struct SDPickUpItemList {
+    uint32_t failedItemID = 0; std::vector<SDItem> itemList;
+    template<class Ar> void serialize(Ar & ar) { ar(failedItemID, itemList); }
+};
+struct SDStallItem {
+    SDItem item; size_t price = 0;
+    template<class Ar> void serialize(Ar & ar) { ar(item, price); }
+};
+struct SDStall {
+    uint32_t dbid = 0; bool selling = false; std::string name; std::vector<SDStallItem> itemList;
+    template<class Ar> void serialize(Ar & ar) { ar(dbid, selling, name, itemList); }
+};
+struct SDItemStorage {
+    size_t gold = 0; SDWear wear; SDBelt belt; SDInventory inventory;
+    template<class Ar> void serialize(Ar & ar) { ar(gold, wear, belt, inventory); }
+};
+struct SDWLDesp {
+    SDWear wear; uint32_t hair = 0; uint32_t hairColor = 0;
+    template<class Ar> void serialize(Ar & ar) { ar(wear, hair, hairColor); }
+};
+struct SDUIDWLDesp {
+    uint64_t uid = 0; SDWLDesp desp;
+    template<class Ar> void serialize(Ar & ar) { ar(uid, desp); }
+};
+struct SDStartGameScene {
+    uint64_t uid = 0; uint64_t mapUID = 0; int x = -1; int y = -1; int direction = 0; SDWLDesp desp; std::string name; uint32_t nameColor = 0; int viewRange = 15;
+    template<class Ar> void serialize(Ar & ar) { ar(uid, mapUID, x, y, direction, desp, name, nameColor, viewRange); }
+};
+
 template<class T> void dump(const char *name, const T & t) {
     std::ostringstream ss(std::ios::binary);
     { cereal::PortableBinaryOutputArchive ar(ss); ar(t); }
@@ -268,4 +403,38 @@ int main(){
     SDRankingList ranking; ranking.type=1; ranking.entries={rankingEntry,{2,40,987654321,"bob"}}; dump("SDRankingList", ranking);
     SDChatPeerList peerListValue{peer,{43,"bob",std::nullopt,SDChatPeerPlayerVar{false,1}}}; dump("SDChatPeerList", peerListValue);
     SDUIDList uidList{1,0x1122334455667788ULL}; dump("SDUIDList", uidList);
+    SDItem item; item.itemID=100; item.seqID=7; item.count=3; item.duration[0]=90; item.duration[1]=100; item.extAttrList={{1,"abc"}}; dump("SDItem", item);
+    SDItem item2; item2.itemID=101; item2.seqID=8; item2.count=1; dump("SDItemEmptyExtAttrs", item2);
+    SDDropItem drop; drop.x=1; drop.y=2; drop.item=item; dump("SDDropItem", drop);
+    SDDropItemList dropList; dropList.x=3; dropList.y=4; dropList.itemList={item,item2}; dump("SDDropItemList", dropList);
+    SDDropItemOdds dropOdds; dropOdds.item=item; dropOdds.odds=2; dump("SDDropItemOdds", dropOdds);
+    SDDropOnDie dropDie; dropDie.playerUID=0x1122334455667788ULL; dropDie.allowDefaultDrop=true; dropDie.itemList={dropOdds}; dump("SDDropOnDie", dropDie);
+    SDDropOnHit dropHit; dropHit.itemList={dropOdds}; dump("SDDropOnHit", dropHit);
+    SDBelt belt; belt.list={item,{},{},{},{},{}}; dump("SDBelt", belt);
+    SDWear wear; wear.m_list={{1,item}}; dump("SDWear", wear);
+    SDShowSecuredItemList secured; secured.itemList={item,item2}; dump("SDShowSecuredItemList", secured);
+    SDSellItem sellItem; sellItem.item=item; sellItem.costList={cost}; dump("SDSellItem", sellItem);
+    SDSellItemList sellList; sellList.npcUID=0x1122334455667788ULL; sellList.list={sellItem}; dump("SDSellItemList", sellList);
+    SDAuctionItem auctionItem; auctionItem.auctionID=0x0102030405060708ULL; auctionItem.seller=peer; auctionItem.note="note"; auctionItem.timeLeft=3600; auctionItem.price=500; auctionItem.item=item; dump("SDAuctionItem", auctionItem);
+    SDAuctionItemList auctionList; auctionList.category=2; auctionList.itemList={auctionItem}; dump("SDAuctionItemList", auctionList);
+    SDUpdateItem updateItem; updateItem.item=item; dump("SDUpdateItem", updateItem);
+    SDInventory inventory; inventory.m_list={item,item2}; dump("SDInventory", inventory);
+    SDGrantItemList grantList; grantList.playerUID=0x1122334455667788ULL; grantList.itemList={item,item2}; dump("SDGrantItemList", grantList);
+    SDItemGrant itemGrant; itemGrant.gold=1000; itemGrant.inventory=inventory; dump("SDItemGrant", itemGrant);
+    SDDirectTradeItem directItem; directItem.itemID=100; directItem.seqID=7; directItem.count=2; dump("SDDirectTradeItem", directItem);
+    SDDirectTradeOfferRequest tradeRequest; tradeRequest.uid=0x1122334455667788ULL; tradeRequest.gold=100; tradeRequest.locked=true; tradeRequest.itemList={directItem}; dump("SDDirectTradeOfferRequest", tradeRequest);
+    SDDirectTradeOffer tradeOffer; tradeOffer.uid=0x1122334455667788ULL; tradeOffer.gold=200; tradeOffer.locked=true; tradeOffer.confirmed=true; tradeOffer.itemList={item}; dump("SDDirectTradeOffer", tradeOffer);
+    SDDirectTradeResult tradeResult; tradeResult.uid=0x1122334455667788ULL; tradeResult.gold=300; tradeResult.inventory=inventory; dump("SDDirectTradeResult", tradeResult);
+    SDEquipWear equipWear; equipWear.uid=42; equipWear.wltype=3; equipWear.item=item; dump("SDEquipWear", equipWear);
+    SDGrabWear grabWear; grabWear.wltype=3; grabWear.item=item; dump("SDGrabWear", grabWear);
+    SDEquipBelt equipBelt; equipBelt.slot=2; equipBelt.item=item; dump("SDEquipBelt", equipBelt);
+    SDGrabBelt grabBelt; grabBelt.slot=2; grabBelt.item=item; dump("SDGrabBelt", grabBelt);
+    SDBuyCost buyCost; buyCost.item=item; buyCost.costList={cost}; dump("SDBuyCost", buyCost);
+    SDPickUpItemList pickUp; pickUp.failedItemID=99; pickUp.itemList={item,item2}; dump("SDPickUpItemList", pickUp);
+    SDStallItem stallItem; stallItem.item=item; stallItem.price=500; dump("SDStallItem", stallItem);
+    SDStall stall; stall.dbid=7; stall.selling=true; stall.name="shop"; stall.itemList={stallItem}; dump("SDStall", stall);
+    SDItemStorage storage; storage.gold=1000; storage.wear=wear; storage.belt=belt; storage.inventory=inventory; dump("SDItemStorage", storage);
+    SDWLDesp wlDesp; wlDesp.wear=wear; wlDesp.hair=3; wlDesp.hairColor=4; dump("SDWLDesp", wlDesp);
+    SDUIDWLDesp uidWL; uidWL.uid=42; uidWL.desp=wlDesp; dump("SDUIDWLDesp", uidWL);
+    SDStartGameScene startScene; startScene.uid=42; startScene.mapUID=0x1122334455667788ULL; startScene.x=-10; startScene.y=20; startScene.direction=3; startScene.desp=wlDesp; startScene.name="hero"; startScene.nameColor=0x11223344; startScene.viewRange=15; dump("SDStartGameScene", startScene);
 }

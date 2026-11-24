@@ -39,6 +39,6 @@ It compiles `serdes_fixture_probe.cpp` with cereal and writes raw `PortableBinar
 
 - `internal/protocol/testdata/serdes-golden.json`
 
-The probe currently mirrors 47 `serdesmsg.hpp` fixture objects. Extend the probe whenever another object is migrated.
+The probe currently mirrors 81 `serdesmsg.hpp` fixture objects. Extend the probe whenever another object is migrated.
 
 All generated outputs are checked in so normal Go development does not require the C++ toolchain.

@@ -16,7 +16,7 @@
 | ID | C++/数据源 | Go 目标 | 批次 | 状态 | 备注 |
 |---|---|---|---|---|---|
 | C01 | `common/src` 基础常量、数学、坐标、路径、ID | `internal/common`、`internal/protocol` | B1 | in-progress | `ActionNode`、StaticBuffer、StaticVector 已完成 |
-| C02 | `protocoldef.hpp`、`clientmsg.hpp`、`servermsg.hpp`、`cerealf.hpp`、`serdesmsg.hpp` | `internal/protocol` | B1 | in-progress | 固定消息、PortableBinary 和 47 个 serdes golden 对象已完成；其余复杂 serdes 迁移中 |
+| C02 | `protocoldef.hpp`、`clientmsg.hpp`、`servermsg.hpp`、`cerealf.hpp`、`serdesmsg.hpp` | `internal/protocol` | B1 | in-progress | 固定消息、PortableBinary、SDItem 和 81 个 serdes golden 对象已完成；其余复杂 serdes 迁移中 |
 | C03 | `actormsg.hpp`、`actormsgpack.hpp`、`msgf.hpp` | `internal/actor`、`internal/protocol` | B1/B3 | pending | 消息包络与路由 |
 | C04 | `*.inc` 静态记录表 | `internal/common` 或生成代码 | B1/B2 | pending | 优先使用转换工具生成 |
 | C05 | `server/src/server.sql` | `internal/storage` | B2 | pending | 包含自定义 SQLite 函数 |
@@ -86,14 +86,24 @@
   - `std::map`、`std::unordered_map`、optional、嵌套 vector；
   - peer config/index/list；
   - `SDChatPeerList`、`SDUIDList`。
+- 第三批 34 个 item-centric 对象，覆盖：
+  - `SDItem` 核心 wire 结构；
+  - drop item/odds/on-die/on-hit；
+  - belt、wear、secure item；
+  - sell item、buy cost、pickup；
+  - inventory、grant item；
+  - direct trade request/offer/result；
+  - equip/grab wear/belt；
+  - auction、stall、item storage；
+  - `SDWLDesp`、`SDUIDWLDesp`、`SDStartGameScene`。
 - 建立可重复生成的 C++ cereal golden fixture；
-- 对 47 个 serdes fixture 做 Go/C++ 字节级对照和反序列化测试；
-- 对 optional 缺省、空集合、map 多元素和 tagged-value helper 做边界测试；
+- 对 81 个 serdes fixture 做 Go/C++ 字节级对照和反序列化测试；
+- 对 optional 缺省、空集合、map 多元素、`SDItem.ItemIDSeq` 和 inventory/wear helper 做边界测试；
 - 协议与公共类型测试、race 测试通过。
 
 待完成：
 
-- `serdesmsg.hpp` 其余可变对象，重点包括 `SDItem`、runtime config、Lua 变量和复杂嵌套结构；
+- `serdesmsg.hpp` 其余可变对象，重点包括 runtime config、Lua 变量和复杂嵌套结构；
 - `serdesmsg.cpp` 中的辅助序列化逻辑；
 - 客户端/服务端真实 golden packet 样本；
 - 大批量协议对象的 fuzz/边界测试；
