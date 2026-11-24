@@ -23,8 +23,8 @@
 | C06 | 账号、角色、物品、行会、拍卖、摆摊、邮件数据库代码 | `internal/storage` | B2 | adapted | 持久化和数据访问完成；买断税务/投递编排归 B6 |
 | C07 | `actorpool.*`、`delaydriver.*`、`dispatcher.*` | `internal/actor` | B3 | pending | 地图串行执行优先 |
 | C08 | `netdriver.*`、`actornetdriver.*`、`servicecorenet.*`、`serverpeer.*` | `internal/transport` | B3 | pending | 保留旧 TCP 协议 |
-| C09 | `servermap.*`、`servermapop.*` | `internal/world` | B4 | pending | |
-| C10 | `battleobject.*`、`monster.*`、`buff*.*`、怪物子类 | `internal/world` | B4 | pending | |
+| C09 | `servermap.*`、`servermapop.*` | `internal/world` | B4 | in-progress | 网格/占用/寻路/移动完成；地图文件加载与 AOI 待补 |
+| C10 | `battleobject.*`、`monster.*`、`buff*.*`、怪物子类 | `internal/world` | B4 | in-progress | 伤害结算/Buff/仇恨/安全区/刷新完成；协程与子类特化待补 |
 | C11 | `player.*`、`playerop.*`、`playernet.*`、背包和物品逻辑 | `internal/game` | B5 | pending | |
 | C12 | `serverluacoroutinerunner.*`、`serverluamodule.*`、Lua 脚本 | `internal/script` | B5 | pending | 默认复用原 Lua 脚本 |
 | C13 | `npchar.*`、`npcharop.*`、NPC 脚本 | `internal/game`、`internal/script` | B5 | pending | |
@@ -178,3 +178,46 @@
 
 - 登录、建角、进图等业务 handler 在 B5 注册；
 - master/slave 多进程与 peer 协议后续补齐。
+### B4：世界、地图与战斗运行时
+
+状态：**运行时骨架完成（部分子项延后）**
+
+完成内容：
+
+- `internal/world/geometry.go`：8 方向、切比雪夫距离、`hopValid`（1/2/diagonal 平方距离规则）；
+- `internal/world/mapdata.go`：`MapData`/`Land` 静态地形；
+- `internal/world/map_state.go`：格子占用、实体所有权、A* 寻路（对角需两侧都可走）、
+  移动校验（hop + 视线 + 占用）、世界时钟 `Advance`；
+- `internal/world/damage.go`：`DamageNode`/`PlainPhyDamage`/`MagicDamage`、
+  命中率 `sigmoid(delta/2.5)/2+0.5`、物理/魔法减伤、元素抗性放大；
+- `internal/world/buff.go`：`Buff`/`BuffList`，seqID 自增、按 buffSeq 升序、
+  叠加上限、按来源批量移除、到期事件；
+- `internal/world/combat_state.go`：`SafeZone`（矩形+圆形）、`OffenderList` 仇恨；
+- `internal/world/monster.go`：`MonsterRecord`、掉落互斥链表 `RollDrop`、
+  AI 冷却与 2 秒路径缓存、视野、`BehaveMode`、刷新管理器；
+- `map_state.go` 追加：`Combat`（完整伤害链路 + 仇恨 + 吸血）、
+  `CommitDeath`（掉落只结算一次）、`DropOwner`、`AddBuff`、`SetSafeZone`、
+  `SafeZoneBlocksAttack`、`MutateEntity`（原地修改实体）；
+- 56 项单元测试覆盖以上全部行为。
+
+关键行为锁定（易错点已写进注释与测试）：
+
+| 项 | 结论 |
+|---|---|
+| 命中率取值范围 | `(0.5, 1.0)`，**下限是 0.5 不是 0**（公式外层 `+0.5`），差值 0 时是 0.75 |
+| 掉落表结构 | 外层分组独立判定、内层是**互斥链**（按序 roll，命中即退出该组） |
+| 吸血回复 | `min(damage, 20)`（monster.cpp:756） |
+| 视野 0 的怪 | 钳到至少 1，否则永远不主动攻击 |
+| 仇恨归属 | 掉落给仇恨最高者；`activeTime` 用于衰减 |
+| 安全区 | 保护站在区内者；火墙/固定打击/宠物伤害绕过 |
+| 实体读取 | `Entity()` 是**值拷贝**，修改必须走 `MutateEntity` |
+
+边界说明（延后项）：
+
+- `BattleObject` 的协程（`requestMove`/`requestJump`/`requestMapSwitch`）改为同步返回，
+  异步动作队列在 B5 与 session 联调时补；
+- 怪物子类特化（34 个类）：帧表差异已在客户端复刻中数据化，
+  服务端只需 AI 差异，待 B4 收尾逐类核对；
+- `servermap.cpp` 的 AOI/视野广播、地图 `.bin` 加载未做（属于 B4 剩余）；
+- Buff 的 act/aura 细分（`buffact*`）只保留计数语义，细化在 B5。
+
