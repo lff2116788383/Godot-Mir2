@@ -47,6 +47,11 @@ const SM_HEALTH := 30
 const SM_GOLD := 47
 const SM_TEXT := 51
 const SM_PLAYERSAY := 83
+const SM_CODISAPPEAR := 102
+const SM_NOTIFYDEAD := 32
+const SM_DEADFADEOUT := 33
+const SM_CASTMAGIC := 38
+const SM_MISS := 37
 
 const SM_TABLE := preload("res://scripts/net/sm_table.gd")
 

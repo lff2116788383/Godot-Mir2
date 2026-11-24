@@ -134,8 +134,9 @@ static func build_npc_uid(npc_id: int, peer_index_v: int) -> int:
 
 
 ## uidf::buildMonsterUID
-static func build_monster_uid(monster_id: int, peer_index_v: int) -> int:
-	return _build(UID_MON, monster_id, peer_index_v, 0)
+## 注意：原版还有 seq 参数用于区分同种怪物的不同实例
+static func build_monster_uid(monster_id: int, peer_index_v: int, seq: int = 0) -> int:
+	return _build(UID_MON, monster_id, peer_index_v, seq)
 
 
 ## uidf::getPlayerUID（uidf.hpp:69）

@@ -1,0 +1,261 @@
+extends Node2D
+class_name HumanView
+## 其他玩家 / NPC 的表现节点
+##
+## 【依据】client/src/hero.cpp 动作队列 + hero.cpp:76-150 绘制顺序
+##          clientnpc.cpp（NPC 也用 human 外观）
+##
+## 与 MonsterActor 的差别：
+##   - 贴图来自 texture/hero|hair|helmet|weapon（分层），不是 APNG
+##   - 动作类型是 MOTION_*（玩家动作），不是 MOTION_MON_*
+##
+## Godot 差异：把 HumanActor 组合进来，自己只管动作队列与坐标。
+
+const HumanActorRef := preload("res://scripts/actor/human_actor.gd")
+const MotionNodeRef := preload("res://scripts/action/motion_node.gd")
+const MotionTypeRef := preload("res://scripts/action/motion_type.gd")
+const ActionTypeRef := preload("res://scripts/action/action_type.gd")
+const PathFinderRef := preload("res://scripts/action/path_finder.gd")
+const CreatureMovableRef := preload("res://scripts/action/creature_movable.gd")
+const SysConstRef := preload("res://scripts/core/sys_const.gd")
+
+const GRID_X := 48
+const GRID_Y := 32
+
+var human: HumanActor = null
+var curr_motion = null
+var motion_queue: Array = []
+var forced_queue: Array = []
+var grid := Vector2i.ZERO
+var facing: int = 5   ## DIR_DOWN
+
+var _frame_acc := 0.0
+var _dead := false
+
+## 地图上下文（由 CoManager 注入）
+var _can_move: Callable = Callable()
+var _make_finder: Callable = Callable()
+var _max_step: int = 10
+
+
+func setup(assets_root: String, p_dress: int = 0, p_hair: int = 1,
+		p_helmet: int = 0, p_weapon: int = 0, p_gender: bool = false) -> void:
+	human = HumanActorRef.new()
+	human.name = "Human"
+	add_child(human)
+	human.setup(assets_root)
+	human.set_appearance(p_dress, p_hair, p_helmet, p_weapon, p_gender)
+	# 脚底锚点：人形图约 22x63，需向左上偏移使脚落在格中心
+	human.anchor_offset = Vector2(-10, -48)
+
+
+## CoManager 创建实体后注入
+func set_walk_context(can_move: Callable, make_finder: Callable, max_step: int) -> void:
+	_can_move = can_move
+	_make_finder = make_finder
+	_max_step = max_step
+
+
+# ==================== 动作应用（hero.cpp:510 parseAction） ====================
+
+func apply_action(action) -> void:
+	if action == null or human == null:
+		return
+	if _dead:
+		return
+	motion_queue.clear()
+
+	match action.type:
+		ActionTypeRef.ACTION_DIE:
+			_on_die(action)
+		ActionTypeRef.ACTION_STAND:
+			_on_stand(action)
+		ActionTypeRef.ACTION_MOVE:
+			_on_move(action)
+		ActionTypeRef.ACTION_SPACEMOVE:
+			_on_space_move(action)
+		ActionTypeRef.ACTION_HITTED:
+			_on_hitted(action)
+		ActionTypeRef.ACTION_JUMP:
+			_on_jump(action)
+		ActionTypeRef.ACTION_ATTACK:
+			_on_attack(action)
+		ActionTypeRef.ACTION_SPELL:
+			_on_spell(action)
+		ActionTypeRef.ACTION_SPAWN:
+			_on_stand(action)
+		_:
+			pass
+
+	_begin_next_motion()
+
+
+func _motion_end() -> Vector3i:
+	if curr_motion != null:
+		return Vector3i(curr_motion.end_x, curr_motion.end_y, curr_motion.direction)
+	return Vector3i(grid.x, grid.y, facing)
+
+
+func _on_stand(action) -> void:
+	var end := _motion_end()
+	motion_queue = CreatureMovableRef.make_walk_motion_queue(
+		end.x, end.y, action.x, action.y, SysConstRef.SYS_MAXSPEED,
+		false, _can_move, _make_finder, _max_step)
+	var m := MotionNodeRef.new()
+	m.type = MotionTypeRef.MOTION_STAND
+	m.direction = action.direction
+	m.x = action.x
+	m.y = action.y
+	motion_queue.append(m)
+
+
+func _on_move(action) -> void:
+	var end := _motion_end()
+	motion_queue = CreatureMovableRef.make_walk_motion_queue(
+		end.x, end.y, action.x, action.y, SysConstRef.SYS_MAXSPEED,
+		false, _can_move, _make_finder, _max_step)
+	var mn = CreatureMovableRef.make_walk_motion(
+		action.x, action.y, action.aim_x, action.aim_y, action.speed, false, _can_move)
+	if mn != null:
+		motion_queue.append(mn)
+
+
+func _on_attack(action) -> void:
+	var end := _motion_end()
+	motion_queue = CreatureMovableRef.make_walk_motion_queue(
+		end.x, end.y, action.x, action.y, SysConstRef.SYS_MAXSPEED,
+		false, _can_move, _make_finder, _max_step)
+	var d: int = PathFinderRef.get_off_dir(action.x, action.y, action.aim_x, action.aim_y)
+	if not PathFinderRef.dir_valid(d):
+		d = end.z
+	var m := MotionNodeRef.new()
+	# hero.cpp:1108 默认物理攻击：单手位 ONEVSWING，双手位 TWOVSWING
+	# 武器是否双手由 WLDesp 决定，待外观同步接入后细化
+	m.type = MotionTypeRef.MOTION_ONEVSWING
+	m.direction = d
+	m.x = action.x
+	m.y = action.y
+	m.ext_magic_id = action.ext_magic_id
+	m.ext_modifier_id = action.ext_modifier_id
+	motion_queue.append(m)
+
+
+func _on_spell(action) -> void:
+	var end := _motion_end()
+	motion_queue = CreatureMovableRef.make_walk_motion_queue(
+		end.x, end.y, action.x, action.y, SysConstRef.SYS_MAXSPEED,
+		false, _can_move, _make_finder, _max_step)
+	var d: int = PathFinderRef.get_off_dir(action.x, action.y, action.aim_x, action.aim_y)
+	if not PathFinderRef.dir_valid(d):
+		d = end.z
+	var m := MotionNodeRef.new()
+	# 施法动作：原版按魔法是否有方向分 SPELL0/SPELL1，默认 SPELL0
+	m.type = MotionTypeRef.MOTION_SPELL0
+	m.direction = d
+	m.x = action.x
+	m.y = action.y
+	m.ext_magic_id = action.ext_magic_id
+	m.ext_modifier_id = action.ext_modifier_id
+	motion_queue.append(m)
+
+
+func _on_hitted(action) -> void:
+	var end := _motion_end()
+	motion_queue = CreatureMovableRef.make_walk_motion_queue(
+		end.x, end.y, action.x, action.y, SysConstRef.SYS_MAXSPEED,
+		false, _can_move, _make_finder, _max_step)
+	var m := MotionNodeRef.new()
+	m.type = MotionTypeRef.MOTION_HITTED
+	m.direction = action.direction
+	m.x = action.x
+	m.y = action.y
+	m.ext_from_uid = action.ext_from_uid
+	motion_queue.append(m)
+
+
+func _on_jump(action) -> void:
+	forced_queue.clear()
+	curr_motion = MotionNodeRef.new()
+	curr_motion.type = MotionTypeRef.MOTION_STAND
+	curr_motion.direction = action.direction
+	curr_motion.x = action.x
+	curr_motion.y = action.y
+	_set_grid(action.x, action.y)
+
+
+func _on_die(action) -> void:
+	var end := _motion_end()
+	for m in CreatureMovableRef.make_walk_motion_queue(
+			end.x, end.y, action.x, action.y, SysConstRef.SYS_MAXSPEED,
+		false, _can_move, _make_finder, _max_step):
+		forced_queue.append(m)
+	var de := _motion_end()
+	var m := MotionNodeRef.new()
+	m.type = MotionTypeRef.MOTION_DIE
+	m.direction = de.z if PathFinderRef.dir_valid(de.z) else facing
+	m.x = de.x
+	m.y = de.y
+	forced_queue.append(m)
+	_dead = true
+
+
+func _on_space_move(action) -> void:
+	forced_queue.clear()
+	curr_motion = MotionNodeRef.new()
+	curr_motion.type = MotionTypeRef.MOTION_STAND
+	curr_motion.direction = facing
+	curr_motion.x = action.aim_x
+	curr_motion.y = action.aim_y
+	_set_grid(action.aim_x, action.aim_y)
+
+
+# ==================== 队列推进 ====================
+
+func _set_grid(x: int, y: int) -> void:
+	grid = Vector2i(x, y)
+	position = Vector2(x * GRID_X, y * GRID_Y)
+
+
+func _begin_next_motion() -> void:
+	if not forced_queue.is_empty():
+		curr_motion = forced_queue.pop_front()
+	elif not motion_queue.is_empty():
+		curr_motion = motion_queue.pop_front()
+
+	if curr_motion != null:
+		facing = curr_motion.direction
+		_set_grid(curr_motion.x, curr_motion.y)
+		_frame_acc = 0.0
+		if human != null:
+			human.set_motion(curr_motion)
+
+
+func _process(dt: float) -> void:
+	if curr_motion == null or human == null:
+		return
+	var delay: float = curr_motion.frame_delay()
+	if delay <= 0.0:
+		delay = 100.0
+	_frame_acc += dt * 1000.0
+
+	while _frame_acc >= delay:
+		_frame_acc -= delay
+		var n: int = curr_motion.frame_count_ex()
+		if n <= 0:
+			break
+		curr_motion.frame += 1
+		if curr_motion.frame >= n:
+			curr_motion.frame = 0
+			if not forced_queue.is_empty() or not motion_queue.is_empty():
+				_begin_next_motion()
+			else:
+				curr_motion.frame = n - 1
+				human.refresh_textures()
+			return
+		human.refresh_textures()
+
+
+func set_appearance(p_dress: int, p_hair: int, p_helmet: int, p_weapon: int,
+		p_gender: bool) -> void:
+	if human != null:
+		human.set_appearance(p_dress, p_hair, p_helmet, p_weapon, p_gender)

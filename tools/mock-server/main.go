@@ -83,8 +83,12 @@ const (
 const (
 	spawnX   = 400
 	spawnY   = 402
-	mapUID   = 1
 	playerDBID = 1001
+
+	// mapUID 必须是 uidf::buildMapUID 编码后的值，不能是裸 mapID
+	//   type(MAP=2) << 59 | id(1) << 35 | peerIndex(1) << 31
+	//   = 0x1000000880000000
+	mapUID = uint64(2)<<uidTypeShift | uint64(1)<<uidIDShift | uint64(1)<<uidPeerShift
 )
 
 // Server 服务端状态
@@ -92,6 +96,8 @@ type Server struct {
 	mu      sync.Mutex
 	players map[string]*Player  // 账号 -> 玩家
 	clients map[net.Conn]*Session
+	// 场景内固定怪物（用于验证 SM_CORECORD / SM_ACTION）
+	sceneMonsters []MonsterSpawn
 }
 
 // Session 一个连接
@@ -122,6 +128,15 @@ func newServer() *Server {
 	return &Server{
 		players: make(map[string]*Player),
 		clients: make(map[net.Conn]*Session),
+		// 默认场景怪物：摆在小范围，方便客户端视野内能看到
+		// MonsterID 取自 data/monsterrecord.json：
+		//   1=沙漠蜥蜴 2=夜行鬼 3=夜行鬼09
+		// 摆在主角 (400,402) 周围 4-6 格，确保初始视口内全部可见
+		sceneMonsters: []MonsterSpawn{
+			{MonsterID: 1, X: 396, Y: 399, Dir: 5, Seq: 1},   // 左上
+			{MonsterID: 2, X: 404, Y: 400, Dir: 5, Seq: 2},   // 右上
+			{MonsterID: 3, X: 400, Y: 406, Dir: 4, Seq: 3},   // 下方
+		},
 	}
 }
 
@@ -311,6 +326,9 @@ func (s *Server) onOnline(sess *Session, f *Frame) {
 
 	// 紧接着下发进场场景
 	s.sendStartGameScene(sess, p, uid)
+
+	// 再下发场景内实体（怪物）
+	s.sendSceneEntities(sess, p)
 
 	log.Printf("[进图] %s uid=%d 位置(%d,%d)", p.Name, uid, p.X, p.Y)
 }

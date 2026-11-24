@@ -67,8 +67,13 @@ func run(main: Node) -> void:
 		var nsz := body2.decode_u16(8)
 		var nm2 := body2.slice(10, 10 + nsz).get_string_from_utf8()
 		_ok(nm2 == _self_name, "名字一致: " + nm2)
+		# mapUID 是 uidf::buildMapUID 编码值，不是裸 mapID：
+		#   type(MAP=2)<<59 | id(1)<<35 | peerIndex(1)<<31 = 0x1000000880000000
 		var map_uid := body2.decode_u64(141)
-		_ok(map_uid == 1, "地图 UID=1", "实际 %d" % map_uid)
+		_ok(map_uid == 0x1000000880000000,
+			"地图 UID 是 MAP 类型编码值", "实际 0x%X" % map_uid)
+		_ok(UidScript.get_uid_type(map_uid) == UidScript.UID_MAP, "UID 类型 = MAP")
+		_ok(UidScript.get_map_id(map_uid) == 1, "mapID = 1")
 
 	# 5. 进场场景
 	var got_scene := await _wait_for(MirClientScript.SM_STARTGAMESCENE, 3000)

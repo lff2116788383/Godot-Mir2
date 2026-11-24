@@ -14,6 +14,12 @@ var _player: PlayerActor = null
 var _human: HumanActor = null
 var _spawn := Vector2i.ZERO
 var _load_ms := 0
+## 当前地图 UID（maprecord.inc: 比奇县_0 的 mapID = 1）
+var map_uid: int = 0
+## 场景实体管理器（联机时启用）
+var co_manager: CoManager = null
+## 网络客户端（联机时启用）
+var net: MirClient = null
 
 
 func _ready() -> void:
@@ -30,6 +36,8 @@ func _ready() -> void:
 		push_error(hud.text)
 		return
 
+	# 比奇县_0 的 mapID = 1（maprecord.inc 第 1 条），peerIndex = 1
+	map_uid = Uid.build_map_uid(1, 1)
 	_spawn = _find_spawn(Vector2i(_map.w / 2, _map.h / 2))
 	map_view.load_map(_map)
 	_create_player()
@@ -48,8 +56,79 @@ func _ready() -> void:
 	print("[Main] 纹理缓存: %s" % str(TexCache.stats()))
 
 	_update_hud()
+	await _maybe_connect()
 	_maybe_run_test()
 	_maybe_autoshot()
+
+
+## 支持 --online：连 mock 服务端并显示场景实体
+func _maybe_connect() -> void:
+	var args := OS.get_cmdline_user_args()
+	if args.find("--online") < 0:
+		return
+
+	co_manager = CoManager.new()
+	co_manager.name = "CoManager"
+	add_child(co_manager)
+	co_manager.setup(Game.assets_root)
+	co_manager.set_map_context(Callable(self, "can_move_to"), Callable(self, "make_path_finder"))
+	co_manager.map_uid = map_uid
+	co_manager.set_my_position_provider(func() -> Vector3i:
+		return Vector3i(_player.grid.x, _player.grid.y, map_uid))
+	co_manager.entity_query_requested.connect(func(uid: int):
+		print("[Main] 请求查询实体 0x%X" % uid))
+
+	net = MirClient.new()
+	net.name = "Net"
+	add_child(net)
+	net.frame_received.connect(_on_net_frame)
+
+	var ok = await net.connect_to("127.0.0.1", 7000)
+	if not ok:
+		print("[Main] 连接服务端失败（未启动 mock？）")
+		return
+	print("[Main] 已连接 mock 服务端")
+
+	await net.login("test", "test")
+	await _wait_sec(0.2)
+	await net.query_char()
+	await _wait_sec(0.2)
+	await net.online()
+	await _wait_sec(1.0)
+	print("[Main] 场景实体数 = %d" % (co_manager.count() if co_manager != null else 0))
+	# 诊断：打印每个实体的位置与可见性
+	for uid in co_manager.all_uids():
+		var n = co_manager.find_uid(uid)
+		if n == null: continue
+		var spr: Sprite2D = null
+		for c in n.get_children():
+			if c is Sprite2D:
+				spr = c; break
+		print("  [实体] %s pos=%s spr_pos=%s spr_size=%s" % [
+			n.name, str(n.position),
+			str(spr.position) if spr else "-",
+			str(spr.texture.get_size()) if (spr and spr.texture) else "-"])
+
+
+## 服务端消息分发
+func _on_net_frame(code: int, body: PackedByteArray, _resp: int) -> void:
+	if co_manager == null:
+		return
+	match code:
+		MirClient.SM_CORECORD:
+			co_manager.on_sm_corecord(body)
+		MirClient.SM_ACTION:
+			co_manager.on_sm_action(body)
+		MirClient.SM_CODISAPPEAR:
+			if body.size() >= 16:
+				co_manager.remove_uid(body.decode_s64(0))
+
+
+func _wait_sec(sec: float) -> void:
+	var t := 0.0
+	while t < sec:
+		await get_tree().process_frame
+		t += get_process_delta_time()
 
 
 ## 支持 --run-test <名称>：在场景内跑自测（Autoload 可用）
@@ -64,15 +143,23 @@ func _maybe_run_test() -> void:
 		add_child(t0)
 		await t0.run(self)
 		return
+	if name == "sync":
+		var ts: Node = load("res://tools/sync_selftest.gd").new()
+		add_child(ts)
+		await ts.run(self)
+		get_tree().quit(0)
+		return
 	if name == "net":
 		var tn: Node = load("res://tools/net_selftest.gd").new()
 		add_child(tn)
 		await tn.run(self)
+		get_tree().quit(0)
 		return
 	if name == "anim":
 		var ta: Node = load("res://tools/anim_selftest.gd").new()
 		add_child(ta)
 		await ta.run(self)
+		get_tree().quit(0)
 		return
 	if name != "move":
 		return
@@ -124,6 +211,19 @@ func _check_path_grid(x: int, y: int) -> int:
 
 func _is_walkable(g: Vector2i) -> bool:
 	return _check_path_grid(g.x, g.y) == PathFinder.PF_FREE
+
+
+## 供 CoManager 注入实体动作队列：能否站立于该格
+func can_move_to(x: int, y: int) -> bool:
+	return _check_path_grid(x, y) == PathFinder.PF_FREE
+
+
+## 供 CoManager 注入实体动作队列：构造寻路器
+func make_path_finder(max_step: int) -> PathFinder:
+	return PathFinder.new(_check_path_grid, max_step, max_step)
+
+
+
 
 
 func _on_player_grid_changed(g: Vector2i) -> void:

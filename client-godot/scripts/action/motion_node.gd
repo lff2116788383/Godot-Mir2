@@ -27,6 +27,7 @@ var frame: int = 0
 
 ## 扩展参数（对应 motionnode.hpp:34-71 的 MotionExtParam）
 var ext_magic_id: int = 0        ## spell / swing
+var ext_modifier_id: int = 0     ## spell 的 modifierID（与 magicID 同在 extParam）
 var ext_attack_motion: int = 0   ## attack
 var ext_from_uid: int = 0        ## hitted
 var ext_fade_out: int = 0        ## die（update 期间可变）
