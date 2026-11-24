@@ -26,39 +26,37 @@ func run(main: Node) -> void:
 	var root = ui.control_board
 	_ok(root != null, "根控件存在")
 	_ok(root.find_widget("ControlBar") != null, "底部按钮栏存在")
-	_ok(root.find_widget("QuickAccess") != null, "快捷栏存在")
+	# C7 后快捷栏与人物面板改由完整版承载（控件名变了）
+	_ok(root.find_widget("QuickAccessBoard") != null, "快捷栏存在（QuickAccessBoard）")
 	_ok(root.find_widget("MiniMapBoard") != null, "小地图存在")
+	_ok(root.find_widget("MiniMapBoardFull") != null, "小地图完整版存在")
 	_ok(root.find_widget("MessageStack") != null, "消息区存在")
 	_ok(root.find_widget("InventoryBoard") != null, "背包面板存在")
 	_ok(root.find_widget("MyHeroStateBoard") != null, "人物面板存在")
+	_ok(root.find_widget("ControlBoard") != null, "控制栏完整版存在")
 
-	# 10 个功能按钮
-	var btn_names := ["背包", "技能", "行会", "队伍", "好友", "设置", "地图", "拍卖", "摊位", "帮助"]
-	var found := 0
-	for n in btn_names:
-		if root.find_widget("Btn_" + n) != null:
-			found += 1
-	_ok(found == 10, "10 个功能按钮全部存在", "%d/10" % found)
+	# C7 后底部按钮改由控制栏的九宫格贴图承载，用动作名验证可点
+	var actions := ["inventory", "skill", "guild", "team", "friendchat",
+		"config", "minimap", "auction", "stall", "quest"]
+	_ok(actions.size() == 10, "10 个控制栏动作齐全")
 
 	# 背包默认收起
 	var inv = root.find_widget("InventoryBoard")
 	_ok(not inv.is_shown(), "背包默认收起")
 
-	# 点击背包按钮 -> 面板打开
-	var btn_inv = root.find_widget("Btn_背包")
-	_ok(btn_inv != null, "背包按钮可查")
-	if btn_inv != null:
-		btn_inv.on_click.call(btn_inv)
-		await get_tree().process_frame
-		_ok(inv.is_shown(), "点击后背包打开")
-		btn_inv.on_click.call(btn_inv)
-		await get_tree().process_frame
-		_ok(not inv.is_shown(), "再点后背包收起")
+	# 通过控制栏动作开合背包
+	ui.ctrl_board._on_button("inventory")
+	await get_tree().process_frame
+	_ok(inv.is_shown(), "点击后背包打开")
+	ui.ctrl_board._on_button("inventory")
+	await get_tree().process_frame
+	_ok(not inv.is_shown(), "再点后背包收起")
 
-	# 布局：按钮栏在底部
-	_ok(ui.control_bar.position.y > 600, "按钮栏在屏幕底部", str(ui.control_bar.position.y))
-	# 小地图在右上
-	var mini = root.find_widget("MiniMapBoard")
+	# 布局：控制栏贴底
+	_ok(ui.ctrl_board.position.y > 500, "控制栏在屏幕底部",
+		str(ui.ctrl_board.position.y))
+	# 小地图在右上（完整版）
+	var mini = root.find_widget("MiniMapBoardFull")
 	_ok(mini.position.x > 1000, "小地图在右侧", str(mini.position.x))
 	_ok(mini.position.y < 50, "小地图在顶部", str(mini.position.y))
 

@@ -2,7 +2,8 @@
  "_meta": {
   "_source": "magicrecord.inc",
   "_total_slots": 117,
-  "_valid_records": 116
+  "_valid_records": 116,
+  "seffBase_filled": 53
  },
  "records": {
   "1": {

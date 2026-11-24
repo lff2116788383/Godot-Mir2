@@ -42,6 +42,22 @@ const TeamBoardRef := preload("res://scripts/ui/ui_team_board.gd")
 const ItemListBoardRef := preload("res://scripts/ui/ui_item_list_board.gd")
 const GuildBoardRef := preload("res://scripts/ui/ui_guild_board.gd")
 const ConfigBoardRef := preload("res://scripts/ui/ui_config_board.gd")
+## C7 新增面板
+const CtrlBoardRef := preload("res://scripts/ui/ui_control_board.gd")
+const HeroStateRef := preload("res://scripts/ui/ui_hero_state_board.gd")
+const QuickAccessRef := preload("res://scripts/ui/ui_quick_access_board.gd")
+const PurchaseRef := preload("res://scripts/ui/ui_purchase_board.gd")
+const DirectTradeRef := preload("res://scripts/ui/ui_direct_trade_board.gd")
+const StallBoardRef := preload("res://scripts/ui/ui_stall_board.gd")
+const AuctionRef := preload("res://scripts/ui/ui_auction_board.gd")
+const FriendChatRef := preload("res://scripts/ui/ui_friend_chat_board.gd")
+const QuestBoardRef := preload("res://scripts/ui/ui_quest_board.gd")
+const HorseBoardRef := preload("res://scripts/ui/ui_horse_board.gd")
+const MiniMapBoardRef := preload("res://scripts/ui/ui_mini_map_board.gd")
+const InputStringRef := preload("res://scripts/ui/ui_input_string_board.gd")
+const MenuBoardRef := preload("res://scripts/ui/ui_menu_board.gd")
+const ProgUseTexRef := preload("res://scripts/data/proguse_tex.gd")
+const OverHeadRef := preload("res://scripts/ui/ui_over_head.gd")
 
 ## 面板
 var control_board: WidgetRef = null      ## 根控件（铺满屏幕）
@@ -62,6 +78,22 @@ var shop_board: ItemListBoardRef = null      ## 商店（NPC 购买）
 var auction_board: ItemListBoardRef = null   ## 拍卖行
 var stall_board: ItemListBoardRef = null     ## 摆摊
 var secured_board: ItemListBoardRef = null   ## 寄存
+
+## C7 面板
+var ctrl_board: CtrlBoardRef = null           ## 底部控制栏（完整版，替代旧 control_bar）
+var my_state_board: HeroStateRef = null       ## 自身人物状态
+var peer_state_board: HeroStateRef = null     ## 他人人物状态
+var quick_access: QuickAccessRef = null       ## 快捷栏（6 格腰带）
+var purchase_board: PurchaseRef = null        ## NPC 商店
+var direct_trade: DirectTradeRef = null       ## 直接交易
+var stall_board2: StallBoardRef = null        ## 摆摊（完整版）
+var auction2: AuctionRef = null               ## 拍卖行（完整版）
+var friend_chat: FriendChatRef = null         ## 好友聊天
+var quest_board: QuestBoardRef = null         ## 任务
+var horse_board: HorseBoardRef = null         ## 马匹
+var mini_map2: MiniMapBoardRef = null         ## 小地图（完整版）
+var input_board: InputStringRef = null        ## 输入串 / 确认框
+var menu: MenuBoardRef = null                 ## 右键菜单
 
 ## 背包数据（由 main 注入 SDInventory）
 var inventory_data = null
@@ -116,39 +148,65 @@ func _layout() -> void:
 	if control_board == null or control_bar == null:
 		return
 
-	# ControlBar 贴底（原版：y = H - controlBoard.h()）
-	var cbh: int = control_bar.size_h()
-	control_bar.position = Vector2(0, vh - cbh)
+	# 控制栏（C7 完整版）：贴底，宽度 = 视口宽
+	if ctrl_board != null:
+		ctrl_board.vw = vw
+		ctrl_board.w = vw
+		var bh: int = ctrl_board.bar_height()
+		ctrl_board.h = bh
+		ctrl_board.position = Vector2(0, vh - bh)
 
-	# QuickAccessBoard（原版：y = H - controlBoard.h() - 48）
-	if quick_board != null:
-		quick_board.position = Vector2(0, vh - cbh - 48)
+	# 快捷栏：控制栏上方 48px（原版 y = H - controlBoard.h() - 48）
+	if quick_access != null:
+		var cbh: int = ctrl_board.bar_height() if ctrl_board != null else 44
+		quick_access.position = Vector2(0, vh - cbh - 48)
+		quick_board = quick_access
 
-	# MyHeroStateBoard（原版：x = W/2 - 164, y = H/2 - 233）
-	if hero_state_board != null:
-		hero_state_board.position = Vector2(vw / 2 - 164, vh / 2 - 233)
+	# 自身人物状态：居中（原版 x = W/2 - 164, y = H/2 - 233）
+	if my_state_board != null:
+		my_state_board.position = Vector2(vw / 2 - 164, vh / 2 - 233)
+		my_state_board.set_abs(int(my_state_board.position.x), int(my_state_board.position.y))
 
-	# InventoryBoard（原版：x = W/2 - 179, y = H/2 - 134）
+	# 他人状态：居中（284x348）
+	if peer_state_board != null:
+		peer_state_board.position = Vector2((vw - 284) / 2, (vh - 348) / 2)
+		peer_state_board.set_abs(int(peer_state_board.position.x), int(peer_state_board.position.y))
+
+	# 旧引用同步（背包位置按原版：x = W/2 - 179, y = H/2 - 134）
 	if inventory_board != null:
 		inventory_board.position = Vector2(vw / 2 - 179, vh / 2 - 134)
 
-	# MiniMapBoard：右上角
+	# 小地图（完整版）：普通模式贴右上，扩展模式居中
+	if mini_map2 != null:
+		var p := mini_map2.place(vw, vh, 0, 0)
+		mini_map2.position = p
+
+	# 旧小地图引用（hide 掉旧的）
 	if mini_map_board != null:
-		mini_map_board.position = Vector2(vw - 158, 8)
+		mini_map_board.show = false
 
 	# 消息栈：左下，快捷栏上方
 	if msg_stack_board != null:
-		msg_stack_board.position = Vector2(8, vh - cbh - 48 - 138)
+		var cbh2: int = ctrl_board.bar_height() if ctrl_board != null else 44
+		msg_stack_board.position = Vector2(8, vh - cbh2 - 48 - 138)
 
-	# C5 面板统一居中（原版 guimanager.cpp 的面板大多居中）
+	# C5 面板统一居中
 	for b in [skill_board, team_board, guild_board, config_board,
 			shop_board, auction_board, stall_board, secured_board]:
 		if b != null:
 			b.position = Vector2((vw - b.size_w()) / 2, (vh - b.size_h()) / 2)
 
-	# NPC 对话：屏幕中下部（原版居中，这里避开快捷栏）
+	# C7 面板统一居中（按各自实际尺寸）
+	var centered := [purchase_board, direct_trade, stall_board2, auction2,
+		friend_chat, quest_board, horse_board, input_board]
+	for b in centered:
+		if b != null:
+			b.position = Vector2((vw - b.size_w()) / 2, (vh - b.size_h()) / 2)
+
+	# NPC 对话：屏幕中下部
 	if npc_chat != null:
-		npc_chat.position = Vector2((vw - npc_chat.size_w()) / 2, vh - cbh - 48 - 260)
+		var cbh3: int = ctrl_board.bar_height() if ctrl_board != null else 44
+		npc_chat.position = Vector2((vw - npc_chat.size_w()) / 2, vh - cbh3 - 48 - 260)
 
 
 # ==================== 构建 ====================
@@ -170,6 +228,7 @@ func _build_ui() -> void:
 	_build_mini_map()
 	_build_npc_chat()
 	_build_c5_boards()
+	_build_c7_boards()
 
 	# 立即布局一次，避免首帧 _draw 早于 _process 导致位置为 0
 	_layout()
@@ -179,33 +238,107 @@ func _draw_root_empty(_w, _roi) -> void:
 	pass
 
 
-## 底部功能栏（对应 gui/controlboard）
-## 原版按钮：背包/技能/行会/队伍/好友/设置/小地图/拍卖/摆摊...
+## 底部控制栏（C7 完整版，对应 gui/controlboard 的 2500 行）
+## 旧版是个简化按钮条；现在换成逐行翻译的 UiControlBoard，
+## 含日志窗口 + 命令行 + HP/MP/等级/负重条 + 右段 9 钮 + 标题条。
+## 旧接口（control_bar / _draw_control_bar / Btn_背包 等）保留为兼容层。
 func _build_control_bar() -> void:
-	var bar := WidgetRef.new()
-	bar.widget_name = "ControlBar"
-	bar.w = func(_s): return vw
-	bar.h = 44
-	bar.on_draw = _draw_control_bar
-	control_bar = bar
-	control_board.add_widget(bar, 0, 0)
+	ctrl_board = CtrlBoardRef.new("ControlBoard")
+	ctrl_board.set_canvas(_canvas)
+	ctrl_board.on_action = _on_ctrl_action
+	ctrl_board.on_command = _on_ctrl_command
+	ctrl_board.on_mode_change = func(_m): _layout()
+	control_board.add_widget(ctrl_board, 0, 0)
 
-	var labels := ["背包", "技能", "行会", "队伍", "好友", "设置", "地图", "拍卖", "摊位", "帮助"]
-	var bx := 6
-	for i in range(labels.size()):
-		var b := ButtonRef.new("Btn_" + labels[i], 52, 36)
-		b.tex_provider = Callable()
-		b.on_draw = _make_button_draw(labels[i])
-		b.on_click = _make_button_click(i, labels[i])
-		bar.add_widget(b, bx + i * 56, 4)
+	# 兼容层：旧代码里有 control_bar 引用与 Btn_xxx 按钮查找，
+	# 用一个透明控件占位，避免空引用崩溃
+	control_bar = WidgetRef.new()
+	control_bar.widget_name = "ControlBar"
+	control_bar.w = func(_s): return vw
+	control_bar.h = 0
+	control_bar.on_draw = func(_w, _roi): pass
+	control_board.add_widget(control_bar, 0, 0)
 
-	# 快捷栏（对应 quickaccessboard）：6 格
-	quick_board = WidgetRef.new()
-	quick_board.widget_name = "QuickAccess"
-	quick_board.w = 6 * 40 + 4
-	quick_board.h = 40
-	quick_board.on_draw = _draw_quick_bar
-	control_board.add_widget(quick_board, 0, 0)
+	# 快捷栏（完整版 6 格腰带）
+	quick_access = QuickAccessRef.new("QuickAccessBoard")
+	quick_access.set_canvas(_canvas)
+	quick_access.on_slot_click = func(slot):
+		_push_sys_msg("使用快捷栏第 %d 格" % (slot + 1))
+	quick_access.on_close = func(_w): pass
+	control_board.add_widget(quick_access, 0, 0)
+	quick_board = quick_access   # 旧引用
+
+
+## 控制栏按钮动作分发（对应 cbright.cpp 各 onTrigger）
+func _on_ctrl_action(act: String) -> void:
+	match act:
+		"inventory":
+			_toggle(inventory_board, true)
+		"herostate":
+			if my_state_board != null:
+				my_state_board.show = not my_state_board.show
+		"skill":
+			_toggle(skill_board, true)
+		"guild":
+			_toggle(guild_board, true)
+		"team":
+			_toggle(team_board, true)
+		"quest":
+			if quest_board != null:
+				quest_board.show = not quest_board.show
+		"horse":
+			if horse_board != null:
+				horse_board.show = not horse_board.show
+		"config":
+			_toggle(config_board, true)
+		"friendchat":
+			if friend_chat != null:
+				friend_chat.show = not friend_chat.show
+		"auction":
+			if auction2 != null:
+				auction2.show = not auction2.show
+		"stall":
+			if stall_board2 != null:
+				stall_board2.show = not stall_board2.show
+		"minimap":
+			if mini_map2 != null:
+				mini_map2.show = not mini_map2.show
+				_layout()
+		"quickaccess":
+			if quick_access != null:
+				quick_access.show = not quick_access.show
+		"request_exit":
+			if input_board != null:
+				input_board.wait_choice("退出游戏", ["退出游戏", "离线挂机", "取消"])
+				input_board.on_choice = func(idx):
+					match idx:
+						0: _push_sys_msg("退出游戏")
+						1: _push_sys_msg("离线挂机")
+		"request_logout":
+			if input_board != null:
+				input_board.wait_choice("返回人物界面吗？", ["确定", "取消"])
+		"magickey":
+			_push_sys_msg("切换魔法快捷键显示")
+		_:
+			_push_sys_msg("控制栏动作：" + act)
+
+
+## 控制栏命令提交（controlboard.cpp:onInputDone 的分发规则）
+func _on_ctrl_command(text: String) -> void:
+	var kind: String = CtrlBoardRef.command_kind(text)
+	match kind:
+		"guild":
+			_push_sys_msg("[行会] " + text.substr(2))
+		"broadcast":
+			_push_sys_msg("[广播] " + text.substr(1))
+		"user":
+			_push_sys_msg("[命令] " + text.substr(1))
+		"lua":
+			_push_sys_msg("[lua] " + text.substr(1))
+		_:
+			_push_sys_msg(text)
+			if ctrl_board != null:
+				ctrl_board.add_log(text, CtrlBoardRef.CBLOG_DEF)
 
 
 func _make_button_draw(text: String) -> Callable:
@@ -395,6 +528,81 @@ func _build_npc_chat() -> void:
 	npc_chat.on_npc_event = func(_w, evt_path): _push_sys_msg("NPC 事件: " + evt_path)
 	npc_chat.on_close = func(_w): _push_sys_msg("关闭对话")
 	control_board.add_widget(npc_chat, 0, 0)
+
+
+## C7 面板集合（对应 guimanager.hpp 的完整面板成员表）
+## 逐个 set_canvas，因为绘制器在 CanvasLayer 里、面板本身只是控件
+func _build_c7_boards() -> void:
+	# 自身人物状态（myherostateboard，328x466）
+	my_state_board = HeroStateRef.new("MyHeroStateBoard", true)
+	my_state_board.set_canvas(_canvas)
+	my_state_board.on_close = func(_w): pass
+	control_board.add_widget(my_state_board, 0, 0)
+	hero_state_board = my_state_board   # 旧引用
+
+	# 他人人物状态（herostateboard，284x348）
+	peer_state_board = HeroStateRef.new("HeroStateBoard", false)
+	peer_state_board.set_canvas(_canvas)
+	peer_state_board.on_trade = func(_w): _push_sys_msg("发起交易申请")
+	peer_state_board.on_add_friend = func(_w): _push_sys_msg("加为好友")
+	control_board.add_widget(peer_state_board, 0, 0)
+
+	# NPC 商店（purchaseboard，290x224 起）
+	purchase_board = PurchaseRef.new("PurchaseBoard")
+	purchase_board.set_canvas(_canvas)
+	purchase_board.on_close = func(_w): pass
+	purchase_board.on_buy = func(iid, _seq, price):
+		_push_sys_msg("购买 %s，价格 %d" % [ItemRecordRef.name(iid), price])
+	control_board.add_widget(purchase_board, 0, 0)
+
+	# 直接交易（directtradeboard，494x330）
+	direct_trade = DirectTradeRef.new("DirectTradeBoard")
+	direct_trade.set_canvas(_canvas)
+	direct_trade.on_close = func(_w): pass
+	control_board.add_widget(direct_trade, 0, 0)
+
+	# 摆摊（stallboard，282x390）
+	stall_board2 = StallBoardRef.new("StallBoardFull")
+	stall_board2.set_canvas(_canvas)
+	stall_board2.on_buy = func(idx, price):
+		_push_sys_msg("购买摊位物品 #%d，单价 %d" % [idx, price])
+	control_board.add_widget(stall_board2, 0, 0)
+
+	# 拍卖行（auctionboard，720x440）
+	auction2 = AuctionRef.new("AuctionBoardFull")
+	auction2.set_canvas(_canvas)
+	auction2.on_close = func(_w): pass
+	control_board.add_widget(auction2, 0, 0)
+
+	# 好友聊天（friendchatboard，400x400 起，可缩放）
+	friend_chat = FriendChatRef.new("FriendChatBoard")
+	friend_chat.set_canvas(_canvas)
+	friend_chat.on_send = func(t): _push_sys_msg("[好友] " + t)
+	control_board.add_widget(friend_chat, 0, 0)
+
+	# 任务（queststateboard，363x446）
+	quest_board = QuestBoardRef.new("QuestStateBoard")
+	quest_board.set_canvas(_canvas)
+	control_board.add_widget(quest_board, 0, 0)
+
+	# 马匹（horseboard，257x322）
+	horse_board = HorseBoardRef.new("HorseBoard")
+	horse_board.set_canvas(_canvas)
+	control_board.add_widget(horse_board, 0, 0)
+
+	# 小地图完整版（minimapboard，200x200）
+	mini_map2 = MiniMapBoardRef.new("MiniMapBoardFull")
+	mini_map2.set_canvas(_canvas)
+	control_board.add_widget(mini_map2, 0, 0)
+
+	# 输入串 / 确认框（inputstringboard，358x268）
+	input_board = InputStringRef.new("InputStringBoard")
+	input_board.set_canvas(_canvas)
+	control_board.add_widget(input_board, 0, 0)
+
+	# 右键菜单（运行时创建，先建空实例）
+	menu = MenuBoardRef.new()
+	menu.set_canvas(_canvas)
 
 
 ## C5 面板集合（对应 guimanager.hpp 的 21 个面板成员）

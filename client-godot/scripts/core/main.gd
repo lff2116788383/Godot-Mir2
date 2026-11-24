@@ -222,6 +222,12 @@ func _maybe_run_test() -> void:
 		add_child(t0)
 		await t0.run(self)
 		return
+	if name == "c7c8":
+		var t7: Node = load("res://tools/c7_c8_scene.gd").new()
+		add_child(t7)
+		await t7.run(self)
+		get_tree().quit(0)
+		return
 	if name == "c5c6":
 		var t5: Node = load("res://tools/c5_c6_scene.gd").new()
 		add_child(t5)

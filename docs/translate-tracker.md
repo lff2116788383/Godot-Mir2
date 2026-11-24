@@ -95,7 +95,28 @@
 | `client/src/clientmonster.cpp`<br>`client/src/clientstandmonster.hpp` | `scripts/actor/client_monster.gd` | ✅ | 默认帧表 + gfxID 合成 + standMode |
 | `common/src/*.inc`（5 个） | `data/*.json` | ✅ | 1258 物品/364 怪物/603 地图/116 魔法/21 Buff |
 
-## 测试覆盖（143 项全过）
+| `client/src/gui/controlboard/*`（7 文件 2520 行） | `scripts/ui/ui_control_board.gd` | ✅ | 三段布局 178+中段+166、日志窗 344x84、命令行 344x15、头像 82x97、九宫格 9 钮 |
+| `client/src/gui/myherostateboard/*` | `scripts/ui/ui_hero_state_board.gd` | ✅ | 328x466，11 装备格，衣服/头盔/武器相对锚点 |
+| `client/src/gui/herostateboard/*` | `scripts/ui/ui_hero_state_board.gd` | ✅ | 284x348，格子 43x43，交易/加好友按钮 |
+| `client/src/gui/quickaccessboard/*` | `scripts/ui/ui_quick_access_board.gd` | ✅ | 280x48，6 格 (17+42i, 6, 36x36) |
+| `client/src/gui/overheadboard/*`（502 行） | `scripts/ui/ui_over_head.gd` | ✅ | 血条宽=图标数*10+2、显数字/满血隐藏规则 |
+| `client/src/gui/underbodyboard/*` | `scripts/ui/ui_under_body.gd` | ✅ | 名字/行会[头衔]/配偶/称号，空行跳过 |
+| `client/src/gui/stallbar/*` | `scripts/ui/ui_stall_bar.gd` | ✅ | max(name.w,60)+10 |
+| `client/src/gui/purchaseboard/*`（901 行） | `scripts/ui/ui_purchase_board.gd` | ✅ | 格 38x38、行距 42、Ext1/Ext2 展开 |
+| `client/src/gui/directtradeboard/*`（1174 行） | `scripts/ui/ui_direct_trade_board.gd` | ✅ | 494x330，5 态机、金钱解析/千分位 |
+| `client/src/gui/stallboard/*`（1007 行） | `scripts/ui/ui_stall_board.gd` | ✅ | 282x390，三模式、按钮显隐三规则 |
+| `client/src/gui/auctionboard/*`（2609 行） | `scripts/ui/ui_auction_board.gd` | ✅ | 720x440，13 行、列宽 108/140/70/142 |
+| `client/src/gui/friendchatboard/*`（4584 行） | `scripts/ui/ui_friend_chat_board.gd` | ✅ | 5 页、九宫格拉伸、气泡 35x39 |
+| `client/src/queststateboard.cpp` | `scripts/ui/ui_quest_board.gd` | ✅ | 363x446，描述区 (40,100) 270 宽，折叠 |
+| `client/src/horseboard.cpp` | `scripts/ui/ui_horse_board.gd` | ✅ | 257x322，四钮 y=231 |
+| `client/src/minimapboard.cpp`（608 行） | `scripts/ui/ui_mini_map_board.gd` | ✅ | 200x200/扩展 80%x50%，缩放拖动 |
+| `client/src/inputstringboard.cpp`（333 行） | `scripts/ui/ui_input_string_board.gd` | ✅ | 358x268，输入/选择/确认三模式 |
+| `client/src/menuboard.cpp`+`menuitem`+`pullmenu` | `scripts/ui/ui_menu_board.gd` | ✅ | 菜单项/分隔/勾选/箭头三帧 |
+| `client/src/soundeffectdb.*`+`bgmusicdb.*` | `scripts/audio/audio_manager.gd` | ✅ | 848 音效 + 25 BGM，4 段 ID 规则 |
+| `client/src/sdldevice.cpp:1533-1710` | `scripts/audio/audio_manager.gd` | ✅ | BGM 单轨 + SFX 128 轨、3D 定位 |
+| `client/src/progusedb.*` | `scripts/data/proguse_tex.gd` | ✅ | UI 图库 1509 张（此前误判为缺素材） |
+
+## 测试覆盖（665 项全过）
 
 | 测试 | 项数 | 覆盖 |
 |---|---|---|
@@ -113,7 +134,7 @@
 | `test_c3_c4.gd` | 42 | XML 解析、排版换行、NPC 面板、飘字、物品图标 |
 | `c3_c4_scene.gd` | 13 | NPC 对话弹出、背包注入、飘字推进速率、死亡淡出（场景内） |
 | `test_c5_c6.gd` | 45 | 技能 63 图标、队伍 5 页、列表分页、行会、设置、行为表 |
-| `c5_c6_scene.gd` | 10 | 8 面板装配、按钮开关面板、行为描述加载（场景内） |
+| `c5_c6_scene.gd` | 9 | 8 面板装配、控制栏动作开关面板、行为描述加载（场景内） |
 
 ## 已完成但需回归的
 
@@ -122,3 +143,17 @@
 | 地图渲染 | ✅ | 瓦片层，800x800 解析 180ms，有效率 100% |
 | 主角逐格移动 | ⚠️ | 寻路已对，移动推进有卡格 bug 待修（B10 统一处理） |
 | 纹理缓存 | ✅ | LRU，命中率 94.9% |
+| `test_c7_c8.gd` | 235 | 17 个新面板几何、状态机、音效 ID 合成、3D 定位、素材可达 |
+| `c7_c8_scene.gd` | 40 | 13 面板装配、控制栏贴底布局、音频 Autoload、UI 贴图实载（场景内） |
+
+## C7+C8 关键结论
+
+| 项 | 结论 |
+|---|---|
+| **UI 图库** | `texture/proguse/` 就是 UI 图库，1509 张 PNG，文件名 = 8 位 hex texID。**此前「素材缺 UI 图库」的判断是错的**，面板可像素级还原 |
+| **尺寸自证** | 0x12=800x133、0x13=456x131、0x22=127x41 与 controlboard.hpp 注释完全吻合 |
+| **头像 id** | `0x02000000 + jobGfxIndex*2 + (gender?0:1)`，实测 02000000..02000005 共 6 张 84x94（3 职业 × 2 性别） |
+| **怪物音效** | 表里无 seff 覆盖配置，全部走默认 `0x02000000 + lookID*16 + offset`；seff 段 647 个文件 |
+| **魔法音效** | `0x04000000 + seffBase*16 + stageIndex`，seffBase 已从 .inc 回填 53 条 |
+| **3D 定位** | distance 用**欧氏距离**（不是切比雪夫），angle = 90 - 180*atan2(-dGY,dGX)/π |
+| **headless 音频** | 无音频驱动时建 128 个 AudioStreamPlayer 会让 Godot 静默退出（无任何输出），必须显式跳过 |

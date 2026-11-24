@@ -23,6 +23,7 @@ const CreatureMovableRef := preload("res://scripts/action/creature_movable.gd")
 const MonsterRecordRef := preload("res://scripts/item/monster_record.gd")
 const UidRef := preload("res://scripts/core/uid.gd")
 const BehaviorsRef := preload("res://scripts/actor/monster_behaviors.gd")
+const AudioManagerRef := preload("res://scripts/audio/audio_manager.gd")
 
 ## 格尺寸
 const GRID_X := 48
@@ -311,12 +312,55 @@ func _advance_animation(dt: float) -> void:
 			# advanceMotionFrame：纯 frame++
 			curr_motion.frame += 1
 			_refresh_texture()
+			_play_frame_sound()
 		else:
 			# 末帧：allowSwitchMotion=true 时切动作
 			_move_next_motion()
 			# 若切到了新的 idle，帧已归 0，继续循环下一轮
 			if curr_motion == null:
 				break
+
+
+## 【C8】怪物逐帧音效（clientmonster.cpp:100-177）
+##
+## 原版在 update 里的触发条件：
+##   MOTION_MON_SPAWN  frame==0 -> getSeffID(MONSEFF_SPAWN)
+##   MOTION_MON_STAND  不发声（注释：shall only play when show up）
+##   MOTION_MON_ATTACK0/1  frame==0 -> getSeffID(MONSEFF_ATTACK)
+##   MOTION_MON_HITTED frame==0 -> getSeffID(MONSEFF_HITTED)
+##                                + 按攻击者类型追加武器声
+##   MOTION_MON_DIE    frame==0 -> getSeffID(MONSEFF_DIE)
+##
+## 音效 id = 0x02000000 + lookID * 16 + offset（怪物表里没有 seff 覆盖配置，
+## 848 个音效文件里 0x02 段有 647 个，正好覆盖 40 个 lookID × 16）
+func _play_frame_sound() -> void:
+	var audio = get_node_or_null("/root/Audio")
+	if audio == null or curr_motion == null or logic == null:
+		return
+	var mt: int = curr_motion.type
+	var fr: int = curr_motion.frame
+	if fr != 0:
+		return
+
+	var look := int(logic.look_id()) if logic.has_method("look_id") else 0
+	var gx: int = curr_motion.x
+	var gy: int = curr_motion.y
+
+	if mt == MotionTypeRef.MOTION_MON_SPAWN:
+		audio.play_seff_at(AudioManagerRef.mon_seff(look, AudioManagerRef.MONSEFF_SPAWN), gx, gy)
+	elif mt == MotionTypeRef.MOTION_MON_ATTACK0 or mt == MotionTypeRef.MOTION_MON_ATTACK1:
+		audio.play_seff_at(AudioManagerRef.mon_seff(look, AudioManagerRef.MONSEFF_ATTACK), gx, gy)
+	elif mt == MotionTypeRef.MOTION_MON_HITTED:
+		audio.play_seff_at(AudioManagerRef.mon_seff(look, AudioManagerRef.MONSEFF_HITTED), gx, gy)
+		# 被玩家打时补武器声（clientmonster.cpp:133-150）
+		if hitted_from_is_player:
+			audio.play_seff_at(AudioManagerRef.MON_HITTED_BY, gx, gy)
+	elif mt == MotionTypeRef.MOTION_MON_DIE:
+		audio.play_seff_at(AudioManagerRef.mon_seff(look, AudioManagerRef.MONSEFF_DIE), gx, gy)
+
+
+## 被击来源是否是玩家（由外部在收到 ACTION_HITTED 时置位）
+var hitted_from_is_player := false
 
 
 ## creaturemovable.cpp:191 moveNextMotion

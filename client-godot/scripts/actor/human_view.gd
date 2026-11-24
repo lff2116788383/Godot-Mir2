@@ -18,6 +18,7 @@ const ActionTypeRef := preload("res://scripts/action/action_type.gd")
 const PathFinderRef := preload("res://scripts/action/path_finder.gd")
 const CreatureMovableRef := preload("res://scripts/action/creature_movable.gd")
 const SysConstRef := preload("res://scripts/core/sys_const.gd")
+const AudioManagerRef := preload("res://scripts/audio/audio_manager.gd")
 
 const GRID_X := 48
 const GRID_Y := 32
@@ -257,10 +258,65 @@ func _physics_process(dt: float) -> void:
 		if curr_motion.frame + 1 < n:
 			curr_motion.frame += 1
 			human.refresh_textures()
+			_play_frame_sound()
 		else:
 			_move_next_motion()
 			if curr_motion == null:
 				break
+
+
+## 【C8】逐帧音效（hero.cpp:240-338 的 CallOnExitHelper 语义）
+##
+## 原版在一个动作的「序号帧变化」时触发音效，判定顺序：
+##   1. 脚步：MOTION_WALK/RUN/ONHORSEWALK/ONHORSERUN，frame==1 放 base、frame==4 放 base+1
+##   2. 挥击：七种 SWING 动作，frame==0 按武器 category 选音
+##   3. 受击：MOTION_HITTED，人声 + 武器/身体/护甲声
+##
+## Godot 差异：原版用 seqFrameID 判重，这里在「帧号真的推进了」之后调用，
+## 等价于同一个序号帧只触发一次。
+func _play_frame_sound() -> void:
+	var audio = _audio()
+	if audio == null or curr_motion == null:
+		return
+	var mt: int = curr_motion.type
+	var fr: int = curr_motion.frame
+	var gx: int = curr_motion.x
+	var gy: int = curr_motion.y
+
+	# 1. 脚步
+	var step_id: int = AudioManagerRef.step_seff(mt, fr)
+	if step_id >= 0:
+		audio.play_seff_at(step_id, gx, gy)
+		return
+
+	# 2. 挥击（frame 0）
+	if fr == 0 and mt in AudioManagerRef.SWING_MOTIONS:
+		var cat := _weapon_category()
+		audio.play_seff_at(AudioManagerRef.attack_seff(cat), gx, gy)
+		return
+
+	# 3. 受击（frame 0）
+	if fr == 0 and mt == MotionTypeRef.MOTION_HITTED:
+		# 人声（性别由外观决定，这里默认男声）
+		audio.play_seff_at(AudioManagerRef.struck_voice_seff(gender), gx, gy)
+		audio.play_seff_at(AudioManagerRef.struck_body_seff(has_dress), gx, gy)
+
+
+## 取 AudioManager（Autoload）
+func _audio():
+	var t := get_node_or_null("/root/Audio")
+	return t
+
+
+## 武器类别（用于选挥击音效）
+## 由外部（Game 或 actor_factory）注入，因为没有完整背包时不查表
+var weapon_category := ""
+var gender := 0
+var has_dress := false
+
+
+func _weapon_category() -> String:
+	return weapon_category
 
 
 ## creaturemovable.cpp:191
