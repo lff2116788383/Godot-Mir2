@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"path/filepath"
 
 	"github.com/lff2116788383/godot-mir2/server-go/internal/actor"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/config"
@@ -96,7 +97,26 @@ func main() {
 		Worlds:    worlds,
 		Broadcast: broadcaster,
 	}
-	if err := game.RegisterAllRoutes(dispatcher, loginHandler, actionHandler); err != nil {
+
+	// 物品表（穿戴校验/药剂效果/技能书都依赖它）
+	itemsPath := filepath.Join("content", "items.json")
+	itemDB, err := game.LoadItemDB(itemsPath)
+	if err != nil {
+		slog.Error("load item db", "path", itemsPath, "error", err)
+		os.Exit(1)
+	}
+	slog.Info("item db loaded", "count", itemDB.Count())
+
+	inventoryHandler := &game.InventoryHandler{
+		Players:   players,
+		Items:     itemDB,
+		Worlds:    worlds,
+		Broadcast: broadcaster,
+		ItemRepo:  storage.NewItemRepository(store),
+		Sessions:  loginHandler.Sessions,
+	}
+
+	if err := game.RegisterAllRoutes(dispatcher, loginHandler, actionHandler, inventoryHandler); err != nil {
 		slog.Error("register routes", "error", err)
 		os.Exit(1)
 	}
@@ -112,7 +132,8 @@ func main() {
 		"game_listen", cfg.GameListenAddr,
 		"database", cfg.DatabasePath,
 		"assets", assetsRoot,
-		"routes", "ping,login,querychar,online,account,password,createchar,deletechar,action",
+		"routes", "ping,login,querychar,online,account,password,createchar,deletechar,"+
+			"action,equipwear,grabwear,equipbelt,grabelt,dropitem,consumeitem",
 	)
 	if err := server.ListenAndServe(ctx); err != nil && ctx.Err() == nil {
 		slog.Error("legacy TCP server stopped", "error", err)

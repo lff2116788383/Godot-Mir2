@@ -84,8 +84,19 @@ func startE2EServer(t *testing.T) *e2eServer {
 		Players: players, Sessions: loginHandler.Sessions, Worlds: worlds, Broadcast: cast,
 	}
 
+	// 物品表：e2e 也要真实加载，否则背包装备路由没有数据
+	itemDB, err := LoadItemDB("../../content/items.json")
+	if err != nil {
+		cancel()
+		t.Fatalf("load item db: %v", err)
+	}
+	inventory := &InventoryHandler{
+		Players: players, Items: itemDB, Worlds: worlds, Broadcast: cast,
+		ItemRepo: storage.NewItemRepository(store), Sessions: loginHandler.Sessions,
+	}
+
 	dispatcher := transport.NewDispatcher()
-	if err := RegisterAllRoutes(dispatcher, loginHandler, actions); err != nil {
+	if err := RegisterAllRoutes(dispatcher, loginHandler, actions, inventory); err != nil {
 		cancel()
 		t.Fatalf("register routes: %v", err)
 	}
@@ -363,4 +374,63 @@ func mustPlayerUID(t *testing.T, store *storage.Store, account string) uint64 {
 		t.Fatalf("get char %s: %v", account, err)
 	}
 	return common.GetPlayerUID(ch.DBID)
+}
+
+// TestE2EEquipWearOverNetwork 验证穿装备走真实网络往返。
+//
+// 这是最后一个关键验证：单元测试都在进程内直接调 handler，
+// 只有走真实 TCP + 真实 cerealf 编解码才能确认
+// 「定长错误消息」与「变长成功消息」两种编码都选对了。
+func TestE2EEquipWearOverNetwork(t *testing.T) {
+	srv := startE2EServer(t)
+
+	c := dialE2E(t, srv.addr)
+	defer c.close()
+
+	// 登录 + 进图
+	var login protocol.CMLogin
+	_ = login.ID.Assign([]byte("alice"))
+	_ = login.Password.Assign([]byte("pwd123"))
+	payload, err := protocol.AppendWirePayload(nil, login)
+	if err != nil {
+		t.Fatalf("encode login: %v", err)
+	}
+	c.send(t, protocol.CM_LOGIN, payload)
+	c.recvUntil(t, protocol.SM_LOGINOK, 3*time.Second)
+	c.send(t, protocol.CM_QUERYCHAR, nil)
+	c.recvUntil(t, protocol.SM_QUERYCHAROK, 3*time.Second)
+	c.send(t, protocol.CM_ONLINE, nil)
+	online := c.recvUntil(t, protocol.SM_ONLINEOK, 3*time.Second)
+	var ok protocol.SMOnlineOK
+	if _, err := protocol.ReadWirePayload(&ok, online.Payload); err != nil {
+		t.Fatalf("decode onlineok: %v", err)
+	}
+
+	// 让服务端给这个角色发一件武器（通过 GM 式的内存注入不合适，
+	// 这里改为直接请求穿一件背包里没有的物品，验证错误码路径能走通）
+	var req protocol.CMRequestEquipWear
+	req.ItemID = 100
+	req.SeqID = 1
+	req.WLType = uint16(WLGWeapon)
+	body, err := protocol.AppendWirePayload(nil, req)
+	if err != nil {
+		t.Fatalf("encode equip request: %v", err)
+	}
+	c.send(t, protocol.CM_REQUESTEQUIPWEAR, body)
+
+	// 背包里没有 -> 应收到 SM_EQUIPWEARERROR（定长 10 字节）
+	errPkt := c.recvUntil(t, protocol.SM_EQUIPWEARERROR, 3*time.Second)
+	var eqErr protocol.SMEquipWearError
+	if _, err := protocol.ReadWirePayload(&eqErr, errPkt.Payload); err != nil {
+		t.Fatalf("decode SMEquipWearError: %v", err)
+	}
+	if eqErr.ItemID != 100 || eqErr.SeqID != 1 {
+		t.Fatalf("error payload echoed wrong ids: %+v", eqErr)
+	}
+	// 物品不存在时应该是 BADITEM（因为 itemID 100 在表里可能不存在）
+	// 无论 BADITEM 还是 NOITEM，都说明错误链路走通了
+	if eqErr.Error != EQWErrBadItem && eqErr.Error != EQWErrNoItem && eqErr.Error != EQWErrBadWLType {
+		t.Fatalf("unexpected error code %d", eqErr.Error)
+	}
+	t.Logf("equip error round-trip ok: code=%d", eqErr.Error)
 }

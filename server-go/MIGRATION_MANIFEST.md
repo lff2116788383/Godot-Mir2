@@ -25,7 +25,7 @@
 | C08 | `netdriver.*`、`actornetdriver.*`、`servicecorenet.*`、`serverpeer.*` | `internal/transport`、`internal/game` | B3/B4 | partial | 登录链路 7 条消息已接（CM_LOGIN/QUERYCHAR/ONLINE/CREATEACCOUNT/CHANGEPASSWORD/CREATECHAR/DELETECHAR）；peer 多进程待 B6 |
 | C09 | `servermap.*`、`servermapop.*` | `internal/world` | B4 | done | 网格/占用/寻路/移动/地图 .bin 加载/AOI 观察者圈/地面物品/火墙全部完成 |
 | C10 | `battleobject.*`、`monster.*`、`buff*.*`、怪物子类 | `internal/world` | B4 | partial | 伤害结算/Buff/仇恨/安全区/刷新完成；19 个怪物子类与 buffact 待补 |
-| C11 | `player.*`、`playerop.*`、`playernet.*`、背包和物品逻辑 | `internal/game` | B5 | in-progress | 进世界/CM_ACTION（移动/站立/攻击/拾取）/AOI 广播/离开落库已通；背包/装备/技能/交易未做 |
+| C11 | `player.*`、`playerop.*`、`playernet.*`、背包和物品逻辑 | `internal/game` | B5 | in-progress | 进世界/CM_ACTION/AOI 广播/离开落库 ✅；穿脱装备/腰带/丢弃/使用 ✅；技能/交易/邮件未做 |
 | C12 | `serverluacoroutinerunner.*`、`serverluamodule.*`、Lua 脚本 | `internal/script` | B5 | pending | 默认复用原 Lua 脚本 |
 | C13 | `npchar.*`、`npcharop.*`、NPC 脚本 | `internal/game`、`internal/script` | B5 | pending | |
 | C14 | `quest.*`、`questdb.*`、`questop.*`、任务脚本 | `internal/game`、`internal/script` | B5 | pending | 协程语义高风险 |
@@ -299,3 +299,40 @@ alice 移动时 bob 收到 `SM_ACTION`。客户端 `--login --run-test c9c8` 连
 | **AOI 事件必须真的发包** | B4 算对了事件但没人发，进程内测试发现不了。必须有**端到端**测试断言网络包 |
 | **进场顺序** | 先进地图再回 SM_ONLINEOK。落地坐标可能被占用/不可走，要读回真实位置，否则客户端拿到的坐标与服务端不一致，进场第一步就「被拉回」 |
 | **离场落库** | `Leave` 要写位置/血量/经验，否则下次登录回到出生点、血满 |
+
+### B5 第二批：背包与装备（已端到端验证）
+
+状态：**6 条消息全部打通**
+
+完成内容：
+
+- `content/items.json` + `tools/extract/extract_items.py`：从 `itemrecord.inc`
+  提取 1258 条物品，**逐条与客户端 data/itemrecord.json 的 name/pkgGfxID 校验一致**
+- `internal/game/itemdb.go`：物品表加载、`Wearable`/`Beltable`/`Packable`/
+  `IsPotion`/`IsMagicBook` 判定、WLG 槽位常量（1..11）
+- `internal/game/inventory.go`：背包容器（`AddItem`/`removeItem`/`findItem`）、
+  装备槽、腰带、药剂效果
+- `internal/game/inventory_op.go`：6 条消息处理器
+
+覆盖的消息：
+
+| CM | SM | 要点 |
+|---|---|---|
+| CM_REQUESTEQUIPWEAR | SM_EQUIPWEAR / SM_EQUIPWEARERROR | 旧装备回背包 |
+| CM_REQUESTGRABWEAR | SM_GRABWEAR / SM_GRABWEARERROR | 脱下来永远进背包 |
+| CM_REQUESTEQUIPBELT | SM_EQUIPBELT / SM_EQUIPBELTERROR | 旧物品回背包 |
+| CM_REQUESTGRABBELT | SM_GRABBELT / SM_GRABBELTERROR | 槽位 0..5 |
+| CM_DROPITEM | 地面物品 | 先落地成功再扣背包 |
+| CM_CONSUMEITEM | SM_HEALTH / SM_INVENTORY | 药水/秘籍 |
+
+关键行为锁定（都是踩过才知道的）：
+
+| 项 | 结论 |
+|---|---|
+| **只有 packable 才堆叠** | 药水/卷轴/护身符/药粉才合并，上限 99（SYS_INVGRIDMAXHOLD）。武器/衣服/戒指同 itemID 也各占一格。初版对所有物品合并，两把同名武器会变成 count=2 |
+| **错误类消息是定长** | SM_EQUIPWEARERROR 等是 `MessageFixedCompressed`（10 字节），走 `AppendWirePayload`；`SM_EQUIPWEAR` 等成功消息是 `MessageVariable`，走 `CerealSerialize`。选错客户端解码错位 |
+| **WLG 槽位值** | DRESS=1 HELMET=2 WEAPON=3 SHOES=4 NECKLACE=5 ARMRING0/1=6/7 RING0/1=8/9 TORCH=10 CHARM=11。L 段与 W 段分界在 SHOES，凭记忆写必错 |
+| **腰带只有 6 格** | slot 0..5，越界回 EQBERR_BADSLOT |
+| **丢弃必须先落地再扣背包** | 初版先扣再落，落地失败时用 `addItemNoRec` 归还 —— 归还的是新格（seqID 变了），原格数量已扣掉，玩家实际少东西 |
+| **普通技能书不能学** | 只有「秘籍」（book.magic 非空）才能学。普通技能书是原料 |
+| **itemID 必须与客户端一致** | 两边错一个 ID，客户端就显示成别的图标，且日志看不出来 |

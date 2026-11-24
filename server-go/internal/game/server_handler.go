@@ -63,10 +63,14 @@ func RegisterBootstrapRoutes(dispatcher *transport.Dispatcher, handler *Handler)
 	return RegisterLoginRoutes(dispatcher, handler)
 }
 
-// RegisterAllRoutes 注册登录 + 动作（B5 完整装配）。
-func RegisterAllRoutes(dispatcher *transport.Dispatcher, handler *Handler, actions *ActionHandler) error {
+// RegisterAllRoutes 注册登录 + 动作 + 背包装备（B5 完整装配）。
+func RegisterAllRoutes(dispatcher *transport.Dispatcher, handler *Handler,
+	actions *ActionHandler, inventory *InventoryHandler) error {
 	if err := RegisterBootstrapRoutes(dispatcher, handler); err != nil {
 		return err
 	}
-	return RegisterActionRoutes(dispatcher, actions)
+	if err := RegisterActionRoutes(dispatcher, actions); err != nil {
+		return err
+	}
+	return RegisterInventoryRoutes(dispatcher, inventory)
 }

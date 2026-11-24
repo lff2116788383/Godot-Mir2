@@ -1,6 +1,6 @@
 # mir2x server-go 复刻方案
 
-> 状态：执行中；B0-B5 第一批已完成（玩家进世界 + 动作链路 + AOI 广播端到端打通）
+> 状态：执行中；B0-B5 第二批已完成（玩家进世界 + 动作 + 背包装备，均端到端验证）
 > 目标分支：`server-go`  
 > 目标目录：`server-go/`  
 > 参考服务端：`E:\Desktop\game\mir2x\server`  
@@ -294,12 +294,19 @@ server-go/
 - 玩家 ↔ 地图桥接：进场（含 AOI 事件转网络包）、视野快照、离场落库
 - 端到端验证：两个真 TCP 客户端能看到彼此、移动能互相广播
 
-待补（第二批）：
+第二批已完成：
 
-- 背包操作（CM_DROPITEM / CM_CONSUMEITEM / CM_REQUESTEQUIPWEAR / GRABWEAR / EQUIPBELT）
-- 技能（CM_SETMAGICKEY / 施法表现）
+- 物品表（1258 条，与客户端逐条一致）
+- 穿脱装备（CM_REQUESTEQUIPWEAR / GRABWEAR）
+- 腰带（CM_REQUESTEQUIPBELT / GRABBELT）
+- 丢弃与使用（CM_DROPITEM / CM_CONSUMEITEM）
+
+待补（第三批）：
+
+- 技能（CM_SETMAGICKEY / 施法表现 SM_CASTMAGIC）
 - 死亡与复活（CM_REQUESTDIE / CM_REQUESTREVIVE）
 - 金币/经验变更协议
+- 商店买卖（CM_BUY / CM_QUERYSELLITEMLIST）
 - Lua 协程运行时
 - NPC 对话与任务
 

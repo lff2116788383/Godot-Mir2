@@ -38,6 +38,68 @@ func RegisterActionRoutes(dispatcher *transport.Dispatcher, handler *ActionHandl
 	})
 }
 
+// RegisterInventoryRoutes 注册背包/装备消息。
+//
+// 6 条：穿装备、脱装备、装腰带、取腰带、丢弃、使用。
+func RegisterInventoryRoutes(dispatcher *transport.Dispatcher, handler *InventoryHandler) error {
+	if handler == nil {
+		return nil
+	}
+	routes := []struct {
+		id      protocol.CMType
+		handler transport.HandlerFunc
+	}{
+		{protocol.CM_REQUESTEQUIPWEAR, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRequestEquipWear
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return handler.RequestEquipWear(ctx, s.ID(), req)
+		}},
+		{protocol.CM_REQUESTGRABWEAR, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRequestGrabWear
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return handler.RequestGrabWear(ctx, s.ID(), req)
+		}},
+		{protocol.CM_REQUESTEQUIPBELT, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRequestEquipBelt
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return handler.RequestEquipBelt(ctx, s.ID(), req)
+		}},
+		{protocol.CM_REQUESTGRABBELT, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRequestGrabBelt
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return handler.RequestGrabBelt(ctx, s.ID(), req)
+		}},
+		{protocol.CM_DROPITEM, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMDropItem
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return handler.DropItem(ctx, s.ID(), req)
+		}},
+		{protocol.CM_CONSUMEITEM, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMConsumeItem
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return handler.ConsumeItem(ctx, s.ID(), req)
+		}},
+	}
+	for _, route := range routes {
+		if err := dispatcher.Register(route.id, route.handler); err != nil {
+			return fmt.Errorf("register %v: %w", route.id, err)
+		}
+	}
+	return nil
+}
+
 // RegisterLoginRoutes 把所有登录链路消息注册到 dispatcher。
 //
 // 未注册的消息会被 dispatcher 静默忽略（当前 B4 阶段的行为），
