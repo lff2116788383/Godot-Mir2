@@ -10,7 +10,7 @@
 | B1 | 协议 + 方向 + 动作节点 + UID + 结构 | L0 | ✅ | ~15 | ~2400 |
 | B2 | 数据表（5 个 .inc → JSON） | L0 | ✅ | 5 + 生成器 | 690KB |
 | B3 | 动作状态机（hero 动作部分） | L0 | ✅ | ~4 | ~2000 |
-| B4 | 魔法系统 | L0 | ⬜ | ~8 | ~1400 |
+| B4 | 魔法系统 | L0 | ✅ | ~8 | ~1400 |
 | B5 | 物品逻辑 | L0 | ⬜ | ~5 | ~1200 |
 | B6 | 40 个怪物特有逻辑 | L0 | ⬜ | 40 | ~3000 |
 | B7 | 28 个界面面板逻辑 | L4 | ⬜ | 28 | ~9000 |
@@ -36,7 +36,12 @@
 | `client/src/motionnode.hpp` | `scripts/action/motion_node.gd` | ✅ | 帧数表 + 帧推进 + 触发器 |
 | `client/src/creaturemovable.cpp` | `scripts/action/creature_movable.gd` | ✅ | 移动队列 + LDistance2 |
 | `client/src/hero.cpp:509-760` | `scripts/action/hero_action_parser.gd` | ✅ | parseAction 骨架（魔法特效留 B4） |
-| `common/src/statetrigger.hpp` | `scripts/action/state_trigger.gd` | ⬜ | 状态触发（随 B4） |
+| `common/src/statetrigger.hpp` | `scripts/action/state_trigger.gd` | ⬜ | 已被 MotionNode.add_trigger 覆盖同语义 |
+| `client/src/basemagic.hpp`<br>`client/src/basemagic.cpp` | `scripts/magic/base_magic.gd` | ✅ | 基类 + update/done 语义 |
+| `client/src/followuidmagic.*` | `scripts/magic/follow_uid_magic.gd` | ✅ | 追踪型 + 旋转对齐 + 命中判定 |
+| `client/src/fixedlocmagic.hpp` | `scripts/magic/fixed_loc_magic.gd` | ✅ | 固定型 + 火焰灰烬/火墙 |
+| `client/src/attachmagic.hpp` | `scripts/magic/attach_magic.gd` | ✅ | 附着型 + 雷电/法环/治疗 |
+| `client/src/magicdb.*` | `scripts/magic/magic_db.gd` | ✅ | 26位文件名补码解析（已用真实素材验证） |
 | `common/src/*.inc`（5 个） | `data/*.json` | ✅ | 1258 物品/364 怪物/603 地图/116 魔法/21 Buff |
 
 ## 已完成但需回归的
