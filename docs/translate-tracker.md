@@ -12,7 +12,7 @@
 | B3 | 动作状态机（hero 动作部分） | L0 | ✅ | ~4 | ~2000 |
 | B4 | 魔法系统 | L0 | ✅ | ~8 | ~1400 |
 | B5 | 物品逻辑 | L0 | ✅ | ~5 | ~1200 |
-| B6 | 40 个怪物特有逻辑 | L0 | ⬜ | 40 | ~3000 |
+| B6 | 怪物帧表 + 基类逻辑 | L0 | ✅ | 40 | ~3000 |
 | B7 | 28 个界面面板逻辑 | L4 | ⬜ | 28 | ~9000 |
 | B8 | XML 排版引擎 | L0 | ⬜ | 6 | ~3450 |
 | B9 | 渲染与输入（Godot 重写） | L2/L3 | ⬜ | 按需 | ~8000 |
@@ -44,6 +44,8 @@
 | `client/src/magicdb.*` | `scripts/magic/magic_db.gd` | ✅ | 26位文件名补码解析（已用真实素材验证） |
 | `common/src/itemrecord.hpp` | `scripts/item/item_record.gd` | ✅ | 物品判定 + 穿戴校验 |
 | `client/src/itemflex.cpp`<br>`client/src/itembox.hpp`<br>`client/src/itemalign.hpp` | `scripts/item/item_layout.gd` | ✅ | 三种对齐布局 + 背包/腰带坐标 |
+| 40 个 `client*.hpp`（帧表部分） | `data/monster_frames.json`<br>`scripts/actor/monster_frames.gd` | ✅ | 12 个类自定义帧表（脚本提取） |
+| `client/src/clientmonster.cpp`<br>`client/src/clientstandmonster.hpp` | `scripts/actor/client_monster.gd` | ✅ | 默认帧表 + gfxID 合成 + standMode |
 | `common/src/*.inc`（5 个） | `data/*.json` | ✅ | 1258 物品/364 怪物/603 地图/116 魔法/21 Buff |
 
 ## 已完成但需回归的
