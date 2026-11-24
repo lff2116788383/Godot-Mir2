@@ -96,18 +96,6 @@ func _maybe_connect() -> void:
 	await net.online()
 	await _wait_sec(1.0)
 	print("[Main] 场景实体数 = %d" % (co_manager.count() if co_manager != null else 0))
-	# 诊断：打印每个实体的位置与可见性
-	for uid in co_manager.all_uids():
-		var n = co_manager.find_uid(uid)
-		if n == null: continue
-		var spr: Sprite2D = null
-		for c in n.get_children():
-			if c is Sprite2D:
-				spr = c; break
-		print("  [实体] %s pos=%s spr_pos=%s spr_size=%s" % [
-			n.name, str(n.position),
-			str(spr.position) if spr else "-",
-			str(spr.texture.get_size()) if (spr and spr.texture) else "-"])
 
 
 ## 服务端消息分发

@@ -158,3 +158,105 @@ static func done_ratio(n: MotionNode) -> float:
 	if fc <= 0:
 		return 1.0
 	return minf(float(n.frame + 1) / float(fc), 1.0)
+
+
+## 怪物专用 makeWalkMotion（clientmonster.cpp:640-672）
+## 与玩家版的差别：
+##   1. 动作类型固定 MOTION_MON_WALK（怪物没有 RUN）
+##   2. 判定 LDistance2 ∈ {1, 2, maxStep², 2×maxStep²}
+static func make_monster_walk_motion(x0: int, y0: int, x1: int, y1: int,
+		speed: int, can_move: Callable, max_step: int = 1) -> MotionNode:
+	if can_move.is_null():
+		return null
+	if not bool(can_move.call(x0, y0)):
+		return null
+	if not bool(can_move.call(x1, y1)):
+		return null
+	if speed < SysConstRef.SYS_MINSPEED or speed > SysConstRef.SYS_MAXSPEED:
+		return null
+
+	var sdx: int = 1 + (1 if x1 > x0 else 0) - (1 if x1 < x0 else 0)
+	var sdy: int = 1 + (1 if y1 > y0 else 0) - (1 if y1 < y0 else 0)
+	var ld2 := l_distance2(x0, y0, x1, y1)
+	if ld2 == 1 or ld2 == 2 or ld2 == max_step * max_step or ld2 == 2 * max_step * max_step:
+		var n := MotionNode.new()
+		n.type = MotionType.MOTION_MON_WALK
+		n.direction = int(DIR_V[sdy][sdx])
+		n.speed = speed
+		n.x = x0
+		n.y = y0
+		n.end_x = x1
+		n.end_y = y1
+		return n
+	return null
+
+
+## 怪物专用 makeWalkMotionQueue
+static func make_monster_walk_queue(sx: int, sy: int, ex: int, ey: int,
+		speed: int, can_move: Callable, make_finder: Callable, max_step: int = 1) -> Array:
+	if l_distance2(sx, sy, ex, ey) == 0:
+		return []
+	var path := parse_move_path(sx, sy, ex, ey, can_move, make_finder, max_step, true)
+	if path.size() <= 1:
+		return []
+	var queue: Array = []
+	for i in range(1, path.size()):
+		var p0: Vector2i = path[i - 1]
+		var p1: Vector2i = path[i]
+		var m := make_monster_walk_motion(p0.x, p0.y, p1.x, p1.y, speed, can_move, max_step)
+		if m == null:
+			return []
+		queue.append(m)
+	return queue
+
+
+## 渲染像素偏移（creaturemovable.cpp:216 getShift）
+##   仅 MOTION_WALK/RUN/ONHORSE* /MOTION_MON_WALK 有位移
+##   其余动作返回 (0,0)
+##
+##   stepCount = currStep()  —— 怪物只有 MOTION_MON_WALK 返回 1，其他 0
+##   shiftDX = GRID_X * stepCount / frameCount
+##   framePos = frame + 1（stepped：第 k 帧显示 k+1 的偏移，末帧正好到位）
+static func get_shift(motion, frame: int, is_monster: bool) -> Vector2i:
+	if motion == null:
+		return Vector2i.ZERO
+	var t: int = motion.type
+	var walk_like := t == MotionType.MOTION_WALK or t == MotionType.MOTION_RUN \
+		or t == MotionType.MOTION_ONHORSEWALK or t == MotionType.MOTION_ONHORSERUN \
+		or t == MotionType.MOTION_MON_WALK
+	if not walk_like:
+		return Vector2i.ZERO
+
+	# currStep：怪物 MOTION_MON_WALK = 1；玩家走 1 步 = 1、跑 2 步
+	var step := 0
+	if is_monster:
+		step = 1 if t == MotionType.MOTION_MON_WALK else 0
+	else:
+		match t:
+			MotionType.MOTION_WALK, MotionType.MOTION_ONHORSEWALK:
+				step = 1
+			MotionType.MOTION_RUN, MotionType.MOTION_ONHORSERUN:
+				step = 2
+	if step <= 0:
+		return Vector2i.ZERO
+
+	var fc: int = motion.frame_count_ex()
+	if fc <= 0:
+		return Vector2i.ZERO
+
+	var dx: float = float(SysConstRef.SYS_MAPGRIDXP * step) / float(fc)
+	var dy: float = float(SysConstRef.SYS_MAPGRIDYP * step) / float(fc)
+	var frame_pos := float(frame + 1)
+	var sx := int(round(dx * frame_pos))
+	var sy := int(round(dy * frame_pos))
+
+	match motion.direction:
+		PathFinderRef.DIR_UP:        return Vector2i(0, -sy)
+		PathFinderRef.DIR_UPRIGHT:   return Vector2i(sx, -sy)
+		PathFinderRef.DIR_RIGHT:     return Vector2i(sx, 0)
+		PathFinderRef.DIR_DOWNRIGHT: return Vector2i(sx, sy)
+		PathFinderRef.DIR_DOWN:      return Vector2i(0, sy)
+		PathFinderRef.DIR_DOWNLEFT:  return Vector2i(-sx, sy)
+		PathFinderRef.DIR_LEFT:      return Vector2i(-sx, 0)
+		PathFinderRef.DIR_UPLEFT:    return Vector2i(-sx, -sy)
+	return Vector2i.ZERO

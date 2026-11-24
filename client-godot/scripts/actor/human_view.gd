@@ -106,6 +106,8 @@ func _on_stand(action) -> void:
 	m.direction = action.direction
 	m.x = action.x
 	m.y = action.y
+	m.end_x = m.x
+	m.end_y = m.y
 	motion_queue.append(m)
 
 
@@ -135,6 +137,8 @@ func _on_attack(action) -> void:
 	m.direction = d
 	m.x = action.x
 	m.y = action.y
+	m.end_x = m.x
+	m.end_y = m.y
 	m.ext_magic_id = action.ext_magic_id
 	m.ext_modifier_id = action.ext_modifier_id
 	motion_queue.append(m)
@@ -154,6 +158,8 @@ func _on_spell(action) -> void:
 	m.direction = d
 	m.x = action.x
 	m.y = action.y
+	m.end_x = m.x
+	m.end_y = m.y
 	m.ext_magic_id = action.ext_magic_id
 	m.ext_modifier_id = action.ext_modifier_id
 	motion_queue.append(m)
@@ -169,6 +175,8 @@ func _on_hitted(action) -> void:
 	m.direction = action.direction
 	m.x = action.x
 	m.y = action.y
+	m.end_x = m.x
+	m.end_y = m.y
 	m.ext_from_uid = action.ext_from_uid
 	motion_queue.append(m)
 
@@ -195,6 +203,8 @@ func _on_die(action) -> void:
 	m.direction = de.z if PathFinderRef.dir_valid(de.z) else facing
 	m.x = de.x
 	m.y = de.y
+	m.end_x = m.x
+	m.end_y = m.y
 	forced_queue.append(m)
 	_dead = true
 
@@ -230,7 +240,8 @@ func _begin_next_motion() -> void:
 			human.set_motion(curr_motion)
 
 
-func _process(dt: float) -> void:
+## 动作推进，照搬 clientcreature.hpp:150 updateMotion + creaturemovable.cpp:191
+func _physics_process(dt: float) -> void:
 	if curr_motion == null or human == null:
 		return
 	var delay: float = curr_motion.frame_delay()
@@ -243,16 +254,50 @@ func _process(dt: float) -> void:
 		var n: int = curr_motion.frame_count_ex()
 		if n <= 0:
 			break
-		curr_motion.frame += 1
-		if curr_motion.frame >= n:
-			curr_motion.frame = 0
-			if not forced_queue.is_empty() or not motion_queue.is_empty():
-				_begin_next_motion()
-			else:
-				curr_motion.frame = n - 1
-				human.refresh_textures()
+		if curr_motion.frame + 1 < n:
+			curr_motion.frame += 1
+			human.refresh_textures()
+		else:
+			_move_next_motion()
+			if curr_motion == null:
+				break
+
+
+## creaturemovable.cpp:191
+func _move_next_motion() -> void:
+	if not forced_queue.is_empty():
+		_switch_to(forced_queue.pop_front())
+		return
+	if not motion_queue.is_empty():
+		if CreatureMovableRef.motion_queue_valid(curr_motion, motion_queue):
+			_switch_to(motion_queue.pop_front())
 			return
-		human.refresh_textures()
+		motion_queue.clear()
+	# 队列空 -> makeIdleMotion
+	_switch_to(_make_idle_motion())
+
+
+func _switch_to(m) -> void:
+	curr_motion = m
+	facing = m.direction
+	_set_grid(m.x, m.y)
+	if human != null:
+		human.set_motion(m)
+
+
+func _make_idle_motion():
+	var m = MotionNodeRef.new()
+	m.type = MotionTypeRef.MOTION_STAND
+	m.direction = facing if PathFinderRef.dir_valid(facing) else PathFinderRef.DIR_DOWN
+	m.x = grid.x
+	m.y = grid.y
+	m.end_x = m.x
+	m.end_y = m.y
+	# 关键：end_x/end_y 必须同步设置，否则 motionEndGLoc 读到 -1，
+	# 后续动作的起点会变成 (-1,-1)，导致 makeWalkMotionQueue 全空
+	m.end_x = grid.x
+	m.end_y = grid.y
+	return m
 
 
 func set_appearance(p_dress: int, p_hair: int, p_helmet: int, p_weapon: int,

@@ -12,6 +12,7 @@ const MonsterRecordScript := preload("res://scripts/item/monster_record.gd")
 const ActionNodeScript := preload("res://scripts/action/action_node.gd")
 const ActionTypeScript := preload("res://scripts/action/action_type.gd")
 const UidScript := preload("res://scripts/core/uid.gd")
+const MotionTypeScript := preload("res://scripts/action/motion_type.gd")
 
 var _client = null
 var _co = null
@@ -207,6 +208,19 @@ func _test_net_sync(main: Node) -> void:
 				_ok(spr.visible, "怪物 Sprite 可见")
 				_ok(spr.texture != null, "怪物贴图已加载")
 
+	# 验证动画帧在推进（观察 1 秒，应看到多个不同帧）
+	if not uids.is_empty():
+		var mon = _co.find_uid(uids[0])
+		if mon != null and mon.curr_motion != null:
+			var seen := {}
+			for k in range(80):
+				seen[mon.curr_motion.frame] = true
+				await get_tree().physics_frame
+			_ok(seen.size() >= 2, "怪物动画帧在推进",
+				"观察到 %d 个不同帧" % seen.size())
+			var cnt: int = mon.logic.frame_count(mon.curr_motion.type)
+			_ok(cnt == 4, "站立动作 4 帧", "实际 %d" % cnt)
+
 	# 验证视野裁剪：远处实体不应创建
 	var far_body := PackedByteArray()
 	far_body.resize(49)
@@ -221,6 +235,74 @@ func _test_net_sync(main: Node) -> void:
 	var before: int = _co.count()
 	_co.on_sm_corecord(far_body)
 	_ok(_co.count() == before, "视野外实体被拒绝创建", "before=%d after=%d" % [before, _co.count()])
+
+	# ---- 验证 SM_ACTION 移动同步 ----
+	if not uids.is_empty():
+		var target_uid: int = uids[0]
+		var monnode = _co.find_uid(target_uid)
+
+		# 动作起点必须是怪物当前所在格（服务端下发的动作就是这样）
+		var cm: Callable = Callable(main, "can_move_to")
+		var walk_from: Vector2i = monnode.grid if monnode != null else Vector2i(-1, -1)
+		var walk_to := Vector2i(-1, -1)
+		# 从当前格找一个可走的相邻方向
+		# 怪物 maxStep=1，服务端逐格下发 MOVE，所以这里只走 1 格（含对角）
+		var dirs: Array[Vector2i] = [
+			Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1),
+			Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)]
+		for d: Vector2i in dirs:
+			var g1: Vector2i = walk_from + d
+			if bool(cm.call(g1.x, g1.y)):
+				walk_to = g1
+				break
+		print("    [info] 动作 %s -> %s（起点=怪物当前格）" % [walk_from, walk_to])
+		# 地形勘察：主角周围哪些格可走
+		var free: Array = []
+		for dy in range(-6, 7):
+			for dx in range(-6, 7):
+				if bool(cm.call(400 + dx, 402 + dy)):
+					free.append(Vector2i(400 + dx, 402 + dy))
+		print("    [info] 主角周围可走格数 = %d，前 12 个 = %s" % [free.size(), str(free.slice(0, 12))])
+
+		if walk_from.x < 0:
+			print("    [warn] 附近找不到可走的两格，跳过移动验证")
+		else:
+			var mv := PackedByteArray()
+			mv.resize(44)
+			mv.encode_s64(0, target_uid)
+			mv.encode_s64(8, _co.map_uid)
+			var move_act = ActionNodeScript.make_move(100, walk_from.x, walk_from.y, walk_to.x, walk_to.y)
+			var mab: PackedByteArray = move_act.to_bytes()
+			for i in range(28):
+				mv[16 + i] = mab[i]
+
+			# 绕过 CoManager，直接对目标怪物施加动作（排除 uid 映射问题的干扰）
+			monnode.apply_action(move_act)
+
+			# 边推进边采样动作类型（动作可能很快播完切回 idle，不能事后采样）
+			var seen_types := {}
+			var reached := false
+			for _k in range(300):
+				if monnode != null:
+					if monnode.curr_motion != null:
+						seen_types[monnode.curr_motion.type] = true
+					if monnode.grid == walk_to:
+						reached = true
+				await get_tree().physics_frame
+
+			if monnode != null:
+				var walk_types := [
+					MotionTypeScript.MOTION_WALK, MotionTypeScript.MOTION_RUN,
+					MotionTypeScript.MOTION_ONHORSEWALK, MotionTypeScript.MOTION_ONHORSERUN,
+					MotionTypeScript.MOTION_MON_WALK]
+				var saw_walk := false
+				for t in seen_types.keys():
+					if walk_types.has(t):
+						saw_walk = true
+				_ok(saw_walk, "MOVE 触发了走路动作",
+					"观察到的类型 %s" % str(seen_types.keys()))
+				_ok(reached, "怪物曾移动到目标格",
+					"实际 %s 目标 %s" % [str(monnode.grid), str(walk_to)])
 
 	_client.close_connection()
 	await _wait(0.2)
@@ -237,8 +319,8 @@ func _on_frame(code: int, body: PackedByteArray, _resp: int) -> void:
 		_got_arrays[code].append(body)
 
 
+## headless 下 get_process_delta_time() 不可靠，改为按帧数等
 func _wait(sec: float) -> void:
-	var t := 0.0
-	while t < sec:
+	var frames := int(sec * 60.0)
+	for _k in range(maxi(frames, 1)):
 		await get_tree().process_frame
-		t += get_process_delta_time()

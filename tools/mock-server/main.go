@@ -124,6 +124,8 @@ type Player struct {
 	Exp     uint64
 }
 
+var demoMove *bool
+
 func newServer() *Server {
 	return &Server{
 		players: make(map[string]*Player),
@@ -131,17 +133,19 @@ func newServer() *Server {
 		// 默认场景怪物：摆在小范围，方便客户端视野内能看到
 		// MonsterID 取自 data/monsterrecord.json：
 		//   1=沙漠蜥蜴 2=夜行鬼 3=夜行鬼09
-		// 摆在主角 (400,402) 周围 4-6 格，确保初始视口内全部可见
+		// 位置必须在地图可走格上（实测比奇县_0 主角周围的可走格）
+		// 否则客户端 makeWalkMotion 会因起点不可走而拒绝生成动作队列
 		sceneMonsters: []MonsterSpawn{
-			{MonsterID: 1, X: 396, Y: 399, Dir: 5, Seq: 1},   // 左上
-			{MonsterID: 2, X: 404, Y: 400, Dir: 5, Seq: 2},   // 右上
-			{MonsterID: 3, X: 400, Y: 406, Dir: 4, Seq: 3},   // 下方
+			{MonsterID: 1, X: 404, Y: 398, Dir: 5, Seq: 1},
+			{MonsterID: 2, X: 394, Y: 397, Dir: 5, Seq: 2},
+			{MonsterID: 3, X: 395, Y: 396, Dir: 4, Seq: 3},
 		},
 	}
 }
 
 func main() {
 	port := flag.Int("port", 7000, "监听端口")
+	demoMove = flag.Bool("demo-move", false, "进图后演示怪物移动（验证 SM_ACTION）")
 	flag.Parse()
 
 	s := newServer()
@@ -329,6 +333,11 @@ func (s *Server) onOnline(sess *Session, f *Frame) {
 
 	// 再下发场景内实体（怪物）
 	s.sendSceneEntities(sess, p)
+
+	// 可选：延迟下发怪物移动，用于验证 SM_ACTION 同步
+	if *demoMove {
+		go s.demoMonsterWalk(sess)
+	}
 
 	log.Printf("[进图] %s uid=%d 位置(%d,%d)", p.Name, uid, p.X, p.Y)
 }

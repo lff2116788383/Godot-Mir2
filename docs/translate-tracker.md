@@ -17,6 +17,7 @@
 | B8 | XML 排版引擎 | L0 | 🟨 | 6 | ~3450 |
 | B9 | 渲染与输入（Godot 重写） | L2/L3 | 🟨 | 按需 | ~8000 |
 | B11 | 实体同步与怪物渲染 | L0+L2 | ✅ | 6 | ~1600 |
+| B12 | 怪物动作与像素位移 | L0+L2 | ✅ | 4 | ~500 |
 | B10 | 统一联调（mock 服务端） | — | ✅ | — | — |
 
 ## B1 明细
@@ -58,6 +59,10 @@
 | `client/src/clientmonster.cpp:371-560` | `scripts/actor/monster_actor.gd` | ✅ | 怪物动作队列 + 死亡强制队列 |
 | `client/src/pngtexoffdb.cpp:20-50` | `scripts/data/apng_loader.gd` | ✅ | APNG 拆帧 + 12 位补码偏移 |
 | `common/src/monsterrecord.hpp` | `scripts/item/monster_record.gd` | ✅ | 怪物表 364 条查询 |
+| `client/src/clientcreature.hpp:150` | `scripts/actor/monster_actor.gd` | ✅ | updateMotion 动作推进 |
+| `client/src/creaturemovable.cpp:191` | `scripts/actor/monster_actor.gd` | ✅ | moveNextMotion 队列切换 |
+| `client/src/creaturemovable.cpp:216` | `scripts/action/creature_movable.gd` | ✅ | getShift 像素位移 |
+| `client/src/clientmonster.cpp:640-672` | `scripts/action/creature_movable.gd` | ✅ | 怪物专用 MOTION_MON_WALK |
 | 40 个 `client*.hpp`（帧表部分） | `data/monster_frames.json`<br>`scripts/actor/monster_frames.gd` | ✅ | 12 个类自定义帧表（脚本提取） |
 | `client/src/clientmonster.cpp`<br>`client/src/clientstandmonster.hpp` | `scripts/actor/client_monster.gd` | ✅ | 默认帧表 + gfxID 合成 + standMode |
 | `common/src/*.inc`（5 个） | `data/*.json` | ✅ | 1258 物品/364 怪物/603 地图/116 魔法/21 Buff |
@@ -74,7 +79,7 @@
 | `test_human.gd` | 31 | humanKey 位编码、四层 gfxID、文件名解码、真实素材查找 |
 | `anim_selftest.gd` | 12 | 动作切换（STAND↔WALK）、4 帧循环推进、朝向同步（场景内运行） |
 | `net_selftest.gd` | 19 | 连接/PING/登录/查人/进图/进场/聊天（需先启动 mock） |
-| `sync_selftest.gd` | 29 | CORECORD 解析（Mon/Ply）、APNG 拆帧、怪物表、实体创建、视野裁剪 |
+| `sync_selftest.gd` | 33 | CORECORD 解析（Mon/Ply）、APNG 拆帧、怪物表、实体创建、视野裁剪、动作同步 |
 
 ## 已完成但需回归的
 

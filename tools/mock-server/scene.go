@@ -1,6 +1,9 @@
 package main
 
-import "log"
+import (
+	"log"
+	"time"
+)
 
 // 场景实体下发（mock）
 //
@@ -81,4 +84,24 @@ func (s *Server) broadcastMonsterMove(sess *Session, m MonsterSpawn, nx, ny int)
 	act := makeActionNode(actMove, m.Dir, m.X, m.Y, nx, ny, 100, 0, 0)
 	body := buildSMAction(uid, mapUID, act)
 	WriteFrame(sess.conn, smAction, 0, body)
+}
+
+// demoMonsterWalk 演示怪物移动：每 1.5 秒让第一只怪走一步
+// 用于验证 SM_ACTION -> 客户端动作队列 -> 逐格移动
+func (s *Server) demoMonsterWalk(sess *Session) {
+	time.Sleep(1500 * time.Millisecond)
+	m := s.sceneMonsters[0]
+	cx, cy := m.X, m.Y
+	// 左右往返 4 次
+	for i := 0; i < 4; i++ {
+		nx := cx + 2
+		if i%2 == 1 {
+			nx = cx
+		}
+		s.broadcastMonsterMove(sess, MonsterSpawn{
+			MonsterID: m.MonsterID, X: cx, Y: cy, Dir: 5, Seq: m.Seq,
+		}, nx, cy)
+		log.Printf("[演示] 怪物从 (%d,%d) 走到 (%d,%d)", cx, cy, nx, cy)
+		time.Sleep(1500 * time.Millisecond)
+	}
 }

@@ -135,11 +135,12 @@ func _on_action_spawn(action) -> void:
 ## clientmonster.cpp:512 onActionMove
 func _on_action_move(action) -> void:
 	var end := _motion_end()
-	motion_queue = CreatureMovableRef.make_walk_motion_queue(
+	# 怪物用专用版本：动作类型是 MOTION_MON_WALK（怪物没有 RUN）
+	motion_queue = CreatureMovableRef.make_monster_walk_queue(
 		end.x, end.y, action.x, action.y, SysConstRef.SYS_MAXSPEED,
-		false, _can_move, _make_finder, _max_step)
-	var mn = CreatureMovableRef.make_walk_motion(
-		action.x, action.y, action.aim_x, action.aim_y, action.speed, false, _can_move)
+		_can_move, _make_finder, 1)
+	var mn = CreatureMovableRef.make_monster_walk_motion(
+		action.x, action.y, action.aim_x, action.aim_y, action.speed, _can_move, 1)
 	if mn != null:
 		motion_queue.append(mn)
 
@@ -147,9 +148,9 @@ func _on_action_move(action) -> void:
 ## clientmonster.cpp:534 onActionAttack
 func _on_action_attack(action) -> void:
 	var end := _motion_end()
-	motion_queue = CreatureMovableRef.make_walk_motion_queue(
+	motion_queue = CreatureMovableRef.make_monster_walk_queue(
 		end.x, end.y, action.x, action.y, SysConstRef.SYS_MAXSPEED,
-		false, _can_move, _make_finder, _max_step)
+		_can_move, _make_finder, 1)
 	# 原版还需要 findUID(aimUID) 取目标位置决定朝向
 	# 这里退化为用目标格推算（若无目标信息则用 aim 坐标）
 	var d: int = PathFinderRef.get_off_dir(action.x, action.y, action.aim_x, action.aim_y)
@@ -166,9 +167,9 @@ func _on_action_attack(action) -> void:
 ## clientmonster.cpp:465 onActionStand
 func _on_action_stand(action) -> void:
 	var end := _motion_end()
-	motion_queue = CreatureMovableRef.make_walk_motion_queue(
+	motion_queue = CreatureMovableRef.make_monster_walk_queue(
 		end.x, end.y, action.x, action.y, SysConstRef.SYS_MAXSPEED,
-		false, _can_move, _make_finder, _max_step)
+		_can_move, _make_finder, 1)
 	var mn := MotionNodeRef.new()
 	mn.type = MotionTypeRef.MOTION_MON_STAND
 	mn.direction = action.direction
@@ -180,9 +181,9 @@ func _on_action_stand(action) -> void:
 ## clientmonster.cpp:481 onActionHitted
 func _on_action_hitted(action) -> void:
 	var end := _motion_end()
-	motion_queue = CreatureMovableRef.make_walk_motion_queue(
+	motion_queue = CreatureMovableRef.make_monster_walk_queue(
 		end.x, end.y, action.x, action.y, SysConstRef.SYS_MAXSPEED,
-		false, _can_move, _make_finder, _max_step)
+		_can_move, _make_finder, 1)
 	var mn := MotionNodeRef.new()
 	mn.type = MotionTypeRef.MOTION_MON_HITTED
 	mn.direction = action.direction
@@ -196,9 +197,9 @@ func _on_action_hitted(action) -> void:
 ## 注意：进入 forced_queue，不可被新动作打断
 func _on_action_die(action) -> void:
 	var end := _motion_end()
-	var walk := CreatureMovableRef.make_walk_motion_queue(
+	var walk := CreatureMovableRef.make_monster_walk_queue(
 		end.x, end.y, action.x, action.y, SysConstRef.SYS_MAXSPEED,
-		false, _can_move, _make_finder, _max_step)
+		_can_move, _make_finder, 1)
 	for m in walk:
 		forced_queue.append(m)
 
@@ -260,23 +261,24 @@ func _set_grid(x: int, y: int) -> void:
 func _begin_next_motion() -> void:
 	# 强制队列优先
 	if not forced_queue.is_empty():
-		curr_motion = forced_queue.pop_front()
+		_switch_to(forced_queue.pop_front())
 	elif not motion_queue.is_empty():
-		curr_motion = motion_queue.pop_front()
-
-	if curr_motion != null:
-		facing = curr_motion.direction
-		_set_grid(curr_motion.x, curr_motion.y)
-		_frame_acc = 0.0
-		_refresh_texture()
+		_switch_to(motion_queue.pop_front())
+	_frame_acc = 0.0
 
 
-func _process(dt: float) -> void:
+func _physics_process(dt: float) -> void:
 	if curr_motion == null or logic == null:
 		return
 	_advance_animation(dt)
 
 
+## 动作推进，严格照搬 clientcreature.hpp:150 updateMotion + creaturemovable.cpp:191 moveNextMotion
+##
+##   updateMotion(allowSwitch):
+##     frame + 1 < count  -> advanceMotionFrame()（frame++）
+##     allowSwitch        -> moveNextMotion()（换动作；队列空则新建 idle）
+##     否则               -> true（停在末帧，死亡等）
 func _advance_animation(dt: float) -> void:
 	var delay: float = curr_motion.frame_delay()
 	if delay <= 0.0:
@@ -288,18 +290,69 @@ func _advance_animation(dt: float) -> void:
 		var n: int = logic.frame_count(curr_motion.type)
 		if n <= 0:
 			break
-		curr_motion.frame += 1
-		if curr_motion.frame >= n:
-			# 本动作播完，切下一个
-			curr_motion.frame = 0
-			if not forced_queue.is_empty() or not motion_queue.is_empty():
-				_begin_next_motion()
-			else:
-				# 队列空：停在最后一帧
-				curr_motion.frame = n - 1
-				_refresh_texture()
+
+		if curr_motion.frame + 1 < n:
+			# advanceMotionFrame：纯 frame++
+			curr_motion.frame += 1
+			_refresh_texture()
+		else:
+			# 末帧：allowSwitchMotion=true 时切动作
+			_move_next_motion()
+			# 若切到了新的 idle，帧已归 0，继续循环下一轮
+			if curr_motion == null:
+				break
+
+
+## creaturemovable.cpp:191 moveNextMotion
+##   强制队列优先 -> 普通队列 -> 队列空则新建 idle 动作
+func _move_next_motion() -> void:
+	if not forced_queue.is_empty():
+		_switch_to(forced_queue.pop_front())
+		return
+
+	if not motion_queue.is_empty():
+		if CreatureMovableRef.motion_queue_valid(curr_motion, motion_queue):
+			_switch_to(motion_queue.pop_front())
 			return
-		_refresh_texture()
+		# 队列不衔接：清空并回 idle（原版打 warning）
+		motion_queue.clear()
+
+	# 队列空 -> makeIdleMotion：新建站立动作，frame 从 0 开始
+	# 这就是站立动画会循环的原因
+	_switch_to(_make_idle_motion())
+
+
+## 切换动作：逻辑坐标落到新动作的 end 位置
+## 原版：动作结束时 currMotion 换成下一个，新动作的 x/y 即上一动作的 endX/endY
+func _switch_to(m) -> void:
+	# 先把「上一个动作」的终点落地（行走类动作结束后应停在 end）
+	var landed := false
+	if curr_motion != null and curr_motion.end_x >= 0:
+		_set_grid(curr_motion.end_x, curr_motion.end_y)
+		landed = true
+	curr_motion = m
+	facing = m.direction
+	# 新动作若自带合法起点，则以其起点为准（保证链条衔接）；
+	# 但 idle 动作的 x/y 是「构造时快照」的 grid，落地后不应再覆盖回去
+	if not landed and m.x >= 0:
+		_set_grid(m.x, m.y)
+	_refresh_texture()
+
+
+## 怪物 idle 动作（MOTION_MON_STAND）
+func _make_idle_motion():
+	var m = MotionNodeRef.new()
+	m.type = MotionTypeRef.MOTION_MON_STAND
+	m.direction = facing if PathFinderRef.dir_valid(facing) else PathFinderRef.DIR_DOWN
+	m.x = grid.x
+	m.y = grid.y
+	m.end_x = m.x
+	m.end_y = m.y
+	# 关键：end_x/end_y 必须同步设置，否则 motionEndGLoc 读到 -1，
+	# 后续动作的起点会变成 (-1,-1)，导致 makeWalkMotionQueue 全空
+	m.end_x = grid.x
+	m.end_y = grid.y
+	return m
 
 
 # ==================== 贴图刷新（clientmonster.cpp:57） ====================
@@ -338,7 +391,11 @@ func _refresh_texture() -> void:
 	var dy: int = int(info.get("dy", 0))
 	# Sprite 是本节点的子节点，position 必须是「相对父节点」的局部偏移。
 	# 本节点已在 (grid.x*48, grid.y*32)，故这里只需 (dx, dy) + 向上抬高度。
-	_spr.position = Vector2(dx, dy) - Vector2(0, tex.get_height())
+
+	# 行走中的像素位移（creaturemovable.cpp:216 getShift）
+	# 逻辑坐标只在动作切换时落格，走动过程靠这里的像素偏移表现
+	var shift := CreatureMovableRef.get_shift(curr_motion, curr_motion.frame, true)
+	_spr.position = Vector2(dx + shift.x, dy + shift.y) - Vector2(0, tex.get_height())
 
 
 ## 怪物贴图路径：texture/monster/{KEY:08X}{DX}{DY}.PNG
