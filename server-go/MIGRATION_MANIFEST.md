@@ -160,3 +160,21 @@
 - 物品/怪物/魔法/地图静态记录解析归入 B4/B5；
 - 拍卖购买税务/投递编排、摆摊买家付款编排归入 B6；
 - B2 的结束条件是持久化和数据访问基础设施稳定通过测试，而不是所有玩法业务事务落地。
+### B3：Actor、网络和服务核心
+
+状态：**核心完成**
+
+完成内容：
+
+- `internal/actor` 串行邮箱和调度；
+- 消息顺序、actor stop、system shutdown、定时消息测试；
+- `internal/transport` legacy TCP server；
+- session 读写队列、response ID、超时和连接限额；
+- malformed packet 隔离和生命周期回调；
+- dispatcher 路由和 `CM_PING`/`SM_PING` bootstrap；
+- 服务启动集成：配置、SQLite、actor system、TCP listener、信号退出。
+
+边界说明：
+
+- 登录、建角、进图等业务 handler 在 B5 注册；
+- master/slave 多进程与 peer 协议后续补齐。

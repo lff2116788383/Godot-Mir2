@@ -1,6 +1,6 @@
 # mir2x server-go 复刻方案
 
-> 状态：执行中；B0、B1、B2 已完成，B3 待开始
+> 状态：执行中；B0-B3 已完成，B4 待开始
 > 目标分支：`server-go`  
 > 目标目录：`server-go/`  
 > 参考服务端：`E:\Desktop\game\mir2x\server`  
@@ -234,7 +234,11 @@ server-go/
 - 实现内容清单和 SHA-256 校验；静态记录解析在 B4/B5 实施；
 - 实现资源版本校验。
 
-### B3：Actor、网络和服务核心
+### B3：Actor、网络和服务核心（核心已完成）
+
+> 完成边界：B3 完成 actor 邮箱、legacy TCP transport、session 生命周期、
+> dispatcher 和可执行启动链路。完整登录/游戏消息 handler 属于 B5，
+> 多进程 master/slave 在后续分布式阶段补齐。
 
 - 迁移 ActorPool、消息投递、延迟任务和定时器；
 - 迁移网络驱动、连接生命周期、断线处理和会话；
@@ -412,4 +416,4 @@ B0-B2 已完成，下一批进入 B3：
 4. 用真实 framing golden 驱动传输层测试；
 5. 保持单进程多地图，master/slave 后续补齐。
 
-B3 完成后再进入 B4 世界、地图与战斗。
+B4 下一步实现世界、地图与战斗；B3 已提供消息和连接基础设施。

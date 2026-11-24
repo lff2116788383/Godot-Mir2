@@ -8,28 +8,17 @@
 
 ## 当前阶段
 
-B0、B1、B2 已完成，下一步进入 B3。
+B0、B1、B2 已完成；B3 运行/传输核心已完成；下一批进入 B4。
 
-### B1 已完成
+### B3 已完成
 
-- 旧客户端协议全部固定消息、100 个 serdes/Lua fixture；
-- `serdesmsg.hpp` 94/94 声明类型覆盖；
-- PortableBinary、`cerealf`、XOR、ZSTD；
-- 8 个完整 client/server framing golden packet；
-- packet、varint、XOR 短时 fuzz 通过。
+- actor 串行邮箱、消息顺序、停止和定时消息；
+- legacy TCP server、session、读写队列和生命周期；
+- 消息 dispatcher 和 `CM_PING` -> `SM_PING` bootstrap handler；
+- 可执行服务启动：SQLite 初始化、actor system、TCP listener、优雅退出；
+- 真实 TCP ping 往返、response ID、坏包隔离、会话生命周期测试。
 
-真实 C++ 客户端/服务端会话抓包归入 B8，`serdesmsg.cpp` 领域辅助方法归入对应玩法批次。
-
-### B2 已完成
-
-- 原样嵌入 22 张表、11 个索引和 guild trigger；
-- `jobValid`、`SYS_PLY_VIEWR`、`checkAuctionCategory`；
-- SQLite foreign key、WAL、busy timeout、事务和 STRICT 表；
-- 账号、角色、金币、背包、装备、任务、聊天、行会、拍卖、摆摊、投递和直接交易存储层；
-- `cerealf` BLOB 兼容；
-- JSON 配置和内容 SHA-256 校验。
-
-静态物品/怪物/魔法/地图记录解析归入 B4/B5，拍卖购买税务/投递和摆摊付款编排归入 B6。
+B3 的多进程 master/slave 和完整登录/游戏 handler 分别留给后续分布式阶段与 B5 业务层。
 ## 常用命令
 
 ```powershell

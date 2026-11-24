@@ -10,21 +10,23 @@ import (
 	"time"
 )
 
-// Config contains paths and storage settings owned by the Go server.
+// Config contains paths and listener settings owned by the Go server.
 type Config struct {
-	DatabasePath  string        `json:"database_path"`
-	ContentPath   string        `json:"content_path"`
-	WebListenAddr string        `json:"web_listen_addr"`
-	BusyTimeout   time.Duration `json:"busy_timeout"`
+	DatabasePath   string        `json:"database_path"`
+	ContentPath    string        `json:"content_path"`
+	GameListenAddr string        `json:"game_listen_addr"`
+	WebListenAddr  string        `json:"web_listen_addr"`
+	BusyTimeout    time.Duration `json:"busy_timeout"`
 }
 
 // Default returns the development configuration.
 func Default() Config {
 	return Config{
-		DatabasePath:  "mir2x.db3",
-		ContentPath:   "content",
-		WebListenAddr: "127.0.0.1:8080",
-		BusyTimeout:   5 * time.Second,
+		DatabasePath:   "mir2x.db3",
+		ContentPath:    "content",
+		GameListenAddr: "127.0.0.1:7000",
+		WebListenAddr:  "127.0.0.1:8080",
+		BusyTimeout:    5 * time.Second,
 	}
 }
 
@@ -35,6 +37,9 @@ func (c Config) Validate() error {
 	}
 	if strings.TrimSpace(c.ContentPath) == "" {
 		return errors.New("content_path is empty")
+	}
+	if strings.TrimSpace(c.GameListenAddr) == "" {
+		return errors.New("game_listen_addr is empty")
 	}
 	if strings.TrimSpace(c.WebListenAddr) == "" {
 		return errors.New("web_listen_addr is empty")
