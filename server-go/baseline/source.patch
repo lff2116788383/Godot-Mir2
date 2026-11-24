@@ -1,0 +1,84 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index af0f4bf..1602b82 100755
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -18,7 +18,7 @@
+ # - WIN32 means the target platform is Windows, including MSVC and MinGW.
+ # - MSVC  means the compiler is Microsoft-compatible; MinGW UCRT64 is not MSVC.
+ 
+-cmake_minimum_required(VERSION 3.21)
++cmake_minimum_required(VERSION 3.25)
+ 
+ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+     if(DEFINED ENV{VCPKG_ROOT} AND EXISTS "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
+diff --git a/README.md b/README.md
+index 490df08..6c3e390 100755
+--- a/README.md
++++ b/README.md
+@@ -26,7 +26,7 @@ mir2x is an experimental project that verifies actor-model based parallelism for
+ Each push to the repository publishes a rolling `latest` GitHub release containing Linux and Windows MinGW UCRT64 install trees, the full release page is at <https://github.com/etorth/mir2x/releases/tag/latest>.
+ 
+ ### Notes
+-- This repo uses C++ coroutine to implement actor model, requires compiler to support c++23.
++- This repo uses C++ coroutines and C++26 features (including expansion statements and `std::inplace_vector`); use GCC 16 with its matching standard library and CMake 3.25 or newer.
+ - This repo uses classic v1.45 mir2 as a reference implementation, you can try the original game:
+   - Install [win-xp](https://github.com/etorth/winxp-zh) to host and run the game server/client, tested on real machine or virtualbox machine.
+   - Install server/client from [mir2-v1.45](https://github.com/etorth/CBWCQ3).
+@@ -99,7 +99,7 @@ Then clone and build from the same UCRT64 shell; the helper selects the `x64-min
+ 
+ ```sh
+ git clone https://github.com/etorth/mir2x.git
+-make b_mir2x && cd b_mir2x
++mkdir b_mir2x && cd b_mir2x
+ python3 /path/to/mir2x/build.py --build-dir=/path/to/b_mir2x --parallel=10
+ ```
+ 
+diff --git a/client/src/CMakeLists.txt b/client/src/CMakeLists.txt
+index 1816a8c..847c3a4 100755
+--- a/client/src/CMakeLists.txt
++++ b/client/src/CMakeLists.txt
+@@ -18,15 +18,14 @@ target_link_libraries(client PRIVATE client_objs)
+ 
+ install(TARGETS client DESTINATION client)
+ if(MIR2X_LIBPINYIN_DATA_DIR)
+-    install(DIRECTORY ${MIR2X_LIBPINYIN_DATA_DIR} DESTINATION client)
++    install(DIRECTORY "${MIR2X_LIBPINYIN_DATA_DIR}" DESTINATION client)
+ endif()
+ install(CODE "execute_process(
+-    COMMAND ${MIR2X_PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/installres/src/install_res.py
++    COMMAND \"${MIR2X_PYTHON_EXECUTABLE}\" \"${CMAKE_SOURCE_DIR}/tools/installres/src/install_res.py\"
+             --install-client
+-            --ignore-zsdbmaker-error
+-            --zsdbmaker=$<TARGET_FILE:zsdbmaker>
+-            --input-dir=${MIR2X_ASSETS_REPO_PATH}
+-            --output-dir=${CMAKE_INSTALL_PREFIX}/client/res
++            \"--zsdbmaker=$<TARGET_FILE:zsdbmaker>\"
++            \"--input-dir=${MIR2X_ASSETS_REPO_PATH}\"
++            \"--output-dir=\${CMAKE_INSTALL_PREFIX}/client/res\"
+             ${MIR2X_ASSETS_VERSION_ARG}
+     COMMAND_ERROR_IS_FATAL ANY
+ )")
+diff --git a/server/src/CMakeLists.txt b/server/src/CMakeLists.txt
+index ae7d7a6..c859bf1 100755
+--- a/server/src/CMakeLists.txt
++++ b/server/src/CMakeLists.txt
+@@ -20,14 +20,13 @@ add_executable(server ${SERVER_MAIN_SRC})
+ target_link_libraries(server PRIVATE server_objs)
+ 
+ install(TARGETS server DESTINATION server)
+-install(DIRECTORY ${CMAKE_SOURCE_DIR}/server/script DESTINATION server)
++install(DIRECTORY "${CMAKE_SOURCE_DIR}/server/script" DESTINATION server)
+ install(CODE "execute_process(
+-    COMMAND ${MIR2X_PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/installres/src/install_res.py
++    COMMAND \"${MIR2X_PYTHON_EXECUTABLE}\" \"${CMAKE_SOURCE_DIR}/tools/installres/src/install_res.py\"
+             --install-server
+-            --ignore-zsdbmaker-error
+-            --zsdbmaker=$<TARGET_FILE:zsdbmaker>
+-            --input-dir=${MIR2X_ASSETS_REPO_PATH}
+-            --output-dir=${CMAKE_INSTALL_PREFIX}/server
++            \"--zsdbmaker=$<TARGET_FILE:zsdbmaker>\"
++            \"--input-dir=${MIR2X_ASSETS_REPO_PATH}\"
++            \"--output-dir=\${CMAKE_INSTALL_PREFIX}/server\"
+             ${MIR2X_ASSETS_VERSION_ARG}
+     COMMAND_ERROR_IS_FATAL ANY
+ )")

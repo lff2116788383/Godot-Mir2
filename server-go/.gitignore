@@ -1,0 +1,27 @@
+# Go build and test output
+/bin/
+/dist/
+*.exe
+*.test
+*.out
+coverage.*
+profile.*
+
+# Local state
+.env
+.env.*
+!.env.example
+*.db
+*.db-shm
+*.db-wal
+!testdata/**/*.db
+
+# Web build output
+/web/admin/dist/
+/web/admin/node_modules/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

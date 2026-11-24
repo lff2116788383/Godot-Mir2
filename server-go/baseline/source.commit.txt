@@ -1,0 +1,7 @@
+branch: main
+commit: 58264934b5562cd283db7dc7daddec496b2de86e
+
+58264934b5562cd283db7dc7daddec496b2de86e
+etorth <anhonghe@gmail.com>
+2026-11-21T18:38:39-08:00
+Add guild war declared at the 行政官员, with war name colours

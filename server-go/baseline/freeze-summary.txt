@@ -1,0 +1,6 @@
+source=E:\Desktop\game\mir2x
+branch=main
+commit=58264934b5562cd283db7dc7daddec496b2de86e
+tracked_files=1024
+untracked_entries=1
+patch_bytes=4172

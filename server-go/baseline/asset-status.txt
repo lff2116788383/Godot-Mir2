@@ -1,0 +1,4 @@
+MISSING	E:\Desktop\game\mir2x_assets
+FOUND	E:\Desktop\game\mir2x_assets-main	files=202965	bytes=1441853153	version=1	git_commit=	git_dirty=
+FOUND	E:\Desktop\game\mir2x_data	files=29	bytes=1892941415	version=	git_commit=9c6580c17feab74f72ff5e3b22546565e505f8e6	git_dirty=False
+MISSING	E:\Desktop\game\mir2x\assets
