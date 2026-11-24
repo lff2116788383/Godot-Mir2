@@ -103,6 +103,11 @@ var count: int = 1
 ## duration[1] >  0 and duration[0] == 0 means the item is broken, it contributes nothing
 var duration: Array[int] = [0, 0]
 
+
+## 便于外部用普通数组赋值（GDScript 的 Array[int] 不接受未声明类型的 Array）
+func set_duration(cur: int, maxv: int) -> void:
+	duration = [cur, maxv]
+
 ## int -> 序列化后的值(bytes)
 var ext_attr_list: Dictionary = {}
 
