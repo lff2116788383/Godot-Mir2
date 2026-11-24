@@ -64,6 +64,11 @@ func _maybe_run_test() -> void:
 		add_child(t0)
 		await t0.run(self)
 		return
+	if name == "net":
+		var tn: Node = load("res://tools/net_selftest.gd").new()
+		add_child(tn)
+		await tn.run(self)
+		return
 	if name == "anim":
 		var ta: Node = load("res://tools/anim_selftest.gd").new()
 		add_child(ta)
