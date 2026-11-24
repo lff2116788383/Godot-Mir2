@@ -128,6 +128,18 @@ func (m *SessionManager) MarkOnline(channelID uint64, dbid uint32) error {
 	return nil
 }
 
+// Offline 回滚 online 标记（进场失败时用）。
+//
+// 不清 DBID 会让玩家卡在「已在线但不在世界里」的状态，
+// 之后所有 CM_ONLINE 都被判 MULTIONLINE，永远上不去。
+func (m *SessionManager) Offline(channelID uint64) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if s, ok := m.sessions[channelID]; ok {
+		s.DBID = 0
+	}
+}
+
 // IsCharacterOnline 判断某角色是否已在某个会话里 online。
 func (m *SessionManager) IsCharacterOnline(dbid uint32) bool {
 	m.mu.RLock()

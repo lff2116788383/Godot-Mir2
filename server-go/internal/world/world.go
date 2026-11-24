@@ -262,3 +262,103 @@ func (w *World) MapCount() int {
 	defer w.mu.RUnlock()
 	return len(w.maps)
 }
+
+// CanOccupy 判断某格能否被 uid 占据（网格查询，不修改状态）。
+func (w *World) CanOccupy(ctx context.Context, mapID uint32, uid uint64, x, y int) bool {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return state.CanOccupy(uid, x, y), nil
+	}))
+	if err != nil {
+		return false
+	}
+	ok, _ := value.(bool)
+	return ok
+}
+
+// MoveEntityFull 移动实体并返回移动后的完整实体快照。
+//
+// 与 MoveEntity 的区别：这里返回 Entity 而不是起点，调用方需要
+// 同步方向/坐标/血量时用这个。AOI 事件仍然返回，供上层广播。
+func (w *World) MoveEntityFull(ctx context.Context, mapID uint32, uid uint64, x, y, maxStep int) (Entity, bool, error) {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		_, moveErr, events := state.MoveEntity(uid, x, y, maxStep)
+		if moveErr != nil {
+			return moveEntityResult{OK: false, Events: events}, moveErr
+		}
+		entity, ok := state.Entity(uid)
+		return moveEntityResult{OK: ok, Entity: entity, Events: events}, nil
+	}))
+	if err != nil {
+		return Entity{}, false, err
+	}
+	result, _ := value.(moveEntityResult)
+	return result.Entity, result.OK, nil
+}
+
+type moveEntityResult struct {
+	OK     bool
+	Entity Entity
+	Events []ObserverEvent
+}
+
+// PickupOne 从 (x,y) 拾取一件物品（不指定 itemID 时取最后一件）。
+//
+// 返回拾到的 itemID 列表（当前一次只拾一件）。
+func (w *World) PickupOne(ctx context.Context, mapID uint32, x, y int, uid uint64) ([]uint32, error) {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		ids := state.GroundItemIDsAt(x, y)
+		if len(ids) == 0 {
+			return []uint32(nil), nil
+		}
+		// 从尾部取（与 PickupItem 的尾部语义一致）
+		itemID := ids[len(ids)-1]
+		ok, _ := state.PickupItem(x, y, itemID)
+		if !ok {
+			return []uint32(nil), nil
+		}
+		return []uint32{itemID}, nil
+	}))
+	if err != nil {
+		return nil, err
+	}
+	got, _ := value.([]uint32)
+	return got, nil
+}
+
+// VisibleEntities 返回某个实体视野内可见的其他实体 UID。
+//
+// 对应原版「AM_QUERYOBSERVED 的反向」：把观察者圈里所有格上的实体收集起来。
+// 进场时用它一次性把周围实体推给客户端（避免逐个 COAppear）。
+func (w *World) VisibleEntities(ctx context.Context, mapID uint32, uid uint64) ([]uint64, error) {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return state.VisibleEntities(uid), nil
+	}))
+	if err != nil {
+		return nil, err
+	}
+	out, _ := value.([]uint64)
+	return out, nil
+}
+
+// DropItem 在指定格掉落物品（供战斗掉落、GM 命令、测试使用）。
+func (w *World) DropItem(ctx context.Context, mapID uint32, x, y int, itemIDs []uint32) ([]GroundItemEvent, error) {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return state.DropItems(x, y, itemIDs), nil
+	}))
+	if err != nil {
+		return nil, err
+	}
+	events, _ := value.([]GroundItemEvent)
+	return events, nil
+}
+
+// SetStats 更新实体的战斗属性（升级/换装后调用）。
+func (w *World) SetStats(ctx context.Context, mapID uint32, uid uint64, stats CombatStats) error {
+	_, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return nil, state.MutateEntity(uid, func(e *Entity) error {
+			e.Stats = stats
+			return nil
+		})
+	}))
+	return err
+}

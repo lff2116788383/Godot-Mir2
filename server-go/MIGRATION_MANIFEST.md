@@ -25,7 +25,7 @@
 | C08 | `netdriver.*`、`actornetdriver.*`、`servicecorenet.*`、`serverpeer.*` | `internal/transport`、`internal/game` | B3/B4 | partial | 登录链路 7 条消息已接（CM_LOGIN/QUERYCHAR/ONLINE/CREATEACCOUNT/CHANGEPASSWORD/CREATECHAR/DELETECHAR）；peer 多进程待 B6 |
 | C09 | `servermap.*`、`servermapop.*` | `internal/world` | B4 | done | 网格/占用/寻路/移动/地图 .bin 加载/AOI 观察者圈/地面物品/火墙全部完成 |
 | C10 | `battleobject.*`、`monster.*`、`buff*.*`、怪物子类 | `internal/world` | B4 | partial | 伤害结算/Buff/仇恨/安全区/刷新完成；19 个怪物子类与 buffact 待补 |
-| C11 | `player.*`、`playerop.*`、`playernet.*`、背包和物品逻辑 | `internal/game` | B5 | pending | 登录链路已通，玩家主体 7,096 行未开始 |
+| C11 | `player.*`、`playerop.*`、`playernet.*`、背包和物品逻辑 | `internal/game` | B5 | in-progress | 进世界/CM_ACTION（移动/站立/攻击/拾取）/AOI 广播/离开落库已通；背包/装备/技能/交易未做 |
 | C12 | `serverluacoroutinerunner.*`、`serverluamodule.*`、Lua 脚本 | `internal/script` | B5 | pending | 默认复用原 Lua 脚本 |
 | C13 | `npchar.*`、`npcharop.*`、NPC 脚本 | `internal/game`、`internal/script` | B5 | pending | |
 | C14 | `quest.*`、`questdb.*`、`questop.*`、任务脚本 | `internal/game`、`internal/script` | B5 | pending | 协程语义高风险 |
@@ -260,3 +260,42 @@
 | 任务/Lua 对象 UID | 同上，id 在最低位 |
 | 登录校验 | **不校验** id/password 格式（原版注释明确允许 test/123456） |
 | 会话清理 | 断线必须 `Drop(channelID)`，否则同账号重连被判 MULTILOGIN |
+
+### B5 第一批：玩家进世界 + 动作链路（已与客户端端到端联调）
+
+状态：**核心闭环打通**
+
+完成内容：
+
+- `internal/game/player.go`：玩家运行时（位置/HP/MP/经验/金币/背包/装备/腰带/魔法/buff）、
+  `PlayerManager`、职业属性派生 `PlayerCombatStats`、等级派生 `DisplayLevel`
+- `internal/game/action.go`：`CM_ACTION` 全链路
+  - `handleStand`（位置重同步）
+  - `handleMove`（estimateHop 校验 → 步长推导 → 移动 → 广播）
+  - `handleAttack`（距离校验 → `world.Combat` 结算 → 广播动作/伤害/未命中/死亡）
+  - `handlePickUp`（距离校验 → world 拾取 → 进背包 → 推 SM_INVENTORY）
+- `internal/game/world_service.go`：玩家 ↔ 地图桥接
+  - `Enter`：建 Player → `world.AddEntity` → **把 AOI 事件转成 SM_CORECORD/SM_CODISAPPEAR**
+  - `SendSnapshot`：进场时把视野内已有实体一次性推给新玩家
+  - `Leave`：移除实体 → 广播消失 → 落库位置/血量/经验
+- `internal/game/wire.go` / `server_handler.go`：动作路由注册 + 断线钩子
+- `world` 补：`VisibleEntities`（我能看到谁）、`CanOccupy`、`MoveEntityFull`、
+  `DropItem`、`PickupOne`、`SetStats`
+- `transport` 补：`Broadcaster`（按 channelID 主动推）、`SessionByID`、`SetHandler`
+
+**端到端验证**（`e2e_test.go`，真 TCP + 真协议 + 真 SQLite）：
+两个客户端连同一服务端，bob 进场能看到 alice，alice 收到 bob 出现通知，
+alice 移动时 bob 收到 `SM_ACTION`。客户端 `--login --run-test c9c8` 连本服务端 15 项全过。
+
+关键行为锁定（都是踩过才知道的）：
+
+| 项 | 结论 |
+|---|---|
+| **StaticBuffer<64> 线上大小** | **68 字节**，不是 67。C++ 是 `u16 + u8[65]`=67，但 u16 要求 2 字节对齐，结构体被 padding 到 68。客户端与 mock 历史上都按 67/69 写，导致服务端读长度字段错位到 `0x3100`=12544，表现是「连上了但登录永远没回应」 |
+| **maxStep 语义** | 是**单跳步长**（1/2/3），不是速度。`LDistance2{1,2}→1`、`{4,8}→2`、`{9,18}→3`。把 moveSpeed(600) 当 maxStep 传会让 `HopValid` 全部失败，玩家「怎么都走不动」 |
+| **estimateHop 与 hopStep 不同** | estimateHop 只有 `distance²∈{1,2}` 算一跳（判断「报文起点=当前位置吗」）；hopStep 的 {4,8,9,18} 是移动步长推导。混用会把 2 格外起点当成正常 |
+| **SM_HEALTH 编码** | 是 MessageVariable，body 必须 `CerealSerialize`。`SDHealth` 含 `SDTaggedValMap`（map），wire 编码器不支持，走 `AppendWirePayload` 会静默丢弃 —— 表现是「打中了但血量不变」 |
+| **攻击 magicID=0** | `DamageNode.Valid()` 要求 `MagicID != 0`，extParam 空时必须兜底成 `MagicIDPlainAttack(1)`，否则攻击完全没反应 |
+| **AOI 事件必须真的发包** | B4 算对了事件但没人发，进程内测试发现不了。必须有**端到端**测试断言网络包 |
+| **进场顺序** | 先进地图再回 SM_ONLINEOK。落地坐标可能被占用/不可走，要读回真实位置，否则客户端拿到的坐标与服务端不一致，进场第一步就「被拉回」 |
+| **离场落库** | `Leave` 要写位置/血量/经验，否则下次登录回到出生点、血满 |

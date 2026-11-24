@@ -93,9 +93,27 @@ func NewServer(options Options) *Server {
 	return &Server{options: options, logger: options.Logger, sessions: make(map[uint64]*Session)}
 }
 
+// SetHandler 在服务创建之后回填 Handler。
+//
+// 为什么需要延迟设置：业务层要主动推消息（AOI 广播），需要 Server 句柄；
+// 而 Server 又需要 Handler 才能启动 —— 用 SetHandler 打破这个循环。
+// 必须在 ListenAndServe/Serve 之前调用。
+func (s *Server) SetHandler(handler Handler) {
+	s.mu.Lock()
+	s.options.Handler = handler
+	s.mu.Unlock()
+}
+
+// handler 返回当前 Handler（带锁读取，支持延迟设置）。
+func (s *Server) handler() Handler {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.options.Handler
+}
+
 // ListenAndServe binds Address and blocks until ctx is canceled or the server fails.
 func (s *Server) ListenAndServe(ctx context.Context) error {
-	if s.options.Handler == nil {
+	if s.handler() == nil {
 		return errors.New("transport handler is nil")
 	}
 	listener, err := net.Listen("tcp", s.options.Address)
@@ -110,7 +128,7 @@ func (s *Server) Serve(ctx context.Context, listener net.Listener) error {
 	if listener == nil {
 		return errors.New("listener is nil")
 	}
-	if s.options.Handler == nil {
+	if s.handler() == nil {
 		return errors.New("transport handler is nil")
 	}
 	s.mu.Lock()
@@ -188,14 +206,14 @@ func (s *Server) runSession(ctx context.Context, session *Session) {
 		delete(s.sessions, session.id)
 		s.mu.Unlock()
 		_ = session.Close()
-		if lifecycle, ok := s.options.Handler.(SessionLifecycleHandler); ok {
+		if lifecycle, ok := s.handler().(SessionLifecycleHandler); ok {
 			lifecycle.SessionClosed(ctx, session)
 		}
 	}()
-	if lifecycle, ok := s.options.Handler.(SessionLifecycleHandler); ok {
+	if lifecycle, ok := s.handler().(SessionLifecycleHandler); ok {
 		lifecycle.SessionOpened(ctx, session)
 	}
-	if err := session.run(ctx, s.options.Handler); err != nil && !errors.Is(err, ErrSessionClosed) && !errors.Is(err, net.ErrClosed) && !errors.Is(err, io.EOF) && ctx.Err() == nil {
+	if err := session.run(ctx, s.handler()); err != nil && !errors.Is(err, ErrSessionClosed) && !errors.Is(err, net.ErrClosed) && !errors.Is(err, io.EOF) && ctx.Err() == nil {
 		s.logger.Info("session closed with error", "session", session.id, "remote", session.remoteAddr, "error", err)
 	}
 }
@@ -250,6 +268,17 @@ func (s *Server) SessionCount() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return len(s.sessions)
+}
+
+// SessionByID 按连接 ID 取会话。
+//
+// 业务层需要「按 channelID 主动推消息」（AOI 广播、伤害通知），
+// 而 Session.Send 挂在会话上，所以要能按 ID 反查。
+// 返回 nil 表示连接已断，调用方应静默丢弃消息。
+func (s *Server) SessionByID(id uint64) *Session {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.sessions[id]
 }
 
 // Session is one accepted client connection.

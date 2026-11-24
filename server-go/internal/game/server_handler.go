@@ -19,8 +19,14 @@ import (
 
 // ServerHandler 把 dispatcher 与登录会话清理组合起来。
 type ServerHandler struct {
-	dispatcher *transport.Dispatcher
-	handler    *Handler
+	dispatcher   *transport.Dispatcher
+	handler      *Handler
+	onDisconnect func(ctx context.Context, channelID uint64)
+}
+
+// SetDisconnectHook 设置断线处理（用于把玩家从地图移除）。
+func (s *ServerHandler) SetDisconnectHook(fn func(ctx context.Context, channelID uint64)) {
+	s.onDisconnect = fn
 }
 
 // NewServerHandler 装配一个既能分发消息、又能清理会话的 Handler。
@@ -41,16 +47,26 @@ func (s *ServerHandler) SessionOpened(context.Context, *transport.Session) {}
 // 不清理会导致「客户端断线重连后被判 MULTILOGIN」——
 // 原版靠 channID 复用规避，Go 侧必须显式清理。
 func (s *ServerHandler) SessionClosed(ctx context.Context, session *transport.Session) {
+	// 先让玩家离开世界（移除地图实体 + 广播消失），再清会话
+	if s.onDisconnect != nil {
+		s.onDisconnect(ctx, session.ID())
+	}
 	s.handler.SessionClosed(session)
 }
 
 // RegisterBootstrapRoutes 注册当前批次已实现的全部消息。
-//
-// B4 阶段只有登录链路；B5 会在这里继续追加玩家、NPC、任务等路由。
 func RegisterBootstrapRoutes(dispatcher *transport.Dispatcher, handler *Handler) error {
 	// CM_PING 保留（客户端连上后先 ping 一次）
 	if err := dispatcher.Register(protocol.CM_PING, transport.PingHandler{}.HandlePacket); err != nil {
 		return err
 	}
 	return RegisterLoginRoutes(dispatcher, handler)
+}
+
+// RegisterAllRoutes 注册登录 + 动作（B5 完整装配）。
+func RegisterAllRoutes(dispatcher *transport.Dispatcher, handler *Handler, actions *ActionHandler) error {
+	if err := RegisterBootstrapRoutes(dispatcher, handler); err != nil {
+		return err
+	}
+	return RegisterActionRoutes(dispatcher, actions)
 }

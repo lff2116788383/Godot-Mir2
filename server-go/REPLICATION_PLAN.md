@@ -1,6 +1,6 @@
 # mir2x server-go 复刻方案
 
-> 状态：执行中；B0-B4 已完成（世界运行时 + 登录链路与客户端联调通过）；B5 待开始
+> 状态：执行中；B0-B5 第一批已完成（玩家进世界 + 动作链路 + AOI 广播端到端打通）
 > 目标分支：`server-go`  
 > 目标目录：`server-go/`  
 > 参考服务端：`E:\Desktop\game\mir2x\server`  
@@ -285,7 +285,23 @@ server-go/
 - `serverobject.cpp`
 - `pathf.cpp`
 
-### B5：玩家、Lua、NPC 和任务
+### B5：玩家、Lua、NPC 和任务（第一批已完成）
+
+已完成（第一批：玩家核心闭环）：
+
+- 玩家运行时（位置/HP/MP/经验/金币/背包/装备/腰带/魔法/buff）
+- `CM_ACTION`：站立重同步、移动、攻击、拾取
+- 玩家 ↔ 地图桥接：进场（含 AOI 事件转网络包）、视野快照、离场落库
+- 端到端验证：两个真 TCP 客户端能看到彼此、移动能互相广播
+
+待补（第二批）：
+
+- 背包操作（CM_DROPITEM / CM_CONSUMEITEM / CM_REQUESTEQUIPWEAR / GRABWEAR / EQUIPBELT）
+- 技能（CM_SETMAGICKEY / 施法表现）
+- 死亡与复活（CM_REQUESTDIE / CM_REQUESTREVIVE）
+- 金币/经验变更协议
+- Lua 协程运行时
+- NPC 对话与任务
 
 - 玩家登录、角色创建、属性、背包、穿戴和技能；
 - 物品使用、价格、耐久和随机属性；

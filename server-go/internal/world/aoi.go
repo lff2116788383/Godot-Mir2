@@ -366,3 +366,49 @@ func (m *MapState) QueryObserved(x, y int) bool {
 	}
 	return false
 }
+
+// VisibleEntities 返回 uid 视野内所有其他实体的 UID（不含自己）。
+//
+// 实现方式：遍历自身观察圈覆盖的格，把这些格上的 Occupants 收集起来去重。
+// 与 VisibleObservers 正好相反 —— 那个是「谁能看到这格」，这个是「我能看到谁」。
+func (m *MapState) VisibleEntities(uid uint64) []uint64 {
+	self, ok := m.Entities[uid]
+	if !ok {
+		return nil
+	}
+	if self.ViewRange <= 0 {
+		// 视野 0 只能看到同格
+		cell, err := m.cell(self.X, self.Y)
+		if err != nil {
+			return nil
+		}
+		out := make([]uint64, 0, len(cell.Occupants))
+		for other := range cell.Occupants {
+			if other != uid {
+				out = append(out, other)
+			}
+		}
+		return out
+	}
+
+	seen := make(map[uint64]struct{}, 32)
+	var out []uint64
+	DoCircle(m.Data, self.X, self.Y, self.ViewRange, func(x, y int) bool {
+		cell, err := m.cell(x, y)
+		if err != nil {
+			return false
+		}
+		for other := range cell.Occupants {
+			if other == uid {
+				continue
+			}
+			if _, dup := seen[other]; dup {
+				continue
+			}
+			seen[other] = struct{}{}
+			out = append(out, other)
+		}
+		return false
+	})
+	return out
+}

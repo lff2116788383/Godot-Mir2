@@ -21,6 +21,23 @@ import (
 // 但 dispatcher 注册又需要 transport.HandlerFunc 的签名。放在 game 包的
 // wire.go 里，依赖方向是 game -> transport，而不是反过来。
 
+// RegisterActionRoutes 注册游戏内动作消息。
+//
+// B5 只接 CM_ACTION（移动/站立/攻击/拾取）。其余动作类消息
+// （CM_REQUESTEQUIPWEAR、CM_CONSUMEITEM 等）在后续迭代追加。
+func RegisterActionRoutes(dispatcher *transport.Dispatcher, handler *ActionHandler) error {
+	if handler == nil {
+		return nil
+	}
+	return dispatcher.Register(protocol.CM_ACTION, func(ctx context.Context, session *transport.Session, packet protocol.Packet) error {
+		var req protocol.CMAction
+		if err := decode(packet, &req); err != nil {
+			return err
+		}
+		return handler.CMAction(ctx, session.ID(), req)
+	})
+}
+
 // RegisterLoginRoutes 把所有登录链路消息注册到 dispatcher。
 //
 // 未注册的消息会被 dispatcher 静默忽略（当前 B4 阶段的行为），

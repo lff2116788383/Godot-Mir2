@@ -34,6 +34,8 @@ type Handler struct {
 	Sessions *SessionManager
 	Accounts *storage.AccountRepository
 	Chars    *storage.CharacterRepository
+	// Worlds 进场时把玩家放进地图。为 nil 时只做登录不进场（测试/简化模式）
+	Worlds *WorldService
 }
 
 // NewHandler 装配登录处理器。
@@ -159,6 +161,24 @@ func (h *Handler) CMOnline(ctx context.Context, channelID, respID uint64, sender
 	}
 	playerUID := common.GetPlayerUID(ch.DBID)
 
+	// ★ 先进地图再回包：落地坐标可能被占用/不可走，需要读回真实位置，
+	//   否则客户端拿到的坐标与服务端不一致，进场后第一步就会「被拉回」。
+	spawnX, spawnY := ch.MapX, ch.MapY
+	if h.Worlds != nil {
+		player, err := h.Worlds.Enter(ctx, ch, channelID)
+		if err != nil {
+			// 进场失败要回滚 online 标记，否则玩家永远上不去
+			h.Sessions.Offline(channelID)
+			if sendErr := sendPayload(sender, protocol.SM_ONLINEERROR,
+				protocol.SMOnlineError{Error: OnlineErrNoChar}, respID); sendErr != nil {
+				return OnlineResult{}, sendErr
+			}
+			return OnlineResult{}, nil
+		}
+		spawnX, spawnY = int32(player.X), int32(player.Y)
+		mapUID = player.MapUID
+	}
+
 	reply := protocol.SMOnlineOK{
 		UID:    playerUID,
 		Gender: ch.Gender != 0,
@@ -167,10 +187,10 @@ func (h *Handler) CMOnline(ctx context.Context, channelID, respID uint64, sender
 		Action: common.ActionNode{
 			Type:      common.ActionStand, // 刚进场是站立
 			Direction: uint8(common.DirectionDown),
-			X:         int16(ch.MapX),
-			Y:         int16(ch.MapY),
-			AimX:      int16(ch.MapX),
-			AimY:      int16(ch.MapY),
+			X:         int16(spawnX),
+			Y:         int16(spawnY),
+			AimX:      int16(spawnX),
+			AimY:      int16(spawnY),
 		},
 	}
 	if err := reply.Name.Assign([]byte(ch.Name)); err != nil {
@@ -180,13 +200,18 @@ func (h *Handler) CMOnline(ctx context.Context, channelID, respID uint64, sender
 		return OnlineResult{}, err
 	}
 
+	// 进场后把视野内已有实体推给新玩家（否则他只看得到自己）
+	if h.Worlds != nil {
+		h.Worlds.SendSnapshot(ctx, ch.Map, playerUID)
+	}
+
 	return OnlineResult{
 		ChannelID: channelID,
 		Character: ch,
 		PlayerUID: playerUID,
 		MapUID:    mapUID,
-		X:         int(ch.MapX),
-		Y:         int(ch.MapY),
+		X:         int(spawnX),
+		Y:         int(spawnY),
 	}, nil
 }
 
