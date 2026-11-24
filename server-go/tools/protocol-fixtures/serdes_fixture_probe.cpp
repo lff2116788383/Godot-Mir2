@@ -8,6 +8,7 @@
 #include <array>
 #include <map>
 #include <unordered_map>
+#include <set>
 #include <utility>
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/string.hpp>
@@ -17,6 +18,7 @@
 #include <cereal/types/array.hpp>
 #include <cereal/types/map.hpp>
 #include <cereal/types/unordered_map.hpp>
+#include <cereal/types/set.hpp>
 #include <cereal/types/utility.hpp>
 
 struct SDSendPackage {
@@ -346,6 +348,69 @@ struct SDStartGameScene {
     template<class Ar> void serialize(Ar & ar) { ar(uid, mapUID, x, y, direction, desp, name, nameColor, viewRange); }
 };
 
+struct SDRuntimeConfig {
+    std::unordered_map<std::string, std::string> m_config;
+    template<class Ar> void serialize(Ar & ar) { ar(m_config); }
+};
+struct SDPlayerConfig {
+    SDMagicKeyList magicKeyList; SDRuntimeConfig runtimeConfig;
+    template<class Ar> void serialize(Ar & ar) { ar(magicKeyList, runtimeConfig); }
+};
+struct SDBuffedAbility {
+    SDTaggedValMap dc0, dc1, mc0, mc1, sc0, sc1, ac0, ac1, mac0, mac1;
+    SDTaggedValMap dcHit, mcHit, dcDodge, mcDodge, speed, luckCurse;
+    template<class Ar> void serialize(Ar & ar) { ar(dc0,dc1,mc0,mc1,sc0,sc1,ac0,ac1,mac0,mac1,dcHit,mcHit,dcDodge,mcDodge,speed,luckCurse); }
+};
+struct SDHealth {
+    uint64_t uid = 0; int hp = 0; int mp = 0; int maxHP = 0; int maxMP = 0; int hpRecover = 0; int mpRecover = 0;
+    SDTaggedValMap buffedMaxHP, buffedMaxMP, buffedHPRecover, buffedMPRecover;
+    template<class Ar> void serialize(Ar & ar) { ar(uid,hp,mp,maxHP,maxMP,hpRecover,mpRecover,buffedMaxHP,buffedMaxMP,buffedHPRecover,buffedMPRecover); }
+};
+struct SDBuffIDList {
+    uint64_t uid = 0; std::vector<uint32_t> idList;
+    template<class Ar> void serialize(Ar & ar) { ar(uid,idList); }
+};
+struct SDRegisterQuest {
+    std::string name;
+    template<class Ar> void serialize(Ar & ar) { ar(name); }
+};
+struct SDQueryQuestUID {
+    std::string name;
+    template<class Ar> void serialize(Ar & ar) { ar(name); }
+};
+struct SDTeamJobReq {
+    int minLevel = -1; int maxLevel = -1; int minCapacity = 0; std::set<uint32_t> magicIDList;
+    template<class Ar> void serialize(Ar & ar) { ar(minLevel,maxLevel,minCapacity,magicIDList); }
+};
+struct SDTeamReq {
+    int maxMember = 0; bool autoAccept = false; std::array<std::optional<SDTeamJobReq>,3> jobReqList;
+    template<class Ar> void serialize(Ar & ar) { ar(maxMember,autoAccept,jobReqList); }
+};
+struct SDTeamPlayer {
+    uint64_t uid = 0; uint32_t level = 0; int job = 0; std::string name;
+    template<class Ar> void serialize(Ar & ar) { ar(uid,level,job,name); }
+};
+struct SDTeamCandidate {
+    SDTeamPlayer player;
+    template<class Ar> void serialize(Ar & ar) { ar(player); }
+};
+struct SDRequestJoinTeam {
+    SDTeamPlayer player; int job = 0; int stat = 0; std::vector<uint32_t> magicIDList;
+    template<class Ar> void serialize(Ar & ar) { ar(player,job,stat,magicIDList); }
+};
+struct SDTeamMemberList {
+    uint64_t teamLeader = 0; std::vector<SDTeamPlayer> memberList; SDTeamReq req;
+    template<class Ar> void serialize(Ar & ar) { ar(teamLeader,memberList,req); }
+};
+struct SDTransferTeamLeader {
+    std::vector<uint64_t> memberList; SDTeamReq req;
+    template<class Ar> void serialize(Ar & ar) { ar(memberList,req); }
+};
+struct SDTeamInfo {
+    uint64_t leader = 0; std::string name; int job = 0; int level = 0; int memberCount = 0; SDTeamReq req;
+    template<class Ar> void serialize(Ar & ar) { ar(leader,name,job,level,memberCount,req); }
+};
+
 template<class T> void dump(const char *name, const T & t) {
     std::ostringstream ss(std::ios::binary);
     { cereal::PortableBinaryOutputArchive ar(ss); ar(t); }
@@ -437,4 +502,19 @@ int main(){
     SDWLDesp wlDesp; wlDesp.wear=wear; wlDesp.hair=3; wlDesp.hairColor=4; dump("SDWLDesp", wlDesp);
     SDUIDWLDesp uidWL; uidWL.uid=42; uidWL.desp=wlDesp; dump("SDUIDWLDesp", uidWL);
     SDStartGameScene startScene; startScene.uid=42; startScene.mapUID=0x1122334455667788ULL; startScene.x=-10; startScene.y=20; startScene.direction=3; startScene.desp=wlDesp; startScene.name="hero"; startScene.nameColor=0x11223344; startScene.viewRange=15; dump("SDStartGameScene", startScene);
+    SDRuntimeConfig runtime; runtime.m_config={{"volume","0.5"}}; dump("SDRuntimeConfig", runtime);
+    SDPlayerConfig playerConfig; playerConfig.magicKeyList.keyList={{1,'a'}}; playerConfig.runtimeConfig=runtime; dump("SDPlayerConfig", playerConfig);
+    SDBuffedAbility buff; buff.dc0.valMap={{1,10}}; buff.mc0.valMap={{2,20}}; buff.dcHit.valMap={{3,30}}; buff.speed.valMap={{1,5}}; dump("SDBuffedAbility", buff);
+    SDHealth health; health.uid=42; health.hp=100; health.mp=50; health.maxHP=200; health.maxMP=100; health.hpRecover=3; health.mpRecover=4; health.buffedMaxHP.valMap={{1,20}}; health.buffedMaxMP.valMap={{1,10}}; health.buffedHPRecover.valMap={{1,2}}; health.buffedMPRecover.valMap={{1,1}}; dump("SDHealth", health);
+    SDBuffIDList buffIDs; buffIDs.uid=42; buffIDs.idList={1,2,3}; dump("SDBuffIDList", buffIDs);
+    SDRegisterQuest registerQuest; registerQuest.name="quest"; dump("SDRegisterQuest", registerQuest);
+    SDQueryQuestUID queryQuest; queryQuest.name="quest"; dump("SDQueryQuestUID", queryQuest);
+    SDTeamJobReq jobReq; jobReq.minLevel=10; jobReq.maxLevel=30; jobReq.minCapacity=5; jobReq.magicIDList={2,5}; dump("SDTeamJobReq", jobReq);
+    SDTeamReq teamReq; teamReq.maxMember=5; teamReq.autoAccept=true; teamReq.jobReqList={jobReq,std::nullopt,std::nullopt}; dump("SDTeamReq", teamReq);
+    SDTeamPlayer teamPlayer; teamPlayer.uid=42; teamPlayer.level=20; teamPlayer.job=1; teamPlayer.name="hero"; dump("SDTeamPlayer", teamPlayer);
+    SDTeamCandidate candidate; candidate.player=teamPlayer; dump("SDTeamCandidate", candidate);
+    SDRequestJoinTeam joinReq; joinReq.player=teamPlayer; joinReq.job=1; joinReq.stat=10; joinReq.magicIDList={2,5}; dump("SDRequestJoinTeam", joinReq);
+    SDTeamMemberList teamMembers; teamMembers.teamLeader=42; teamMembers.memberList={teamPlayer,{43,21,2,"bob"}}; teamMembers.req=teamReq; dump("SDTeamMemberList", teamMembers);
+    SDTransferTeamLeader transfer; transfer.memberList={42,43}; transfer.req=teamReq; dump("SDTransferTeamLeader", transfer);
+    SDTeamInfo teamInfo; teamInfo.leader=42; teamInfo.name="party"; teamInfo.job=1; teamInfo.level=20; teamInfo.memberCount=2; teamInfo.req=teamReq; dump("SDTeamInfo", teamInfo);
 }

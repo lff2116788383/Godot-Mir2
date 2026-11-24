@@ -740,7 +740,11 @@ func (v *SDTaggedValMap) UnmarshalPortable(reader *PortableReader) error {
 	if reader.Err() != nil {
 		return reader.Err()
 	}
-	v.ValMap = make(map[int32]int32, count)
+	if count == 0 {
+		v.ValMap = nil
+	} else {
+		v.ValMap = make(map[int32]int32, count)
+	}
 	for i := 0; i < count; i++ {
 		key := reader.Int32()
 		v.ValMap[key] = reader.Int32()
