@@ -18,6 +18,8 @@
 | B9 | 渲染与输入（Godot 重写） | L2/L3 | 🟨 | 按需 | ~8000 |
 | B11 | 实体同步与怪物渲染 | L0+L2 | ✅ | 6 | ~1600 |
 | B12 | 怪物动作与像素位移 | L0+L2 | ✅ | 4 | ~500 |
+| C1 | UI 框架（ROI/控件树/绘制/7 类控件） | L4 | ✅ | 10 | ~2400 |
+| C2 | 主界面（底部栏/快捷栏/小地图/消息/背包） | L4 | ✅ | 2 | ~600 |
 | B10 | 统一联调（mock 服务端） | — | ✅ | — | — |
 
 ## B1 明细
@@ -63,6 +65,17 @@
 | `client/src/creaturemovable.cpp:191` | `scripts/actor/monster_actor.gd` | ✅ | moveNextMotion 队列切换 |
 | `client/src/creaturemovable.cpp:216` | `scripts/action/creature_movable.gd` | ✅ | getShift 像素位移 |
 | `client/src/clientmonster.cpp:640-672` | `scripts/action/creature_movable.gd` | ✅ | 怪物专用 MOTION_MON_WALK |
+| `client/src/widget.roi.hpp` | `scripts/ui/framework/ui_roi.gd` | ✅ | ROI 求交裁剪 |
+| `client/src/widget.hpp`+`widget.cpp` | `scripts/ui/framework/ui_widget.gd` | ✅ | 控件树/属性求值/尺寸计算 |
+| `client/src/sdldevice.hpp:240-440` | `scripts/ui/framework/ui_canvas.gd` | ✅ | 绘制原语 + ROI 裁剪 |
+| `client/src/buttonbase.cpp:51-130` | `scripts/ui/framework/ui_button.gd` | ✅ | 三态机 + 焦点 |
+| `client/src/labelboard.*` | `scripts/ui/framework/ui_label.gd` | ✅ | 文字标签 |
+| `client/src/imageboard.*` | `scripts/ui/framework/ui_image.gd` | ✅ | 图片 + 动画 |
+| `client/src/scrollcontainer.cpp:376-550` | `scripts/ui/framework/ui_scroll.gd` | ✅ | 滚动 + 拖动 |
+| `client/src/checkbox.*`+`radioselector.*` | `scripts/ui/framework/ui_checkbox.gd` | ✅ | 复选/单选 |
+| `client/src/sliderbase.*`+`texslider.*` | `scripts/ui/framework/ui_slider.gd` | ✅ | 滑块 |
+| `client/src/inputline.cpp:46-170` | `scripts/ui/framework/ui_input_line.gd` | ✅ | 输入 + 光标 + IME 三档 |
+| `client/src/guimanager.cpp` | `scripts/ui/game_ui.gd` | ✅ | 面板布局与装配 |
 | 40 个 `client*.hpp`（帧表部分） | `data/monster_frames.json`<br>`scripts/actor/monster_frames.gd` | ✅ | 12 个类自定义帧表（脚本提取） |
 | `client/src/clientmonster.cpp`<br>`client/src/clientstandmonster.hpp` | `scripts/actor/client_monster.gd` | ✅ | 默认帧表 + gfxID 合成 + standMode |
 | `common/src/*.inc`（5 个） | `data/*.json` | ✅ | 1258 物品/364 怪物/603 地图/116 魔法/21 Buff |
@@ -80,6 +93,8 @@
 | `anim_selftest.gd` | 12 | 动作切换（STAND↔WALK）、4 帧循环推进、朝向同步（场景内运行） |
 | `net_selftest.gd` | 19 | 连接/PING/登录/查人/进图/进场/聊天（需先启动 mock） |
 | `sync_selftest.gd` | 33 | CORECORD 解析（Mon/Ply）、APNG 拆帧、怪物表、实体创建、视野裁剪、动作同步 |
+| `test_ui_framework.gd` | 60 | ROI 裁剪、控件树、尺寸计算、按钮三态、滑块、复选、输入、滚动 |
+| `ui_selftest.gd` | 17 | 面板装配、按钮点击开关面板、布局位置（场景内运行） |
 
 ## 已完成但需回归的
 

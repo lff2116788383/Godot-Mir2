@@ -20,6 +20,8 @@ var map_uid: int = 0
 var co_manager: CoManager = null
 ## 网络客户端（联机时启用）
 var net: MirClient = null
+## 游戏界面（C1+C2 产物）
+var ui: GameUi = null
 
 
 func _ready() -> void:
@@ -55,10 +57,22 @@ func _ready() -> void:
 	await get_tree().process_frame
 	print("[Main] 纹理缓存: %s" % str(TexCache.stats()))
 
+	_create_ui()
 	_update_hud()
 	await _maybe_connect()
 	_maybe_run_test()
 	_maybe_autoshot()
+
+
+## 创建游戏界面（对应 GUIManager）
+func _create_ui() -> void:
+	ui = GameUi.new()
+	ui.name = "GameUi"
+	add_child(ui)
+	# 注入数据引用
+	ui.co_manager = co_manager
+	ui.player_actor = _player
+	print("[Main] 界面已创建")
 
 
 ## 支持 --online：连 mock 服务端并显示场景实体
@@ -130,6 +144,12 @@ func _maybe_run_test() -> void:
 		var t0: Node = load("res://tools/_dbg3.gd").new()
 		add_child(t0)
 		await t0.run(self)
+		return
+	if name == "ui":
+		var tu: Node = load("res://tools/ui_selftest.gd").new()
+		add_child(tu)
+		await tu.run(self)
+		get_tree().quit(0)
 		return
 	if name == "sync":
 		var ts: Node = load("res://tools/sync_selftest.gd").new()
@@ -235,6 +255,9 @@ func _update_hud() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _map == null:
+		return
+	# UI 优先处理（对应原版 GUIManager::processEventDefault 先于地图）
+	if ui != null and ui.handle_input(event):
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var world: Vector2 = get_global_mouse_position()
