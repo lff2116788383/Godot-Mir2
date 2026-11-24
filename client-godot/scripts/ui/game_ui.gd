@@ -33,6 +33,10 @@ const ScrollRef := preload("res://scripts/ui/framework/ui_scroll.gd")
 const CheckboxRef := preload("res://scripts/ui/framework/ui_checkbox.gd")
 const SliderRef := preload("res://scripts/ui/framework/ui_slider.gd")
 const InputRef := preload("res://scripts/ui/framework/ui_input_line.gd")
+const NpcChatRef := preload("res://scripts/ui/ui_npc_chat.gd")
+const ItemGfxRef := preload("res://scripts/item/item_gfx.gd")
+const ItemRecordRef := preload("res://scripts/item/item_record.gd")
+const ItemLayoutRef := preload("res://scripts/item/item_layout.gd")
 
 ## 面板
 var control_board: WidgetRef = null      ## 根控件（铺满屏幕）
@@ -42,6 +46,19 @@ var hero_state_board: WidgetRef = null   ## 人物状态（装备+属性）
 var mini_map_board: WidgetRef = null     ## 小地图
 var inventory_board: WidgetRef = null    ## 背包
 var msg_stack_board: WidgetRef = null    ## 消息/聊天
+var npc_chat: NpcChatRef = null          ## NPC 对话（C3）
+
+## 背包数据（由 main 注入 SDInventory）
+var inventory_data = null
+## 人物装备（WLG 槽位 -> 物品 id）
+var wear_list: Dictionary = {}
+## 悬停的背包格（-1 表示无）
+var _hover_cell := -1
+## 背包格尺寸（原版 SYS_INVGRIDPW/PH）
+const INV_GRID_W := 33
+const INV_GRID_H := 32
+const INV_COLS := 10
+const INV_ROWS := 10
 
 ## 绘制器
 var _canvas: CanvasRef = null
@@ -108,6 +125,10 @@ func _layout() -> void:
 	if msg_stack_board != null:
 		msg_stack_board.position = Vector2(8, vh - cbh - 48 - 138)
 
+	# NPC 对话：屏幕中下部（原版居中，这里避开快捷栏）
+	if npc_chat != null:
+		npc_chat.position = Vector2((vw - npc_chat.size_w()) / 2, vh - cbh - 48 - 260)
+
 
 # ==================== 构建 ====================
 
@@ -126,6 +147,7 @@ func _build_ui() -> void:
 	_build_inventory()
 	_build_msg_stack()
 	_build_mini_map()
+	_build_npc_chat()
 
 	# 立即布局一次，避免首帧 _draw 早于 _process 导致位置为 0
 	_layout()
@@ -249,18 +271,54 @@ func _draw_inventory(_w, roi) -> void:
 	canvas.draw_rect_c(Color(0.07, 0.07, 0.1, 0.95), roi.x, roi.y, roi.w, roi.h, true)
 	canvas.draw_border(Color(0.5, 0.45, 0.3, 1.0), roi.x, roi.y, roi.w, roi.h, 2)
 	canvas.draw_string_c("背包", roi.x + 10, roi.y + 6, Color(0.95, 0.85, 0.5), null, 14)
+	var cnt := 0
+	if inventory_data != null:
+		cnt = inventory_data.size()
+	canvas.draw_string_c("%d 件" % cnt, roi.x + roi.w - 56, roi.y + 6,
+		Color(0.7, 0.68, 0.62), null, 12)
 
-	# 10x10 格（原版 SYS_INVGRIDW=10, H=10，格 36x32）
 	var grid_x: int = roi.x + 12
 	var grid_y: int = roi.y + 30
-	var cw := 33
-	var ch := 32
-	for gy in range(10):
-		for gx in range(10):
-			var cx: int = grid_x + gx * cw
-			var cy: int = grid_y + gy * ch
-			canvas.draw_rect_c(Color(0.12, 0.12, 0.16, 0.85), cx, cy, cw - 1, ch - 1, true)
-			canvas.draw_border(Color(0.25, 0.25, 0.3, 0.8), cx, cy, cw - 1, ch - 1, 1)
+
+	# 先画底格
+	for gy in range(INV_ROWS):
+		for gx in range(INV_COLS):
+			var cx: int = grid_x + gx * INV_GRID_W
+			var cy: int = grid_y + gy * INV_GRID_H
+			canvas.draw_rect_c(Color(0.12, 0.12, 0.16, 0.85), cx, cy,
+				INV_GRID_W - 1, INV_GRID_H - 1, true)
+			canvas.draw_border(Color(0.25, 0.25, 0.3, 0.8), cx, cy,
+				INV_GRID_W - 1, INV_GRID_H - 1, 1)
+
+	# 再按顺序画物品（原版按背包格线性排列）
+	if inventory_data == null:
+		return
+	var items: Array = inventory_data.item_list()
+	for i in range(mini(items.size(), INV_COLS * INV_ROWS)):
+		var it = items[i]
+		if it == null:
+			continue
+		var gx2: int = i % INV_COLS
+		var gy2: int = i / INV_COLS
+		var cx2: int = grid_x + gx2 * INV_GRID_W
+		var cy2: int = grid_y + gy2 * INV_GRID_H
+
+		var tex := ItemGfxRef.icon_of_item(it.item_id)
+		if tex != null:
+			# 图标在格内居中（原版 drawItem 的做法）
+			var off := ItemGfxRef.center_offset(tex, INV_GRID_W - 1, INV_GRID_H - 1)
+			canvas.tex_draw(tex, cx2 + off.x, cy2 + off.y)
+		else:
+			# 无图标时画名字首字
+			var nm := ItemRecordRef.name(it.item_id)
+			if not nm.is_empty():
+				canvas.draw_string_c(nm.substr(0, 1), cx2 + 10, cy2 + 10,
+					Color(0.85, 0.8, 0.7), null, 12)
+
+		# 数量（>1 时右下角显示）
+		if it.count > 1:
+			canvas.draw_string_shadow(str(it.count), cx2 + INV_GRID_W - 14, cy2 + INV_GRID_H - 15,
+				Color(1, 1, 0.7), Color(0, 0, 0, 0.9), 1, null, 11)
 
 
 ## 消息栈（对应 messagestackboard，173 行）
@@ -283,6 +341,15 @@ func _draw_msg_stack(_w, roi) -> void:
 	for ln in lines:
 		canvas.draw_string_shadow(str(ln), roi.x + 4, y, Color(0.95, 0.93, 0.86), Color(0, 0, 0, 0.9), 1, null, 13)
 		y += 18
+
+
+## NPC 对话面板（对应 gui/npcchatboard）
+func _build_npc_chat() -> void:
+	npc_chat = NpcChatRef.new("NpcChat")
+	npc_chat.set_canvas(_canvas)
+	npc_chat.on_npc_event = func(_w, evt_path): _push_sys_msg("NPC 事件: " + evt_path)
+	npc_chat.on_close = func(_w): _push_sys_msg("关闭对话")
+	control_board.add_widget(npc_chat, 0, 0)
 
 
 ## 小地图（对应 minimapboard，608 行）

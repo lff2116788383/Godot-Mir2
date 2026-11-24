@@ -20,6 +20,8 @@
 | B12 | 怪物动作与像素位移 | L0+L2 | ✅ | 4 | ~500 |
 | C1 | UI 框架（ROI/控件树/绘制/7 类控件） | L4 | ✅ | 10 | ~2400 |
 | C2 | 主界面（底部栏/快捷栏/小地图/消息/背包） | L4 | ✅ | 2 | ~600 |
+| C3 | XML 解析 + NPC 对话面板 | L0+L4 | ✅ | 4 | ~800 |
+| C4 | 战斗表现（飘字/淡出/受击）+ 物品图标 | L2 | ✅ | 3 | ~600 |
 | B10 | 统一联调（mock 服务端） | — | ✅ | — | — |
 
 ## B1 明细
@@ -76,6 +78,11 @@
 | `client/src/sliderbase.*`+`texslider.*` | `scripts/ui/framework/ui_slider.gd` | ✅ | 滑块 |
 | `client/src/inputline.cpp:46-170` | `scripts/ui/framework/ui_input_line.gd` | ✅ | 输入 + 光标 + IME 三档 |
 | `client/src/guimanager.cpp` | `scripts/ui/game_ui.gd` | ✅ | 面板布局与装配 |
+| `client/src/xmlparagraph.cpp:320-410` | `scripts/ui/xml_layout.gd` | ✅ | XML 解析（layout/par/emoji/image/text） |
+| `client/src/xmltypeset.cpp:624-780` | `scripts/ui/xml_typeset_builder.gd` | ✅ | Token 构建与排版 |
+| `client/src/gui/npcchatboard` | `scripts/ui/ui_npc_chat.gd` | ✅ | NPC 对话面板 |
+| `client/src/ascendstr.cpp` | `scripts/actor/fight_effects.gd` | ✅ | 飘字轨迹/淡出/死亡 |
+| `client/src/inventoryboard.cpp:182-200` | `scripts/item/item_gfx.gd` | ✅ | 物品图标（pkgGfxID\|0x01000000） |
 | 40 个 `client*.hpp`（帧表部分） | `data/monster_frames.json`<br>`scripts/actor/monster_frames.gd` | ✅ | 12 个类自定义帧表（脚本提取） |
 | `client/src/clientmonster.cpp`<br>`client/src/clientstandmonster.hpp` | `scripts/actor/client_monster.gd` | ✅ | 默认帧表 + gfxID 合成 + standMode |
 | `common/src/*.inc`（5 个） | `data/*.json` | ✅ | 1258 物品/364 怪物/603 地图/116 魔法/21 Buff |
@@ -95,6 +102,8 @@
 | `sync_selftest.gd` | 33 | CORECORD 解析（Mon/Ply）、APNG 拆帧、怪物表、实体创建、视野裁剪、动作同步 |
 | `test_ui_framework.gd` | 60 | ROI 裁剪、控件树、尺寸计算、按钮三态、滑块、复选、输入、滚动 |
 | `ui_selftest.gd` | 17 | 面板装配、按钮点击开关面板、布局位置（场景内运行） |
+| `test_c3_c4.gd` | 42 | XML 解析、排版换行、NPC 面板、飘字、物品图标 |
+| `c3_c4_scene.gd` | 13 | NPC 对话弹出、背包注入、飘字推进速率、死亡淡出（场景内） |
 
 ## 已完成但需回归的
 

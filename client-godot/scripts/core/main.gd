@@ -22,6 +22,12 @@ var co_manager: CoManager = null
 var net: MirClient = null
 ## 游戏界面（C1+C2 产物）
 var ui: GameUi = null
+## 战斗表现层（C4 产物）
+var fx: FightEffects = null
+## 背包数据（SDInventory）
+var _inventory = null
+
+const SdInventory := preload("res://scripts/item/sd_inventory.gd")
 
 
 func _ready() -> void:
@@ -57,11 +63,28 @@ func _ready() -> void:
 	await get_tree().process_frame
 	print("[Main] 纹理缓存: %s" % str(TexCache.stats()))
 
+	_create_fx()
+	_init_inventory()
 	_create_ui()
 	_update_hud()
 	await _maybe_connect()
 	_maybe_run_test()
+	await _maybe_demo()
 	_maybe_autoshot()
+
+
+## 初始化背包（实际数据由服务端下发，这里先建空背包）
+func _init_inventory() -> void:
+	_inventory = SdInventory.new()
+	print("[Main] 背包已初始化，容量 %d" % _inventory.capacity())
+
+
+## 创建战斗表现层（对应 ProcessRun 的 m_ascendStrList）
+func _create_fx() -> void:
+	fx = FightEffects.new()
+	fx.name = "FightEffects"
+	add_child(fx)
+	print("[Main] 战斗表现层已创建")
 
 
 ## 创建游戏界面（对应 GUIManager）
@@ -72,7 +95,36 @@ func _create_ui() -> void:
 	# 注入数据引用
 	ui.co_manager = co_manager
 	ui.player_actor = _player
+	ui.inventory_data = _inventory
+	ItemGfx.setup(Game.assets_root)
 	print("[Main] 界面已创建")
+
+
+## 支持 --demo：演示 NPC 对话与战斗飘字（用于截图验证）
+func _maybe_demo() -> void:
+	var args := OS.get_cmdline_user_args()
+	if args.find("--demo") < 0:
+		return
+	if ui == null:
+		return
+	await _wait_sec(0.3)
+	# NPC 对话（实测格式）
+	if ui.npc_chat != null:
+		ui.npc_chat.show_layout(0x1234,
+			"<layout><par>勇士，你终于来了。比奇县最近不太平，</par><par>南边的森林里出现了许多怪物。</par></layout>",
+			"npc_hello")
+	# 战斗飘字
+	if fx != null:
+		fx.on_damage(_player.grid.x + 2, _player.grid.y, 128)
+		fx.on_magic_damage(_player.grid.x - 2, _player.grid.y, 256)
+		fx.on_heal(_player.grid.x, _player.grid.y - 2, 30)
+		fx.on_miss(_player.grid.x + 3, _player.grid.y + 1)
+	# 打开背包看物品区
+	if ui.inventory_board != null:
+		ui.inventory_board.show = true
+	# 系统消息
+	ui._push_sys_msg("欢迎来到比奇县")
+	ui._push_sys_msg("按 F1 打开背包")
 
 
 ## 支持 --online：连 mock 服务端并显示场景实体
@@ -124,6 +176,27 @@ func _on_net_frame(code: int, body: PackedByteArray, _resp: int) -> void:
 		MirClient.SM_CODISAPPEAR:
 			if body.size() >= 16:
 				co_manager.remove_uid(body.decode_s64(0))
+		MirClient.SM_DEADFADEOUT:
+			# SMDeadFadeOut { u64 UID; u64 mapUID; u32 X; u32 Y; } = 24 字节
+			if body.size() >= 16 and fx != null:
+				var uid := body.decode_s64(0)
+				var node = co_manager.find_uid(uid)
+				if node != null:
+					fx.start_fade_out(node)
+		MirClient.SM_NOTIFYDEAD:
+			# SMNotifyDead { u64 UID; } = 8 字节
+			if body.size() >= 8 and fx != null:
+				var uid2 := body.decode_s64(0)
+				var node2 = co_manager.find_uid(uid2)
+				if node2 != null and fx != null:
+					fx.start_fade_out(node2)
+		MirClient.SM_MISS:
+			# SMMiss { u64 UID; } = 8 字节
+			if body.size() >= 8 and fx != null:
+				var uid3 := body.decode_s64(0)
+				var node3 = co_manager.find_uid(uid3)
+				if node3 != null:
+					fx.on_miss(node3.grid.x, node3.grid.y)
 
 
 func _wait_sec(sec: float) -> void:
@@ -144,6 +217,12 @@ func _maybe_run_test() -> void:
 		var t0: Node = load("res://tools/_dbg3.gd").new()
 		add_child(t0)
 		await t0.run(self)
+		return
+	if name == "c3c4":
+		var tc: Node = load("res://tools/c3_c4_scene.gd").new()
+		add_child(tc)
+		await tc.run(self)
+		get_tree().quit(0)
 		return
 	if name == "ui":
 		var tu: Node = load("res://tools/ui_selftest.gd").new()

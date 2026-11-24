@@ -358,6 +358,9 @@ func build_typeset(origin_x: int = 0, origin_y: int = 0) -> void:
 	var base_width := line_target_width()
 
 	# 逐行设置 X 与 Y
+	# 关键：start_y 必须在排版时逐行累加（xmltypeset.cpp:296 lineNewStartY）
+	# 不能沿用 new_line() 时算的粗值 —— 那时上一行还没排版，_line_bottom 是 0
+	var acc_y := 0
 	for i in range(m_line_list.size()):
 		if line_align == LALIGN_JUSTIFY or line_align == LALIGN_DISTRIBUTED:
 			line_padding(i)
@@ -366,13 +369,31 @@ func build_typeset(origin_x: int = 0, origin_y: int = 0) -> void:
 		if allow_extend and (line_align == LALIGN_RIGHT or line_align == LALIGN_CENTER):
 			full_width = maxi(full_width, line_full_width(i))
 
+		# 本行起始 Y = 上一行底部 + 行距
+		m_line_list[i]["start_y"] = acc_y
+
 		set_line_token_start_x(i, full_width)
 		set_line_token_start_y(i)
+
+		# 累加本行高度（含 line_space）
+		acc_y += _line_content_height(i) + line_space
 
 		# 加上原点偏移
 		for t in m_line_list[i]["content"]:
 			t.x += origin_x
 			t.y += origin_y
+
+
+## 本行内容高度（max_h1 + max_h2），不含行距
+func _line_content_height(line: int) -> int:
+	if not line_valid(line) or m_line_list[line]["content"].is_empty():
+		return 0
+	var max_h1 := 0
+	var max_h2 := 0
+	for t in m_line_list[line]["content"]:
+		max_h1 = maxi(max_h1, t.h1)
+		max_h2 = maxi(max_h2, t.h2)
+	return max_h1 + max_h2
 
 
 ## 计算行的原始宽度（不含首 W1 与末 W2）

@@ -99,9 +99,11 @@ func get_quality_item_list(item_id: int, min_quality: int, count: int):
 ## keep_seq_id=true 时保留给定 seqID（需保证不重复）
 ## 返回实际加入的物品
 func add(new_item, keep_seq_id: bool = false):
+	# 原版只断言 newItem 非空（serdesmsg.cpp:131 fflassert(newItem)），
+	# 不校验 seqID —— seqID 正是这里要分配的，不能用 is_valid() 提前拦掉
 	if new_item == null:
 		return null
-	if not new_item.is_valid():
+	if new_item.item_id == 0 or new_item.count == 0:
 		return null
 	var seq_set := get_item_id_seq_set()
 
