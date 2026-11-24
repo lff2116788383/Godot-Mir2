@@ -229,14 +229,15 @@ func (s *Server) onPing(sess *Session, f *Frame) {
 
 // ---- CM_LOGIN ----
 // CMLogin { StaticBuffer<64> id; StaticBuffer<64> password; } = 136 字节
-// 每个 StaticBuffer = u16 size + 65 字节 data
+// 每个 StaticBuffer = u16 size + u8[65]，对齐后 **68 字节**（不是 67）
 func (s *Server) onLogin(sess *Session, f *Frame) {
 	if len(f.Body) != 136 {
 		return
 	}
 	idSize := getU16(f.Body, 0)
 	id := string(f.Body[2 : 2+idSize])
-	pwOff := 2 + 65
+	// StaticBuffer<64> 线上占 68 字节（u16 + u8[65] 对齐到 68），不是 67
+	pwOff := 68
 	pwSize := getU16(f.Body, pwOff)
 	pw := string(f.Body[pwOff+2 : pwOff+2+int(pwSize)])
 

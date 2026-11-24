@@ -89,6 +89,8 @@ const CANVAS_H := 600
 
 ## 协议体尺寸
 const CMLOGIN_SIZE := 136
+## StaticBuffer<64> 的线上大小：u16 size + u8[65]，对齐到偶数 = 68
+const STATIC_BUF_64_SIZE := 68
 const CMNEWACCOUNT_SIZE := 203      ## id 67 + pwd 67 + pwdConfirm 67 = 201，mock 按 203
 const CMCHANGEPWD_SIZE := 203       ## id 67 + pwd 67 + pwdNew 67
 
@@ -387,12 +389,19 @@ func do_login() -> void:
 
 
 ## processlogin.cpp:sendLogin（CMLogin 136 字节）
+##
+## ★ 每个 StaticBuffer<64> 占 **68 字节**，不是 67：
+##   C++ 里是 `uint16_t size + uint8_t data[65]` = 67，
+##   但 uint16_t 要求 2 字节对齐，整个结构体被 padding 到 68。
+##   cerealf 按 POD 原始内存布局拷贝，所以落盘/上线就是 68。
+##   所以第二个 buffer 的起点是 68，不是 69 ——
+##   之前写 69 会让服务端读到的长度字段错位（读到 0x3100 = 12544）。
 func send_login(id: String, pwd: String) -> void:
 	var body := PackedByteArray()
 	body.resize(CMLOGIN_SIZE)
 	body.fill(0)
 	_put_static_buf(body, 0, id)
-	_put_static_buf(body, 69, pwd)
+	_put_static_buf(body, STATIC_BUF_64_SIZE, pwd)
 	if on_send.is_valid():
 		on_send.call(2, body)   # CM_LOGIN = 2
 

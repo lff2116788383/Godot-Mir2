@@ -379,8 +379,10 @@ func on_submit() -> void:
 	body.encode_u16(0, n)
 	for i in range(n):
 		body[2 + i] = bytes[i]
-	body[67] = job
-	body[68] = 1 if active_gender_male else 0
+	# ★ CM_CREATECHAR = StaticBuffer<64> name + u8 job + u8 gender
+	#   StaticBuffer 占 68 字节（对齐），所以 job 在 68、gender 在 69。
+	body[68] = job
+	body[69] = 1 if active_gender_male else 0
 	if on_send.is_valid():
 		on_send.call(CM_CREATECHAR, body)
 	add_notify("提交中")

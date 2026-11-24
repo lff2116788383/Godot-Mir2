@@ -386,9 +386,12 @@ func on_query_char_ok(body: PackedByteArray) -> void:
 		return
 	has_char = true
 	char_name = _get_static_buf(body, 0)
-	char_gender_male = body[67] != 0
-	char_job = body[68]
-	char_exp = body.decode_u64(69)
+	# ★ StaticBuffer<64> 占 68 字节（u16 + u8[65]，对齐到 68），
+	#   不是 67。所以 gender 在 68、job 在 69、exp 在 70。
+	#   按 67/68/69 读会把性别读成 job 的字节 —— 角色显示成错的性别。
+	char_gender_male = body[68] != 0
+	char_job = body[69]
+	char_exp = body.decode_u64(70)
 	# 原版：收到角色数据后按 hasChar 决定按钮显隐，无需额外处理
 	notify.clear()
 	if char_name.is_empty():

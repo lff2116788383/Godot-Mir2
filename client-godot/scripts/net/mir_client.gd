@@ -360,10 +360,17 @@ func login(account: String, password: String) -> int:
 	body.encode_u16(0, a.size())
 	for i in range(mini(a.size(), 64)):
 		body[2 + i] = a[i]
+	# ★ StaticBuffer<64> 线上占 68 字节，不是 67：
+	#   C++ 是 `uint16_t size + uint8_t data[65]` = 67，
+	#   但 uint16_t 要求 2 字节对齐，结构体被 padding 到 68。
+	#   cerealf 按 POD 原始内存布局拷贝，所以第二个 buffer 从 68 开始。
+	#   写成 67/69 会让服务端读到的长度字段错位（读到 0x3100 = 12544），
+	#   表现就是「连上了但登录永远没回应」。
+	var pw_off := 68
 	var pw_bytes := password.to_utf8_buffer()
-	body.encode_u16(67, pw_bytes.size())
+	body.encode_u16(pw_off, pw_bytes.size())
 	for i in range(mini(pw_bytes.size(), 64)):
-		body[69 + i] = pw_bytes[i]
+		body[pw_off + 2 + i] = pw_bytes[i]
 	return send(CM_LOGIN, body, true)
 
 

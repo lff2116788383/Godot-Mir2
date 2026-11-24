@@ -286,9 +286,10 @@ func _test_select_process() -> void:
 	body.encode_u16(0, nm.size())
 	for i in range(nm.size()):
 		body[2 + i] = nm[i]
-	body[67] = 1        # gender（1=男）
-	body[68] = 1        # job（战士）
-	body.encode_u64(69, 0)
+	# StaticBuffer<64> 占 68 字节（对齐），所以 gender 在 68、job 在 69
+	body[68] = 1        # gender（1=男）
+	body[69] = 1        # job（战士）
+	body.encode_u64(70, 0)  # exp 在 70（job/gender 之后，别覆盖它们）
 	sp.on_query_char_ok(body)
 	_ok(sp.has_char, "收到角色后 has_char")
 	_ok(sp.char_name == "测试角色", "角色名解析", sp.char_name)
@@ -410,11 +411,11 @@ func _test_create_char() -> void:
 	b2.encode_u16(0, nb.size())
 	for i in range(nb.size()):
 		b2[2 + i] = nb[i]
-	b2[67] = 4
-	b2[68] = 0
+	b2[68] = 4   # job（法师）
+	b2[69] = 0   # gender（0=女）
 	_ok(b2.decode_u16(0) == 6, "角色名 UTF-8 长度 6", str(b2.decode_u16(0)))
-	_ok(b2[67] == 4, "职业字段 = 4（法师）")
-	_ok(b2[68] == 0, "性别字段 = 0（女）")
+	_ok(b2[68] == 4, "职业字段 = 4（法师）")
+	_ok(b2[69] == 0, "性别字段 = 0（女）")
 
 
 # ==================== 账号 / 改密 ====================
