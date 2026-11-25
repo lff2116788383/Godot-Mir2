@@ -238,5 +238,47 @@ func DefaultConsts() map[string]lua.LValue {
 		"LOGTYPE_INFO":    lua.LNumber(0),
 		"LOGTYPE_WARNING": lua.LNumber(1),
 		"LOGTYPE_FATAL":   lua.LNumber(2),
+
+		// ---- 方向（protocoldef.hpp:20-45 dir8_t）----
+		//
+		// ★ 地图脚本大量用 DIR_DOWNLEFT 之类当 addGuard 的第 4 个参数。
+		//   不注入的后果不是「守卫朝向错了」，而是
+		//   `bad argument #4 to addGuard (number expected, got nil)`
+		//   —— 整张地图的脚本加载直接失败，一只怪都刷不出来。
+		"DIR_NONE":      lua.LNumber(0),
+		"DIR_BEGIN":     lua.LNumber(1),
+		"DIR_UP":        lua.LNumber(1),
+		"DIR_UPRIGHT":   lua.LNumber(2),
+		"DIR_RIGHTUP":   lua.LNumber(2),
+		"DIR_RIGHT":     lua.LNumber(3),
+		"DIR_DOWNRIGHT": lua.LNumber(4),
+		"DIR_RIGHTDOWN": lua.LNumber(4),
+		"DIR_DOWN":      lua.LNumber(5),
+		"DIR_DOWNLEFT":  lua.LNumber(6),
+		"DIR_LEFTDOWN":  lua.LNumber(6),
+		"DIR_LEFT":      lua.LNumber(7),
+		"DIR_UPLEFT":    lua.LNumber(8),
+		"DIR_LEFTUP":    lua.LNumber(8),
+		"DIR_END":       lua.LNumber(9),
+
+		// ---- 安全区类型（sysconst.hpp:195）----
+		// addSafeZone 的第一个参数，脚本用它区分「要加哪种区域」
+		"SYS_SAFEZONE": lua.LString("_RSVD_NAME_SAFE_ZONE_5182730946"),
+
+		// ---- 背包操作类型（protocoldef.hpp:464-466）----
+		"INVOP_TRADE":  lua.LNumber(1),
+		"INVOP_SECURE": lua.LNumber(2),
+		"INVOP_REPAIR": lua.LNumber(3),
+
+		// ---- UID 类型（uidf.hpp）----
+		"UID_NONE":  lua.LNumber(0),
+		"UID_BEGIN": lua.LNumber(0),
+		"UID_COR":   lua.LNumber(0),
+		"UID_MAP":   lua.LNumber(1),
+		"UID_PLY":   lua.LNumber(2),
+		"UID_MON":   lua.LNumber(3),
+		"UID_NPC":   lua.LNumber(4),
+		"UID_RCV":   lua.LNumber(6),
+		"UID_END":   lua.LNumber(7),
 	}
 }

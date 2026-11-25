@@ -456,3 +456,89 @@ INFO player entered world name=测试角色 map=1 at=(400,402)
 | 事件 ID 的 AES 加密 | 链路能通，但缺「防改包点未授权选项」 |
 | 仓库 / 交易 / 修理 | 对话框能弹，点确认无效果 |
 | `CM_NPCEVENT` 客户端侧 | 客户端还没发这条消息，只能服务端侧验证 |
+
+### B5 第五批：地图脚本与刷怪（本轮）
+
+**核心：地图脚本同样零翻译复用。**
+
+`server/script/map/*.lua`（285 个非空脚本、17,754 行）直接由 Lua 运行时加载，
+原版脚本一行不改。
+
+**新增文件**
+
+| 文件 | 行数 | 内容 |
+|---|---|---|
+| `internal/script/mapscript.go` | 520 | 地图脚本加载 + 刷怪协程驱动 + 20 个绑定 |
+| `internal/world/monsterdb.go` | 300 | 怪物表（364 条完整数值含元素抗性/掉落） |
+| `internal/game/mapscript.go` | 400 | 地图脚本管理器 + 宿主（刷怪/守卫/安全区） |
+| `tools/extract/extract_monsters.py` | 250 | 从 monsterrecord.inc 提取怪物表 |
+
+**世界层新增 API**：`MapSize` / `CanWalk` / `CountWalkable` / `AddSafeZoneCircle`
+
+**本轮踩的 4 个大坑（都是性能/语义级，值得记）**
+
+1. **`\b\.hp` 正则永不匹配**
+   与上一轮 `mp` 完全同一个坑。`\b` 要求「单词字符与点之间」有词边界，
+   而 `.hp` 前面永远是空白 —— 整条正则永远不匹配，全表 hp=0。
+   表现是「怪物打不死」（HP 是 0）。
+
+2. **`patchIntDiv` 的正则灾难性回溯（28.9 秒 → 0）**
+   第一版为了让 `//` 匹配「标识符/函数调用/括号/数字」四种形态，
+   写了一个四选一的复杂正则。在 427 行的地图脚本上**灾难性回溯**，
+   耗时 28.9 秒且一处都没匹配上。
+   pprof 一照：`regexp.(*machine).add` 占 44.89%、`.step` 占 18.98%，
+   合计 **87% 时间在正则引擎里**。
+   改成「线性扫描找 `//` 字面量 + 上下文判断」后耗时归零。
+
+3. **gopher-lua 不支持从 Go 函数 yield（地图加载卡死）**
+   `pause(msec)` 最初用 Go 绑定实现，里面调 `l.Yield(...)`。
+   实测 `Yield` 被**静默忽略**：Resume 直接返回 `ResumeOK`，
+   `main()` 里的 `while true` 变成死循环，`Start()` 永不返回 ——
+   服务端日志停在 `npc spawned` 之后再无输出，也不报错。
+   而 **Lua 层的 `coroutine.yield` 是正常的**（Resume 返回 `ResumeYield`）。
+   修法：`pause` 必须在 Lua 里定义（`installPause` 注入），
+   Go 只负责「什么时候 resume」。
+
+4. **`countGLoc` 逐格回调太慢（41 万次跨语言调用）**
+   道馆_1 的配置是 20 种怪 × 285 个 38×38 区域 = 41 万格。
+   每格跨一次 Lua↔Go 边界（gopher-lua 是 AST 解释器，比 C Lua 慢一个量级），
+   加载要 30 秒。
+   修法：`CountThrough` 批量方法，一次算完整块 + 结果按 (x,y,w,h) 缓存。
+   14 万次调用 → 60 次。
+   （注：这一条最终不是主因，主因是第 2 条的 28.9 秒正则，但批量+缓存本身也应该做。）
+
+**另修：UID 构造越界**（与 NPC 同一个问题）
+`BuildMonsterUID(id, peerIndex, seq)` 的 peerIndex 是 4 bit，
+传坐标会越界。改用自增序号做 seq。
+
+**验证结果**
+
+```
+$ go run ./tools/mapcheck（诊断工具，已删除）
+加载 道馆_1 ...
+  加载完成 11.3ms（CanThrough 60 次）      ← 原 29.5 秒
+启动 main() ...
+  启动完成 2.0ms（AddMonster 2821 次）
+```
+
+服务端实跑（比奇县_0）：
+
+```
+INFO map script loaded map=比奇县_0 spawners=1 guards=27 monsters=1107 safeZones=3
+```
+
+**一张图刷出 1107 只怪、27 个守卫、3 个安全区，刷怪协程持续运行。**
+客户端 `--login --run-test c9c8` **15 项全过**。
+
+**怪物表提取结果**：364 条。注意原版只有 1 只怪（黑野猪）配了掉落表，
+其余 363 只没有 dropItemList —— 这不是解析 bug，是上游数据本身如此。
+
+**本轮未做**
+
+| 项目 | 影响 |
+|---|---|
+| 怪物 AI 行为 | 怪能刷出来但不会动、不会打人（`AIState` 有实现但没接进 tick） |
+| 守卫 AI 差异 | 守卫当普通怪刷，不会「只打红名」 |
+| 地图触发器 | `_RSVD_NAME_allocateGridTriggerId` 是空实现 |
+| 跨图切换 | `uidMapSwitch` 返回 false |
+| `pause` 之外的协程调度 | 只有地图脚本的 main() 用到了 |

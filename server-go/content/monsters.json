@@ -1,0 +1,13925 @@
+{
+ "_meta": {
+  "count": 364,
+  "note": "monsterID = .inc 顶层数组下标（第 0 项为空占位）",
+  "source": "E:/Desktop/game/mir2x/common/src/monsterrecord.inc"
+ },
+ "records": {
+  "1": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 1500,
+   "dc": [
+    29,
+    42
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 7360,
+   "hp": 300,
+   "lookID": 0,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 1,
+   "mp": 0,
+   "name": "沙漠蜥蜴",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "10": {
+   "ac": [
+    25,
+    25
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -1,
+    "holy": -3,
+    "ice": 5,
+    "light": -4,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 400,
+   "dc": [
+    30,
+    145
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 139200,
+   "hp": 2150,
+   "lookID": 6,
+   "mac": [
+    53,
+    53
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 10,
+   "mp": 0,
+   "name": "轻甲守卫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 400
+  },
+  "100": {
+   "ac": [
+    4,
+    4
+   ],
+   "attackWait": 1500,
+   "dc": [
+    8,
+    30
+   ],
+   "dcDodge": 20,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 750,
+   "lookID": 53,
+   "mac": [
+    9,
+    9
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 100,
+   "mp": 0,
+   "name": "尸王",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "101": {
+   "ac": [
+    6,
+    6
+   ],
+   "attackWait": 1500,
+   "dc": [
+    8,
+    29
+   ],
+   "dcDodge": 20,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 750,
+   "lookID": 53,
+   "mac": [
+    10,
+    10
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 101,
+   "mp": 0,
+   "name": "尸王2",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "102": {
+   "ac": [
+    6,
+    6
+   ],
+   "attackWait": 1500,
+   "dc": [
+    38,
+    82
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 24000,
+   "hp": 750,
+   "lookID": 53,
+   "mac": [
+    10,
+    10
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 102,
+   "mp": 0,
+   "name": "尸王61",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "103": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2300,
+   "dc": [
+    6,
+    12
+   ],
+   "dcDodge": 11,
+   "dcHit": 13,
+   "dropItemList": [],
+   "exp": 1120,
+   "hp": 70,
+   "lookID": 54,
+   "mac": [
+    2,
+    2
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 103,
+   "mp": 0,
+   "name": "红蛇",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "104": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2300,
+   "dc": [
+    6,
+    12
+   ],
+   "dcDodge": 11,
+   "dcHit": 13,
+   "dropItemList": [],
+   "exp": 1120,
+   "hp": 70,
+   "lookID": 54,
+   "mac": [
+    2,
+    2
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 104,
+   "mp": 0,
+   "name": "红蛇0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "105": {
+   "ac": [
+    11,
+    11
+   ],
+   "attackWait": 1500,
+   "dc": [
+    19,
+    35
+   ],
+   "dcDodge": 18,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 500,
+   "lookID": 55,
+   "mac": [
+    16,
+    16
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 105,
+   "mp": 0,
+   "name": "虎卫",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "106": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": -2,
+    "fire": 2,
+    "holy": -2,
+    "ice": 2,
+    "light": 2,
+    "phantom": -2,
+    "wind": 2
+   },
+   "attackWait": 500,
+   "dc": [
+    6,
+    14
+   ],
+   "dcDodge": 12,
+   "dcHit": 14,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 100,
+   "lookID": 56,
+   "mac": [
+    10,
+    10
+   ],
+   "mc": [
+    6,
+    14
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 106,
+   "mp": 0,
+   "name": "变异骷髅",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "107": {
+   "ac": [
+    12,
+    12
+   ],
+   "acElem": {
+    "dark": -2,
+    "fire": 2,
+    "holy": -2,
+    "ice": 2,
+    "light": 2,
+    "phantom": -2,
+    "wind": 2
+   },
+   "attackWait": 2000,
+   "dc": [
+    25,
+    35
+   ],
+   "dcDodge": 18,
+   "dcHit": 20,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 180,
+   "lookID": 56,
+   "mac": [
+    22,
+    22
+   ],
+   "mc": [
+    25,
+    30
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 107,
+   "mp": 0,
+   "name": "超强骷髅",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "108": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2300,
+   "dc": [
+    6,
+    12
+   ],
+   "dcDodge": 11,
+   "dcHit": 13,
+   "dropItemList": [],
+   "exp": 1120,
+   "hp": 70,
+   "lookID": 57,
+   "mac": [
+    2,
+    2
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 108,
+   "mp": 0,
+   "name": "虎蛇",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "109": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2300,
+   "dc": [
+    6,
+    12
+   ],
+   "dcDodge": 11,
+   "dcHit": 13,
+   "dropItemList": [],
+   "exp": 1120,
+   "hp": 70,
+   "lookID": 57,
+   "mac": [
+    2,
+    2
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 109,
+   "mp": 0,
+   "name": "虎蛇0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "11": {
+   "ac": [
+    25,
+    25
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -1,
+    "holy": -3,
+    "ice": 5,
+    "light": -4,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 400,
+   "dc": [
+    30,
+    145
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 139200,
+   "hp": 2150,
+   "lookID": 6,
+   "mac": [
+    53,
+    53
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 11,
+   "mp": 0,
+   "name": "轻甲守卫8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 400
+  },
+  "110": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    0,
+    5
+   ],
+   "dcDodge": 8,
+   "dcHit": 7,
+   "dropItemList": [],
+   "exp": 224,
+   "hp": 40,
+   "lookID": 3,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 110,
+   "mp": 0,
+   "name": "羊",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "111": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    4,
+    11
+   ],
+   "dcDodge": 10,
+   "dcHit": 12,
+   "dropItemList": [],
+   "exp": 800,
+   "hp": 50,
+   "lookID": 3,
+   "mac": [
+    1,
+    1
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 111,
+   "mp": 0,
+   "name": "猎鹰",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "112": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    4,
+    11
+   ],
+   "dcDodge": 10,
+   "dcHit": 12,
+   "dropItemList": [],
+   "exp": 800,
+   "hp": 50,
+   "lookID": 3,
+   "mac": [
+    1,
+    1
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 112,
+   "mp": 0,
+   "name": "猎鹰0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "113": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    4,
+    9
+   ],
+   "dcDodge": 10,
+   "dcHit": 12,
+   "dropItemList": [],
+   "exp": 560,
+   "hp": 35,
+   "lookID": 3,
+   "mac": [
+    1,
+    1
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 113,
+   "mp": 0,
+   "name": "盔甲虫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "114": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    4,
+    9
+   ],
+   "dcDodge": 10,
+   "dcHit": 12,
+   "dropItemList": [],
+   "exp": 560,
+   "hp": 35,
+   "lookID": 3,
+   "mac": [
+    1,
+    1
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 114,
+   "mp": 0,
+   "name": "盔甲虫0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "115": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    4,
+    11
+   ],
+   "dcDodge": 10,
+   "dcHit": 12,
+   "dropItemList": [],
+   "exp": 720,
+   "hp": 45,
+   "lookID": 3,
+   "mac": [
+    1,
+    1
+   ],
+   "mc": [
+    4,
+    11
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 115,
+   "mp": 0,
+   "name": "沙漠威思尔小虫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "116": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    4,
+    10
+   ],
+   "dcDodge": 10,
+   "dcHit": 12,
+   "dropItemList": [],
+   "exp": 640,
+   "hp": 40,
+   "lookID": 3,
+   "mac": [
+    1,
+    1
+   ],
+   "mc": [
+    4,
+    10
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 116,
+   "mp": 0,
+   "name": "威思尔小虫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "117": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    4,
+    8
+   ],
+   "dcDodge": 10,
+   "dcHit": 12,
+   "dropItemList": [],
+   "exp": 480,
+   "hp": 30,
+   "lookID": 3,
+   "mac": [
+    1,
+    1
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 117,
+   "mp": 0,
+   "name": "多角虫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "118": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    4,
+    8
+   ],
+   "dcDodge": 10,
+   "dcHit": 12,
+   "dropItemList": [],
+   "exp": 480,
+   "hp": 30,
+   "lookID": 3,
+   "mac": [
+    1,
+    1
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 118,
+   "mp": 0,
+   "name": "多角虫0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "119": {
+   "ac": [
+    3,
+    3
+   ],
+   "attackWait": 1500,
+   "dc": [
+    16,
+    55
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 6400,
+   "hp": 200,
+   "lookID": 64,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 119,
+   "mp": 0,
+   "name": "巨型多角虫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "12": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 400,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4800,
+   "hp": 220,
+   "lookID": 7,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    6,
+    16
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 12,
+   "mp": 0,
+   "name": "蚂蚁道士",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 400
+  },
+  "120": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    6,
+    11
+   ],
+   "dcDodge": 11,
+   "dcHit": 13,
+   "dropItemList": [],
+   "exp": 960,
+   "hp": 60,
+   "lookID": 65,
+   "mac": [
+    2,
+    2
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 120,
+   "mp": 0,
+   "name": "狼",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "121": {
+   "ac": [
+    5,
+    5
+   ],
+   "attackWait": 2000,
+   "dc": [
+    24,
+    36
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 200,
+   "lookID": 66,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 121,
+   "mp": 0,
+   "name": "洞穴蜈蚣",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "122": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 0,
+    "fire": -1,
+    "holy": 0,
+    "ice": 0,
+    "light": 0,
+    "phantom": -1,
+    "wind": 0
+   },
+   "attackWait": 2000,
+   "dc": [
+    24,
+    36
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 5760,
+   "hp": 200,
+   "lookID": 66,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 122,
+   "mp": 0,
+   "name": "蜈蚣",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "123": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 0,
+    "fire": -1,
+    "holy": 0,
+    "ice": 0,
+    "light": 0,
+    "phantom": -1,
+    "wind": 0
+   },
+   "attackWait": 2000,
+   "dc": [
+    24,
+    36
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 5760,
+   "hp": 200,
+   "lookID": 66,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 123,
+   "mp": 0,
+   "name": "蜈蚣0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "124": {
+   "ac": [
+    85,
+    85
+   ],
+   "attackWait": 1500,
+   "dc": [
+    140,
+    195
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 144000,
+   "hp": 6750,
+   "lookID": 67,
+   "mac": [
+    240,
+    240
+   ],
+   "mc": [
+    140,
+    217
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 124,
+   "mp": 0,
+   "name": "触龙神",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "125": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 0,
+    "fire": 0,
+    "holy": 0,
+    "ice": 1,
+    "light": -2,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1500,
+   "dc": [
+    24,
+    38
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6400,
+   "hp": 240,
+   "lookID": 68,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 125,
+   "mp": 0,
+   "name": "黑色恶蛆",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "126": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 0,
+    "fire": 0,
+    "holy": 0,
+    "ice": 1,
+    "light": -2,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1500,
+   "dc": [
+    24,
+    38
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6400,
+   "hp": 240,
+   "lookID": 68,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 126,
+   "mp": 0,
+   "name": "黑色恶蛆0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "127": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 0,
+    "fire": -1,
+    "holy": 0,
+    "ice": 2,
+    "light": -1,
+    "phantom": 1,
+    "wind": 0
+   },
+   "attackWait": 1800,
+   "dc": [
+    24,
+    36
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 7040,
+   "hp": 280,
+   "lookID": 69,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 127,
+   "mp": 0,
+   "name": "钳虫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "128": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 0,
+    "fire": -1,
+    "holy": 0,
+    "ice": 2,
+    "light": -1,
+    "phantom": 1,
+    "wind": 0
+   },
+   "attackWait": 1800,
+   "dc": [
+    24,
+    36
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 7040,
+   "hp": 280,
+   "lookID": 69,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 128,
+   "mp": 0,
+   "name": "钳虫0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "129": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": 5,
+    "phantom": 1,
+    "wind": 5
+   },
+   "attackWait": 1800,
+   "dc": [
+    77,
+    86
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 3520,
+   "hp": 560,
+   "lookID": 69,
+   "mac": [
+    28,
+    28
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 129,
+   "mp": 0,
+   "name": "守卫虫",
+   "view": 15,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "13": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 400,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4800,
+   "hp": 220,
+   "lookID": 7,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    6,
+    16
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 13,
+   "mp": 0,
+   "name": "蚂蚁道士0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 400
+  },
+  "130": {
+   "ac": [
+    13,
+    13
+   ],
+   "attackWait": 1500,
+   "dc": [
+    44,
+    66
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 80000,
+   "hp": 2500,
+   "lookID": 70,
+   "mac": [
+    20,
+    20
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 130,
+   "mp": 0,
+   "name": "邪恶钳虫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "131": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    24,
+    36
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6080,
+   "hp": 220,
+   "lookID": 71,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 131,
+   "mp": 0,
+   "name": "跳跳蜂",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "132": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    24,
+    36
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6080,
+   "hp": 220,
+   "lookID": 71,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 132,
+   "mp": 0,
+   "name": "跳跳蜂0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "133": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 0,
+    "fire": 0,
+    "holy": 0,
+    "ice": 2,
+    "light": -1,
+    "phantom": -2,
+    "wind": 0
+   },
+   "attackWait": 2000,
+   "dc": [
+    24,
+    41
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6720,
+   "hp": 260,
+   "lookID": 72,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 133,
+   "mp": 0,
+   "name": "蝴蝶虫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "134": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 0,
+    "fire": 0,
+    "holy": 0,
+    "ice": 2,
+    "light": -1,
+    "phantom": -2,
+    "wind": 0
+   },
+   "attackWait": 2000,
+   "dc": [
+    24,
+    37
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6720,
+   "hp": 260,
+   "lookID": 72,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 134,
+   "mp": 0,
+   "name": "蝴蝶虫0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "135": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    4,
+    4
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6400,
+   "hp": 240,
+   "lookID": 73,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 135,
+   "mp": 0,
+   "name": "角蝇",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "136": {
+   "ac": [
+    4,
+    4
+   ],
+   "attackWait": 3000,
+   "dc": [
+    6,
+    6
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6400,
+   "hp": 240,
+   "lookID": 73,
+   "mac": [
+    16,
+    16
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 136,
+   "mp": 0,
+   "name": "角蝇80",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "137": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    0,
+    23
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 3,
+   "lookID": 4,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 137,
+   "mp": 0,
+   "name": "蝙蝠",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "138": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    22,
+    22
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6400,
+   "hp": 240,
+   "lookID": 4,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    22,
+    22
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 138,
+   "mp": 0,
+   "name": "楔蛾",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "139": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    22,
+    22
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6400,
+   "hp": 240,
+   "lookID": 4,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    22,
+    22
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 139,
+   "mp": 0,
+   "name": "楔蛾93",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "14": {
+   "ac": [
+    11,
+    11
+   ],
+   "attackWait": 400,
+   "dc": [
+    38,
+    55
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 64000,
+   "hp": 2000,
+   "lookID": 8,
+   "mac": [
+    15,
+    15
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 14,
+   "mp": 0,
+   "name": "蚂蚁将军",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 400
+  },
+  "140": {
+   "ac": [
+    4,
+    4
+   ],
+   "attackWait": 2000,
+   "dc": [
+    24,
+    36
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 5760,
+   "hp": 200,
+   "lookID": 4,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 140,
+   "mp": 0,
+   "name": "红野猪",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "141": {
+   "ac": [
+    4,
+    4
+   ],
+   "attackWait": 2000,
+   "dc": [
+    24,
+    36
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 5760,
+   "hp": 200,
+   "lookID": 4,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 141,
+   "mp": 0,
+   "name": "红野猪0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "142": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    24,
+    36
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [
+    [
+     {
+      "count": 1600,
+      "item": "金币（小）",
+      "probRecip": 4,
+      "repeat": 1
+     },
+     {
+      "count": 1,
+      "item": "金创药（小）",
+      "probRecip": 10,
+      "repeat": 1
+     },
+     {
+      "count": 1,
+      "item": "魔法药（小）",
+      "probRecip": 40,
+      "repeat": 1
+     },
+     {
+      "count": 1,
+      "item": "金创药（中）",
+      "probRecip": 20,
+      "repeat": 1
+     },
+     {
+      "count": 1,
+      "item": "金创药（中）",
+      "probRecip": 80,
+      "repeat": 1
+     },
+     {
+      "count": 1,
+      "item": "金创药（大）",
+      "probRecip": 30,
+      "repeat": 1
+     },
+     {
+      "count": 1,
+      "item": "魔法药（大）",
+      "probRecip": 120,
+      "repeat": 1
+     },
+     {
+      "count": 1,
+      "item": "牙齿",
+      "probRecip": 10,
+      "repeat": 1
+     },
+     {
+      "count": 1,
+      "item": "攻击神水（大）",
+      "probRecip": 2000,
+      "repeat": 1
+     },
+     {
+      "count": 1,
+      "item": "自然神水（大）",
+      "probRecip": 2000,
+      "repeat": 1
+     },
+     {
+      "count": 1,
+      "item": "灵魂神水（大）",
+      "probRecip": 2000,
+      "repeat": 1
+     },
+     {
+      "count": 1,
+      "item": "疾风神水（大）",
+      "probRecip": 2000,
+      "repeat": 1
+     },
+     {
+      "count": 1,
+      "item": "体力强效神水（大）",
+      "probRecip": 2000,
+      "repeat": 1
+     },
+     {
+      "count": 1,
+      "item": "魔力强效神水（大）",
+      "probRecip": 2000,
+      "repeat": 1
+     }
+    ],
+    [
+     {
+      "count": 1,
+      "item": "牙齿",
+      "probRecip": 10,
+      "repeat": 1
+     }
+    ]
+   ],
+   "exp": 5760,
+   "hp": 200,
+   "lookID": 4,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 142,
+   "mp": 0,
+   "name": "黑野猪",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "143": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    24,
+    36
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 5760,
+   "hp": 200,
+   "lookID": 4,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 143,
+   "mp": 0,
+   "name": "黑野猪0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "144": {
+   "ac": [
+    13,
+    13
+   ],
+   "attackWait": 1500,
+   "dc": [
+    44,
+    66
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 80000,
+   "hp": 2500,
+   "lookID": 4,
+   "mac": [
+    20,
+    20
+   ],
+   "mc": [
+    44,
+    55
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 144,
+   "mp": 0,
+   "name": "白野猪",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "145": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    24,
+    36
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 7040,
+   "hp": 280,
+   "lookID": 4,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 145,
+   "mp": 0,
+   "name": "蝎蛇",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "146": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    24,
+    36
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 7040,
+   "hp": 280,
+   "lookID": 4,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 146,
+   "mp": 0,
+   "name": "蝎蛇0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "147": {
+   "ac": [
+    44,
+    44
+   ],
+   "attackWait": 1500,
+   "dc": [
+    121,
+    187
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 144000,
+   "hp": 6750,
+   "lookID": 80,
+   "mac": [
+    69,
+    69
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 147,
+   "mp": 0,
+   "name": "邪恶毒蛇",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "148": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -5,
+    "fire": -4,
+    "holy": 5,
+    "ice": -1,
+    "light": 5,
+    "phantom": -1,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    37,
+    54
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 36800,
+   "hp": 1150,
+   "lookID": 81,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 148,
+   "mp": 0,
+   "name": "大老鼠",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "149": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -5,
+    "fire": -4,
+    "holy": 5,
+    "ice": -1,
+    "light": 5,
+    "phantom": -1,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    37,
+    54
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 36800,
+   "hp": 1150,
+   "lookID": 81,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 149,
+   "mp": 0,
+   "name": "大老鼠0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "15": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 400,
+   "dc": [
+    15,
+    29
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 5440,
+   "hp": 260,
+   "lookID": 8,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 15,
+   "mp": 0,
+   "name": "盔甲蚂蚁0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 400
+  },
+  "150": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -5,
+    "fire": -4,
+    "holy": 5,
+    "ice": -1,
+    "light": 5,
+    "phantom": -1,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    37,
+    54
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 36800,
+   "hp": 1150,
+   "lookID": 81,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 150,
+   "mp": 0,
+   "name": "大老鼠8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "151": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": -5,
+    "fire": -3,
+    "holy": 5,
+    "ice": -2,
+    "light": 5,
+    "phantom": -1,
+    "wind": 5
+   },
+   "attackWait": 2200,
+   "dc": [
+    40,
+    57
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 46400,
+   "hp": 1400,
+   "lookID": 82,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 151,
+   "mp": 0,
+   "name": "祖玛弓箭手",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "152": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": -5,
+    "fire": -3,
+    "holy": 5,
+    "ice": -2,
+    "light": 5,
+    "phantom": -1,
+    "wind": 5
+   },
+   "attackWait": 2200,
+   "dc": [
+    40,
+    57
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 46400,
+   "hp": 1400,
+   "lookID": 82,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 152,
+   "mp": 0,
+   "name": "祖玛弓箭手0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "153": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": -5,
+    "fire": -3,
+    "holy": 5,
+    "ice": -2,
+    "light": 5,
+    "phantom": -1,
+    "wind": 5
+   },
+   "attackWait": 2200,
+   "dc": [
+    40,
+    57
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 46400,
+   "hp": 1400,
+   "lookID": 82,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 153,
+   "mp": 0,
+   "name": "祖玛弓箭手8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "154": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": -5,
+    "fire": -3,
+    "holy": 5,
+    "ice": -2,
+    "light": 5,
+    "phantom": -1,
+    "wind": 5
+   },
+   "attackWait": 2200,
+   "dc": [
+    40,
+    57
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 46400,
+   "hp": 1400,
+   "lookID": 82,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 154,
+   "mp": 0,
+   "name": "祖玛弓箭手92",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "155": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": -3,
+    "fire": -5,
+    "holy": 4,
+    "ice": 0,
+    "light": 5,
+    "phantom": -3,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    37,
+    55
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 40000,
+   "hp": 1200,
+   "lookID": 83,
+   "mac": [
+    12,
+    12
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 155,
+   "mp": 0,
+   "name": "祖玛雕像",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "156": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": -3,
+    "fire": -5,
+    "holy": 4,
+    "ice": 0,
+    "light": 5,
+    "phantom": -3,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    37,
+    55
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 40000,
+   "hp": 1200,
+   "lookID": 83,
+   "mac": [
+    12,
+    12
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 156,
+   "mp": 0,
+   "name": "祖玛雕像0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "157": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": -3,
+    "fire": -5,
+    "holy": 4,
+    "ice": 0,
+    "light": 5,
+    "phantom": -3,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    37,
+    55
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 40000,
+   "hp": 1200,
+   "lookID": 83,
+   "mac": [
+    12,
+    12
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 157,
+   "mp": 0,
+   "name": "祖玛雕像8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "158": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": -3,
+    "fire": -5,
+    "holy": 4,
+    "ice": 0,
+    "light": 5,
+    "phantom": -3,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    37,
+    55
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 40000,
+   "hp": 1200,
+   "lookID": 83,
+   "mac": [
+    12,
+    12
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 158,
+   "mp": 0,
+   "name": "祖玛雕像91",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "159": {
+   "ac": [
+    11,
+    11
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": 5,
+    "phantom": -2,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    119,
+    114
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 21600,
+   "hp": 2600,
+   "lookID": 83,
+   "mac": [
+    49,
+    49
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 159,
+   "mp": 0,
+   "name": "守卫神将",
+   "view": 15,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "16": {
+   "ac": [
+    26,
+    26
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -2,
+    "holy": -3,
+    "ice": 4,
+    "light": -5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 400,
+   "dc": [
+    87,
+    120
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 156800,
+   "hp": 2400,
+   "lookID": 9,
+   "mac": [
+    69,
+    69
+   ],
+   "mc": [
+    87,
+    120
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 16,
+   "mp": 0,
+   "name": "海神将领",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 400
+  },
+  "160": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": -4,
+    "fire": -5,
+    "holy": 5,
+    "ice": 0,
+    "light": 5,
+    "phantom": -2,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    37,
+    57
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 43200,
+   "hp": 1300,
+   "lookID": 84,
+   "mac": [
+    12,
+    12
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 160,
+   "mp": 0,
+   "name": "祖玛卫士",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "161": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": -4,
+    "fire": -5,
+    "holy": 5,
+    "ice": 0,
+    "light": 5,
+    "phantom": -2,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    37,
+    57
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 43200,
+   "hp": 1300,
+   "lookID": 84,
+   "mac": [
+    12,
+    12
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 161,
+   "mp": 0,
+   "name": "祖玛卫士0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "162": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": -4,
+    "fire": -5,
+    "holy": 5,
+    "ice": 0,
+    "light": 5,
+    "phantom": -2,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    59,
+    91
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 43200,
+   "hp": 1300,
+   "lookID": 84,
+   "mac": [
+    26,
+    26
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 162,
+   "mp": 0,
+   "name": "祖玛卫士8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "163": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": -4,
+    "fire": -5,
+    "holy": 5,
+    "ice": 0,
+    "light": 5,
+    "phantom": -2,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    59,
+    91
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 43200,
+   "hp": 1300,
+   "lookID": 84,
+   "mac": [
+    26,
+    26
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 163,
+   "mp": 0,
+   "name": "祖玛卫士90",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "164": {
+   "ac": [
+    22,
+    22
+   ],
+   "acElem": {
+    "dark": -3,
+    "fire": -4,
+    "holy": 5,
+    "ice": 0,
+    "light": 5,
+    "phantom": -2,
+    "wind": 5
+   },
+   "attackWait": 1400,
+   "dc": [
+    60,
+    99
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 128000,
+   "hp": 4000,
+   "lookID": 84,
+   "mac": [
+    37,
+    37
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 164,
+   "mp": 0,
+   "name": "护法天",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "165": {
+   "ac": [
+    55,
+    55
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": -2,
+    "holy": 5,
+    "ice": 2,
+    "light": 5,
+    "phantom": 0,
+    "wind": 5
+   },
+   "attackWait": 1500,
+   "dc": [
+    154,
+    253
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 224000,
+   "hp": 10500,
+   "lookID": 85,
+   "mac": [
+    115,
+    115
+   ],
+   "mc": [
+    180,
+    240
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 165,
+   "mp": 0,
+   "name": "祖玛教主",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "166": {
+   "ac": [
+    55,
+    55
+   ],
+   "attackWait": 1500,
+   "dc": [
+    110,
+    150
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 10000,
+   "lookID": 85,
+   "mac": [
+    66,
+    66
+   ],
+   "mc": [
+    110,
+    150
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 166,
+   "mp": 0,
+   "name": "祖玛教主62",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "167": {
+   "ac": [
+    33,
+    33
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": 5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 1200,
+   "dc": [
+    33,
+    55
+   ],
+   "dcDodge": 18,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 5000,
+   "lookID": 86,
+   "mac": [
+    33,
+    33
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 167,
+   "mp": 0,
+   "name": "弓箭卫士",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "168": {
+   "ac": [
+    9,
+    9
+   ],
+   "acElem": {
+    "dark": -2,
+    "fire": 2,
+    "holy": -2,
+    "ice": 2,
+    "light": 2,
+    "phantom": -2,
+    "wind": 2
+   },
+   "attackWait": 500,
+   "dc": [
+    30,
+    50
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 200,
+   "lookID": 89,
+   "mac": [
+    16,
+    16
+   ],
+   "mc": [
+    30,
+    40
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 168,
+   "mp": 0,
+   "name": "未知",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "169": {
+   "ac": [
+    9,
+    9
+   ],
+   "acElem": {
+    "dark": -2,
+    "fire": 2,
+    "holy": -2,
+    "ice": 2,
+    "light": 2,
+    "phantom": -2,
+    "wind": 2
+   },
+   "attackWait": 500,
+   "dc": [
+    30,
+    50
+   ],
+   "dcDodge": 18,
+   "dcHit": 0,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 200,
+   "lookID": 5,
+   "mac": [
+    16,
+    16
+   ],
+   "mc": [
+    30,
+    40
+   ],
+   "mcDodge": 0,
+   "mcHit": 19,
+   "monsterID": 169,
+   "mp": 0,
+   "name": "神兽",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "17": {
+   "ac": [
+    26,
+    26
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -2,
+    "holy": -3,
+    "ice": 4,
+    "light": -5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 400,
+   "dc": [
+    87,
+    120
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 156800,
+   "hp": 2400,
+   "lookID": 9,
+   "mac": [
+    69,
+    69
+   ],
+   "mc": [
+    87,
+    120
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 17,
+   "mp": 0,
+   "name": "海神将领8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 400
+  },
+  "170": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    15,
+    25
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4800,
+   "hp": 220,
+   "lookID": 5,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 170,
+   "mp": 0,
+   "name": "沃玛战将",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "171": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    15,
+    25
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4800,
+   "hp": 220,
+   "lookID": 5,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 171,
+   "mp": 0,
+   "name": "沃玛战将0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "172": {
+   "ac": [
+    4,
+    4
+   ],
+   "attackWait": 2000,
+   "dc": [
+    24,
+    44
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4800,
+   "hp": 220,
+   "lookID": 5,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 172,
+   "mp": 0,
+   "name": "沃玛战将20",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "173": {
+   "ac": [
+    4,
+    4
+   ],
+   "attackWait": 2000,
+   "dc": [
+    24,
+    44
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4800,
+   "hp": 220,
+   "lookID": 5,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 173,
+   "mp": 0,
+   "name": "沃玛战将21",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "174": {
+   "ac": [
+    4,
+    4
+   ],
+   "attackWait": 2000,
+   "dc": [
+    15,
+    25
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 240,
+   "lookID": 5,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 174,
+   "mp": 0,
+   "name": "沃玛战将61",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "175": {
+   "ac": [
+    29,
+    29
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -3,
+    "holy": -3,
+    "ice": 5,
+    "light": -4,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 1800,
+   "dc": [
+    66,
+    240
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 121600,
+   "hp": 2400,
+   "lookID": 5,
+   "mac": [
+    66,
+    66
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 175,
+   "mp": 0,
+   "name": "恶形鬼",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "176": {
+   "ac": [
+    29,
+    29
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -3,
+    "holy": -3,
+    "ice": 5,
+    "light": -4,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 1800,
+   "dc": [
+    66,
+    240
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 121600,
+   "hp": 2400,
+   "lookID": 5,
+   "mac": [
+    66,
+    66
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 176,
+   "mp": 0,
+   "name": "恶形鬼8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "177": {
+   "ac": [
+    23,
+    23
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -3,
+    "holy": -3,
+    "ice": 5,
+    "light": -4,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 1800,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 156800,
+   "hp": 2600,
+   "lookID": 5,
+   "mac": [
+    53,
+    53
+   ],
+   "mc": [
+    107,
+    165
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 177,
+   "mp": 0,
+   "name": "爆毒神魔",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "178": {
+   "ac": [
+    23,
+    23
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -3,
+    "holy": -3,
+    "ice": 5,
+    "light": -4,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 1800,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 156800,
+   "hp": 2600,
+   "lookID": 5,
+   "mac": [
+    53,
+    53
+   ],
+   "mc": [
+    107,
+    165
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 178,
+   "mp": 0,
+   "name": "爆毒神魔8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "179": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": 1,
+    "fire": 0,
+    "holy": -1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 2000,
+   "dc": [
+    29,
+    42
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 7520,
+   "hp": 310,
+   "lookID": 5,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    29,
+    42
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 179,
+   "mp": 0,
+   "name": "沙漠鱼魔",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "18": {
+   "ac": [
+    44,
+    44
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -1,
+    "holy": -2,
+    "ice": 4,
+    "light": -4,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 1500,
+   "dc": [
+    187,
+    253
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 320000,
+   "hp": 8000,
+   "lookID": 0,
+   "mac": [
+    125,
+    125
+   ],
+   "mc": [
+    187,
+    253
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 18,
+   "mp": 0,
+   "name": "霸王守卫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "180": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": 1,
+    "fire": 0,
+    "holy": -1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 2000,
+   "dc": [
+    29,
+    42
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 7520,
+   "hp": 310,
+   "lookID": 5,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    29,
+    42
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 180,
+   "mp": 0,
+   "name": "沙魔鱼魔0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "181": {
+   "ac": [
+    2,
+    2
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 1,
+    "wind": -1
+   },
+   "attackWait": 3500,
+   "dc": [
+    30,
+    43
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8000,
+   "hp": 340,
+   "lookID": 5,
+   "mac": [
+    9,
+    9
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 181,
+   "mp": 0,
+   "name": "沙漠树魔",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "182": {
+   "ac": [
+    2,
+    2
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 1,
+    "wind": -1
+   },
+   "attackWait": 3500,
+   "dc": [
+    30,
+    43
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8000,
+   "hp": 340,
+   "lookID": 5,
+   "mac": [
+    9,
+    9
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 182,
+   "mp": 0,
+   "name": "沙漠树魔0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "183": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2700,
+   "dc": [
+    16,
+    26
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 5120,
+   "hp": 240,
+   "lookID": 96,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 183,
+   "mp": 0,
+   "name": "爆毒蚂蚁",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "184": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2700,
+   "dc": [
+    16,
+    26
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 5120,
+   "hp": 240,
+   "lookID": 96,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 184,
+   "mp": 0,
+   "name": "爆毒蚂蚁0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "185": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": 1,
+    "fire": 0,
+    "holy": -1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 2000,
+   "dc": [
+    29,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8320,
+   "hp": 360,
+   "lookID": 97,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    29,
+    48
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 185,
+   "mp": 0,
+   "name": "沙漠风魔",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "186": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": 1,
+    "fire": 0,
+    "holy": -1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 2000,
+   "dc": [
+    29,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8320,
+   "hp": 360,
+   "lookID": 97,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    29,
+    48
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 186,
+   "mp": 0,
+   "name": "沙漠风魔0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "187": {
+   "ac": [
+    48,
+    48
+   ],
+   "acElem": {
+    "dark": -4,
+    "fire": 0,
+    "holy": 4,
+    "ice": 4,
+    "light": 0,
+    "phantom": 0,
+    "wind": -4
+   },
+   "attackWait": 1500,
+   "dc": [
+    132,
+    209
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 192000,
+   "hp": 14000,
+   "lookID": 98,
+   "mac": [
+    135,
+    135
+   ],
+   "mc": [
+    230,
+    290
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 187,
+   "mp": 0,
+   "name": "诺玛教主2",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "188": {
+   "ac": [
+    37,
+    37
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -2,
+    "holy": -3,
+    "ice": 4,
+    "light": -5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 2500,
+   "dc": [
+    165,
+    247
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 139200,
+   "hp": 3000,
+   "lookID": 99,
+   "mac": [
+    79,
+    79
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 188,
+   "mp": 0,
+   "name": "神舰守卫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "189": {
+   "ac": [
+    37,
+    37
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -2,
+    "holy": -3,
+    "ice": 4,
+    "light": -5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 2500,
+   "dc": [
+    165,
+    247
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 139200,
+   "hp": 3000,
+   "lookID": 99,
+   "mac": [
+    79,
+    79
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 189,
+   "mp": 0,
+   "name": "神舰守卫8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "19": {
+   "ac": [
+    25,
+    25
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -2,
+    "holy": -3,
+    "ice": 4,
+    "light": -5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 1100,
+   "dc": [
+    87,
+    104
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 144000,
+   "hp": 2300,
+   "lookID": 0,
+   "mac": [
+    53,
+    53
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 19,
+   "mp": 0,
+   "name": "犬猴魔",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "190": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": -1,
+    "light": 1,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 2000,
+   "dc": [
+    29,
+    29
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8000,
+   "hp": 340,
+   "lookID": 101,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    29,
+    29
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 190,
+   "mp": 0,
+   "name": "月魔蜘蛛",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "191": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": -1,
+    "light": 1,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1600,
+   "dc": [
+    29,
+    45
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 7840,
+   "hp": 330,
+   "lookID": 102,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 191,
+   "mp": 0,
+   "name": "独眼蜘蛛0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "192": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": -1,
+    "light": 1,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1800,
+   "dc": [
+    29,
+    43
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 7520,
+   "hp": 310,
+   "lookID": 103,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    29,
+    43
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 192,
+   "mp": 0,
+   "name": "天狼蜘蛛",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "193": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": -1,
+    "light": 1,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1800,
+   "dc": [
+    29,
+    43
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 7520,
+   "hp": 310,
+   "lookID": 103,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    29,
+    43
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 193,
+   "mp": 0,
+   "name": "天狼蜘蛛0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "194": {
+   "ac": [
+    52,
+    52
+   ],
+   "acElem": {
+    "dark": 4,
+    "fire": 4,
+    "holy": -3,
+    "ice": 0,
+    "light": -3,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1500,
+   "dc": [
+    110,
+    200
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 208000,
+   "hp": 9750,
+   "lookID": 104,
+   "mac": [
+    105,
+    105
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 194,
+   "mp": 0,
+   "name": "赤月恶魔",
+   "view": 15,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "195": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 500,
+   "dc": [
+    28,
+    42
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 5,
+   "lookID": 105,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    28,
+    42
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 195,
+   "mp": 0,
+   "name": "爆裂蜘蛛",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "196": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": -1,
+    "light": 1,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 2500,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8000,
+   "hp": 340,
+   "lookID": 6,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 196,
+   "mp": 0,
+   "name": "幻影蜘蛛",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "197": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -2,
+    "fire": 2,
+    "holy": 2,
+    "ice": 0,
+    "light": -2,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 2000,
+   "dc": [
+    33,
+    47
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 9280,
+   "hp": 420,
+   "lookID": 6,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 197,
+   "mp": 0,
+   "name": "血巨人",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "198": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -2,
+    "fire": 2,
+    "holy": 2,
+    "ice": 0,
+    "light": -2,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 2000,
+   "dc": [
+    33,
+    47
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 9280,
+   "hp": 420,
+   "lookID": 6,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 198,
+   "mp": 0,
+   "name": "血巨人0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "199": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 2,
+    "fire": 2,
+    "holy": -2,
+    "ice": 0,
+    "light": -2,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1500,
+   "dc": [
+    33,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 9920,
+   "hp": 460,
+   "lookID": 6,
+   "mac": [
+    12,
+    12
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 199,
+   "mp": 0,
+   "name": "血金刚",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "2": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 1000,
+   "dc": [
+    2,
+    7
+   ],
+   "dcDodge": 9,
+   "dcHit": 11,
+   "dropItemList": [],
+   "exp": 320,
+   "hp": 20,
+   "lookID": 1,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 2,
+   "mp": 0,
+   "name": "夜行鬼",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 1000
+  },
+  "20": {
+   "ac": [
+    25,
+    25
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -2,
+    "holy": -3,
+    "ice": 4,
+    "light": -5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 1100,
+   "dc": [
+    87,
+    104
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 144000,
+   "hp": 2300,
+   "lookID": 0,
+   "mac": [
+    53,
+    53
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 20,
+   "mp": 0,
+   "name": "犬猴魔8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "200": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 2,
+    "fire": 2,
+    "holy": -2,
+    "ice": 0,
+    "light": -2,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1500,
+   "dc": [
+    33,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 9920,
+   "hp": 460,
+   "lookID": 6,
+   "mac": [
+    12,
+    12
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 200,
+   "mp": 0,
+   "name": "血金刚0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "201": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 2,
+    "fire": 2,
+    "holy": -2,
+    "ice": 0,
+    "light": -2,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1500,
+   "dc": [
+    33,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 9920,
+   "hp": 460,
+   "lookID": 6,
+   "mac": [
+    12,
+    12
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 201,
+   "mp": 0,
+   "name": "血金刚70",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "202": {
+   "ac": [
+    8,
+    8
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": 5,
+    "phantom": 0,
+    "wind": 5
+   },
+   "attackWait": 1500,
+   "dc": [
+    105,
+    96
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 4960,
+   "hp": 920,
+   "lookID": 6,
+   "mac": [
+    53,
+    53
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 202,
+   "mp": 0,
+   "name": "守卫血魔",
+   "view": 15,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "203": {
+   "ac": [
+    18,
+    18
+   ],
+   "acElem": {
+    "dark": -2,
+    "fire": 3,
+    "holy": 3,
+    "ice": 0,
+    "light": -2,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1500,
+   "dc": [
+    55,
+    88
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 112000,
+   "hp": 3500,
+   "lookID": 6,
+   "mac": [
+    32,
+    32
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 203,
+   "mp": 0,
+   "name": "神鬼王",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "204": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": 2,
+    "fire": 2,
+    "holy": -2,
+    "ice": 0,
+    "light": -2,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1500,
+   "dc": [
+    33,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 9920,
+   "hp": 460,
+   "lookID": 6,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 204,
+   "mp": 0,
+   "name": "赤血恶魔",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "205": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": 2,
+    "fire": 2,
+    "holy": -2,
+    "ice": 0,
+    "light": -2,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1500,
+   "dc": [
+    33,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 9920,
+   "hp": 460,
+   "lookID": 6,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 205,
+   "mp": 0,
+   "name": "赤血恶魔0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "206": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": 2,
+    "fire": 2,
+    "holy": -2,
+    "ice": 0,
+    "light": -2,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1500,
+   "dc": [
+    33,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 9920,
+   "hp": 460,
+   "lookID": 6,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 206,
+   "mp": 0,
+   "name": "赤血恶魔50",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "207": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": 2,
+    "fire": 2,
+    "holy": -2,
+    "ice": 0,
+    "light": -2,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1500,
+   "dc": [
+    33,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 9920,
+   "hp": 460,
+   "lookID": 6,
+   "mac": [
+    10,
+    10
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 207,
+   "mp": 0,
+   "name": "赤月灰血魔",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "208": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": 2,
+    "fire": 2,
+    "holy": -2,
+    "ice": 0,
+    "light": -2,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1500,
+   "dc": [
+    33,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 9920,
+   "hp": 460,
+   "lookID": 6,
+   "mac": [
+    10,
+    10
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 208,
+   "mp": 0,
+   "name": "灰血恶魔",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "209": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": 2,
+    "fire": 2,
+    "holy": -2,
+    "ice": 0,
+    "light": -2,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1500,
+   "dc": [
+    53,
+    77
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 9920,
+   "hp": 460,
+   "lookID": 6,
+   "mac": [
+    22,
+    22
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 209,
+   "mp": 0,
+   "name": "灰血恶魔0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "21": {
+   "ac": [
+    2,
+    2
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 3500,
+   "dc": [
+    30,
+    42
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 7840,
+   "hp": 330,
+   "lookID": 0,
+   "mac": [
+    9,
+    9
+   ],
+   "mc": [
+    30,
+    42
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 21,
+   "mp": 0,
+   "name": "诺玛法老",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "210": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": 2,
+    "fire": 2,
+    "holy": -2,
+    "ice": 0,
+    "light": -2,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1500,
+   "dc": [
+    33,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 9920,
+   "hp": 460,
+   "lookID": 6,
+   "mac": [
+    10,
+    10
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 210,
+   "mp": 0,
+   "name": "灰血恶魔60",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "211": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": -1,
+    "light": 1,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1800,
+   "dc": [
+    29,
+    47
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8160,
+   "hp": 350,
+   "lookID": 6,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    29,
+    47
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 211,
+   "mp": 0,
+   "name": "花色蜘蛛",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "212": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": -1,
+    "light": 1,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1800,
+   "dc": [
+    29,
+    47
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8160,
+   "hp": 350,
+   "lookID": 6,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    29,
+    47
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 212,
+   "mp": 0,
+   "name": "花色蜘蛛0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "213": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": -1,
+    "light": 1,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 2000,
+   "dc": [
+    29,
+    50
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8480,
+   "hp": 370,
+   "lookID": 112,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 213,
+   "mp": 0,
+   "name": "黑角蜘蛛",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "214": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": -1,
+    "light": 1,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 2000,
+   "dc": [
+    29,
+    50
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8480,
+   "hp": 370,
+   "lookID": 112,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 214,
+   "mp": 0,
+   "name": "黑角蜘蛛0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "215": {
+   "ac": [
+    16,
+    16
+   ],
+   "acElem": {
+    "dark": -2,
+    "fire": 0,
+    "holy": 3,
+    "ice": -2,
+    "light": 3,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 1500,
+   "dc": [
+    49,
+    77
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 96000,
+   "hp": 3000,
+   "lookID": 112,
+   "mac": [
+    25,
+    25
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 215,
+   "mp": 0,
+   "name": "八脚首领",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "216": {
+   "ac": [
+    220,
+    220
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": 5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    165,
+    165
+   ],
+   "dcDodge": 200,
+   "dcHit": 200,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 9999,
+   "lookID": 113,
+   "mac": [
+    220,
+    220
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 216,
+   "mp": 0,
+   "name": "禁军卫士",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "217": {
+   "ac": [
+    220,
+    220
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": 5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    165,
+    165
+   ],
+   "dcDodge": 200,
+   "dcHit": 200,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 9999,
+   "lookID": 114,
+   "mac": [
+    220,
+    220
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 217,
+   "mp": 0,
+   "name": "沙漠战士",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "218": {
+   "ac": [
+    220,
+    220
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": 5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    165,
+    165
+   ],
+   "dcDodge": 200,
+   "dcHit": 200,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 9999,
+   "lookID": 115,
+   "mac": [
+    220,
+    220
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 218,
+   "mp": 0,
+   "name": "昂克战士",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "219": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 7,
+   "dcHit": 4,
+   "dropItemList": [],
+   "exp": 80,
+   "hp": 500,
+   "lookID": 116,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 219,
+   "mp": 0,
+   "name": "褐色马",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "22": {
+   "ac": [
+    2,
+    2
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 3500,
+   "dc": [
+    30,
+    42
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 7840,
+   "hp": 330,
+   "lookID": 0,
+   "mac": [
+    9,
+    9
+   ],
+   "mc": [
+    30,
+    42
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 22,
+   "mp": 0,
+   "name": "诺玛法老0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "220": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 7,
+   "dcHit": 4,
+   "dropItemList": [],
+   "exp": 80,
+   "hp": 1000,
+   "lookID": 117,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 220,
+   "mp": 0,
+   "name": "白马",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "221": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 7,
+   "dcHit": 4,
+   "dropItemList": [],
+   "exp": 80,
+   "hp": 2000,
+   "lookID": 118,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 221,
+   "mp": 0,
+   "name": "黑马",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "222": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    0,
+    3
+   ],
+   "dcDodge": 5,
+   "dcHit": 8,
+   "dropItemList": [],
+   "exp": 128,
+   "hp": 20,
+   "lookID": 119,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 222,
+   "mp": 0,
+   "name": "猪",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "223": {
+   "ac": [
+    63,
+    63
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -1,
+    "holy": -2,
+    "ice": 4,
+    "light": -4,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 1200,
+   "dc": [
+    253,
+    275
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 320000,
+   "hp": 12000,
+   "lookID": 120,
+   "mac": [
+    124,
+    124
+   ],
+   "mc": [
+    152,
+    218
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 223,
+   "mp": 0,
+   "name": "霸王教主",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "224": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    0,
+    4
+   ],
+   "dcDodge": 5,
+   "dcHit": 10,
+   "dropItemList": [],
+   "exp": 176,
+   "hp": 30,
+   "lookID": 121,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 224,
+   "mp": 0,
+   "name": "牛",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "225": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 2000,
+   "dc": [
+    29,
+    46
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8000,
+   "hp": 340,
+   "lookID": 7,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 225,
+   "mp": 0,
+   "name": "诺玛1",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "226": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 2000,
+   "dc": [
+    29,
+    46
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8000,
+   "hp": 340,
+   "lookID": 7,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 226,
+   "mp": 0,
+   "name": "诺玛10",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "227": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 400,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 0,
+   "dcHit": 0,
+   "dropItemList": [],
+   "exp": 0,
+   "hp": 50,
+   "lookID": 7,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 227,
+   "mp": 10,
+   "name": "未知",
+   "view": 9,
+   "walkStep": 0,
+   "walkWait": 400
+  },
+  "228": {
+   "ac": [
+    11,
+    11
+   ],
+   "attackWait": 4000,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 7,
+   "dcHit": 4,
+   "dropItemList": [],
+   "exp": 80,
+   "hp": 300,
+   "lookID": 7,
+   "mac": [
+    16,
+    16
+   ],
+   "mc": [
+    22,
+    38
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 228,
+   "mp": 0,
+   "name": "未知",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "229": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 2,
+    "fire": 2,
+    "holy": 2,
+    "ice": 2,
+    "light": 2,
+    "phantom": 0,
+    "wind": 2
+   },
+   "attackWait": 2000,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4800,
+   "hp": 2500,
+   "lookID": 7,
+   "mac": [
+    20,
+    20
+   ],
+   "mc": [
+    20,
+    100
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 229,
+   "mp": 0,
+   "name": "未知",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "23": {
+   "ac": [
+    16,
+    16
+   ],
+   "acElem": {
+    "dark": -2,
+    "fire": 0,
+    "holy": 3,
+    "ice": 3,
+    "light": 0,
+    "phantom": 0,
+    "wind": -2
+   },
+   "attackWait": 1500,
+   "dc": [
+    49,
+    77
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 96000,
+   "hp": 3000,
+   "lookID": 0,
+   "mac": [
+    25,
+    25
+   ],
+   "mc": [
+    49,
+    66
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 23,
+   "mp": 0,
+   "name": "诺玛大法老",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "230": {
+   "ac": [
+    4,
+    4
+   ],
+   "attackWait": 1500,
+   "dc": [
+    22,
+    55
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 12800,
+   "hp": 400,
+   "lookID": 7,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 230,
+   "mp": 0,
+   "name": "七点白蛇",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "231": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": -2,
+    "fire": 2,
+    "holy": -2,
+    "ice": 2,
+    "light": 2,
+    "phantom": -2,
+    "wind": 2
+   },
+   "attackWait": 1500,
+   "dc": [
+    6,
+    13
+   ],
+   "dcDodge": 11,
+   "dcHit": 13,
+   "dropItemList": [],
+   "exp": 1280,
+   "hp": 80,
+   "lookID": 7,
+   "mac": [
+    3,
+    3
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 231,
+   "mp": 0,
+   "name": "千年毒蛇",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "232": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 500,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 0,
+   "dcHit": 0,
+   "dropItemList": [],
+   "exp": 320,
+   "hp": 20,
+   "lookID": 7,
+   "mac": [
+    200,
+    200
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 232,
+   "mp": 0,
+   "name": "栗子树",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "233": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 2000,
+   "dc": [
+    29,
+    46
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8000,
+   "hp": 340,
+   "lookID": 128,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 233,
+   "mp": 0,
+   "name": "诺玛2",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "234": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 2000,
+   "dc": [
+    29,
+    46
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8000,
+   "hp": 340,
+   "lookID": 128,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 234,
+   "mp": 0,
+   "name": "诺玛20",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "235": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 2000,
+   "dc": [
+    29,
+    46
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8000,
+   "hp": 340,
+   "lookID": 129,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 235,
+   "mp": 0,
+   "name": "诺玛3",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "236": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 2000,
+   "dc": [
+    29,
+    46
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8000,
+   "hp": 340,
+   "lookID": 129,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 236,
+   "mp": 0,
+   "name": "诺玛30",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "237": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 4,
+    "holy": -2,
+    "ice": -5,
+    "light": 5,
+    "phantom": 2,
+    "wind": -2
+   },
+   "attackWait": 2400,
+   "dc": [
+    38,
+    55
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 44800,
+   "hp": 1400,
+   "lookID": 130,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    38,
+    55
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 237,
+   "mp": 0,
+   "name": "潘夜右护卫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "238": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 4,
+    "holy": -2,
+    "ice": -5,
+    "light": 5,
+    "phantom": 2,
+    "wind": -2
+   },
+   "attackWait": 2000,
+   "dc": [
+    38,
+    55
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 44800,
+   "hp": 1400,
+   "lookID": 130,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    38,
+    55
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 238,
+   "mp": 0,
+   "name": "潘夜右护卫0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "239": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 4,
+    "holy": -2,
+    "ice": -5,
+    "light": 5,
+    "phantom": 2,
+    "wind": -2
+   },
+   "attackWait": 2400,
+   "dc": [
+    42,
+    61
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 60800,
+   "hp": 1800,
+   "lookID": 130,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    42,
+    61
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 239,
+   "mp": 0,
+   "name": "潘夜右护卫8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "24": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2100,
+   "dc": [
+    15,
+    25
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4480,
+   "hp": 200,
+   "lookID": 0,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 24,
+   "mp": 0,
+   "name": "蚂蚁战士",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "240": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 4,
+    "holy": -2,
+    "ice": -5,
+    "light": 5,
+    "phantom": 2,
+    "wind": -2
+   },
+   "attackWait": 2000,
+   "dc": [
+    42,
+    61
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 59200,
+   "hp": 1800,
+   "lookID": 130,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    42,
+    61
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 240,
+   "mp": 0,
+   "name": "潘夜右护卫95",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "241": {
+   "ac": [
+    14,
+    14
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": 5,
+    "phantom": 2,
+    "wind": 5
+   },
+   "attackWait": 2400,
+   "dc": [
+    77,
+    110
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 22400,
+   "hp": 2800,
+   "lookID": 130,
+   "mac": [
+    48,
+    48
+   ],
+   "mc": [
+    123,
+    176
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 241,
+   "mp": 0,
+   "name": "守卫右狮",
+   "view": 15,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "242": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 4,
+    "holy": -2,
+    "ice": -5,
+    "light": 5,
+    "phantom": 2,
+    "wind": -2
+   },
+   "attackWait": 2000,
+   "dc": [
+    38,
+    55
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 44800,
+   "hp": 1400,
+   "lookID": 131,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    38,
+    55
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 242,
+   "mp": 0,
+   "name": "潘夜左护卫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "243": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 4,
+    "holy": -2,
+    "ice": -5,
+    "light": 5,
+    "phantom": 2,
+    "wind": -2
+   },
+   "attackWait": 2000,
+   "dc": [
+    38,
+    55
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 44800,
+   "hp": 1400,
+   "lookID": 131,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    38,
+    55
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 243,
+   "mp": 0,
+   "name": "潘夜左护卫0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "244": {
+   "ac": [
+    6,
+    6
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 4,
+    "holy": -2,
+    "ice": -5,
+    "light": 5,
+    "phantom": 2,
+    "wind": -2
+   },
+   "attackWait": 2000,
+   "dc": [
+    42,
+    61
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 60800,
+   "hp": 1800,
+   "lookID": 131,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    42,
+    61
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 244,
+   "mp": 0,
+   "name": "潘夜左护卫8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "245": {
+   "ac": [
+    8,
+    8
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 4,
+    "holy": -2,
+    "ice": -5,
+    "light": 5,
+    "phantom": 2,
+    "wind": -2
+   },
+   "attackWait": 2000,
+   "dc": [
+    62,
+    88
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 44800,
+   "hp": 1400,
+   "lookID": 131,
+   "mac": [
+    24,
+    24
+   ],
+   "mc": [
+    38,
+    55
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 245,
+   "mp": 0,
+   "name": "潘夜左护卫94",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "246": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 1300,
+   "dc": [
+    15,
+    26
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4640,
+   "hp": 210,
+   "lookID": 132,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    14,
+    24
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 246,
+   "mp": 0,
+   "name": "腐蚀人鬼",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "247": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 1300,
+   "dc": [
+    15,
+    26
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4640,
+   "hp": 210,
+   "lookID": 132,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    14,
+    24
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 247,
+   "mp": 0,
+   "name": "腐蚀人鬼0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "248": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": -3,
+    "ice": -5,
+    "light": 5,
+    "phantom": 1,
+    "wind": -1
+   },
+   "attackWait": 2200,
+   "dc": [
+    37,
+    56
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 41600,
+   "hp": 1200,
+   "lookID": 133,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    37,
+    56
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 248,
+   "mp": 0,
+   "name": "潘夜冰魔",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "249": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": -3,
+    "ice": -5,
+    "light": 5,
+    "phantom": 1,
+    "wind": -1
+   },
+   "attackWait": 2200,
+   "dc": [
+    37,
+    56
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 41600,
+   "hp": 1200,
+   "lookID": 133,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    37,
+    56
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 249,
+   "mp": 0,
+   "name": "潘夜冰魔0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "25": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2100,
+   "dc": [
+    15,
+    25
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4480,
+   "hp": 200,
+   "lookID": 0,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 25,
+   "mp": 0,
+   "name": "蚂蚁战士0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "250": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 6,
+    "holy": -3,
+    "ice": -5,
+    "light": 5,
+    "phantom": 1,
+    "wind": -1
+   },
+   "attackWait": 2200,
+   "dc": [
+    41,
+    62
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 56000,
+   "hp": 1600,
+   "lookID": 133,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    41,
+    62
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 250,
+   "mp": 0,
+   "name": "潘夜冰魔8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "251": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": -3,
+    "ice": -4,
+    "light": 4,
+    "phantom": 1,
+    "wind": -1
+   },
+   "attackWait": 2200,
+   "dc": [
+    37,
+    56
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 41600,
+   "hp": 1200,
+   "lookID": 134,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    37,
+    56
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 251,
+   "mp": 0,
+   "name": "潘夜云魔",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "252": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": -3,
+    "ice": -4,
+    "light": 4,
+    "phantom": 1,
+    "wind": -1
+   },
+   "attackWait": 2200,
+   "dc": [
+    37,
+    56
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 41600,
+   "hp": 1200,
+   "lookID": 134,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    37,
+    56
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 252,
+   "mp": 0,
+   "name": "潘夜云魔0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "253": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": -3,
+    "ice": -4,
+    "light": 4,
+    "phantom": 1,
+    "wind": -1
+   },
+   "attackWait": 2200,
+   "dc": [
+    41,
+    61
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 56000,
+   "hp": 1600,
+   "lookID": 134,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    41,
+    61
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 253,
+   "mp": 0,
+   "name": "潘夜云魔8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "254": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": -3,
+    "ice": -4,
+    "light": 5,
+    "phantom": 1,
+    "wind": -3
+   },
+   "attackWait": 2200,
+   "dc": [
+    37,
+    56
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 41600,
+   "hp": 1200,
+   "lookID": 135,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    37,
+    56
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 254,
+   "mp": 0,
+   "name": "潘夜风魔",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "255": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": -3,
+    "ice": -4,
+    "light": 5,
+    "phantom": 1,
+    "wind": -3
+   },
+   "attackWait": 2200,
+   "dc": [
+    37,
+    56
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 41600,
+   "hp": 1200,
+   "lookID": 135,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    37,
+    56
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 255,
+   "mp": 0,
+   "name": "潘夜风魔0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "256": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": -3,
+    "ice": -4,
+    "light": 5,
+    "phantom": 1,
+    "wind": -3
+   },
+   "attackWait": 2200,
+   "dc": [
+    41,
+    62
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 56000,
+   "hp": 1600,
+   "lookID": 135,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    41,
+    62
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 256,
+   "mp": 0,
+   "name": "潘夜风魔8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "257": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 3,
+    "holy": -3,
+    "ice": -4,
+    "light": 5,
+    "phantom": 1,
+    "wind": -1
+   },
+   "attackWait": 2200,
+   "dc": [
+    37,
+    56
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 41600,
+   "hp": 1200,
+   "lookID": 136,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    37,
+    56
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 257,
+   "mp": 0,
+   "name": "潘夜火魔",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "258": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 3,
+    "holy": -3,
+    "ice": -4,
+    "light": 5,
+    "phantom": 1,
+    "wind": -1
+   },
+   "attackWait": 2200,
+   "dc": [
+    37,
+    56
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 41600,
+   "hp": 1200,
+   "lookID": 136,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    37,
+    56
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 258,
+   "mp": 0,
+   "name": "潘夜火魔0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "259": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 3,
+    "holy": -3,
+    "ice": -4,
+    "light": 5,
+    "phantom": 1,
+    "wind": -1
+   },
+   "attackWait": 2200,
+   "dc": [
+    41,
+    62
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 56000,
+   "hp": 1600,
+   "lookID": 136,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    41,
+    62
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 259,
+   "mp": 0,
+   "name": "潘夜火魔8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "26": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 400,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 0,
+   "dcHit": 0,
+   "dropItemList": [],
+   "exp": 0,
+   "hp": 50,
+   "lookID": 0,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 26,
+   "mp": 10,
+   "name": "诺玛酋长",
+   "view": 9,
+   "walkStep": 1,
+   "walkWait": 400
+  },
+  "260": {
+   "ac": [
+    22,
+    22
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 4,
+    "holy": -2,
+    "ice": -4,
+    "light": 5,
+    "phantom": 1,
+    "wind": -1
+   },
+   "attackWait": 1500,
+   "dc": [
+    60,
+    99
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 128000,
+   "hp": 4000,
+   "lookID": 137,
+   "mac": [
+    37,
+    37
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 260,
+   "mp": 0,
+   "name": "潘夜鬼将",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "261": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": -2,
+    "ice": -4,
+    "light": 5,
+    "phantom": 2,
+    "wind": -1
+   },
+   "attackWait": 2000,
+   "dc": [
+    37,
+    53
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 35200,
+   "hp": 1100,
+   "lookID": 137,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 261,
+   "mp": 0,
+   "name": "潘夜战士",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "262": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": -2,
+    "ice": -4,
+    "light": 5,
+    "phantom": 2,
+    "wind": -1
+   },
+   "attackWait": 2000,
+   "dc": [
+    37,
+    53
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 35200,
+   "hp": 1100,
+   "lookID": 137,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 262,
+   "mp": 0,
+   "name": "潘夜战士0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "263": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": -2,
+    "ice": -4,
+    "light": 5,
+    "phantom": 2,
+    "wind": -1
+   },
+   "attackWait": 2000,
+   "dc": [
+    41,
+    58
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 48000,
+   "hp": 1500,
+   "lookID": 137,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 263,
+   "mp": 0,
+   "name": "潘夜战士8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "264": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 1300,
+   "dc": [
+    15,
+    29
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4960,
+   "hp": 230,
+   "lookID": 8,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 264,
+   "mp": 0,
+   "name": "浪子人鬼",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "265": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 1300,
+   "dc": [
+    16,
+    29
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4960,
+   "hp": 230,
+   "lookID": 8,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 265,
+   "mp": 0,
+   "name": "浪子人鬼0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "266": {
+   "ac": [
+    56,
+    56
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 0,
+    "ice": -2,
+    "light": 5,
+    "phantom": 3,
+    "wind": 1
+   },
+   "attackWait": 1500,
+   "dc": [
+    220,
+    290
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 224000,
+   "hp": 10500,
+   "lookID": 8,
+   "mac": [
+    110,
+    110
+   ],
+   "mc": [
+    186,
+    233
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 266,
+   "mp": 0,
+   "name": "潘夜牛魔王",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "267": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 2,
+    "holy": 0,
+    "ice": 0,
+    "light": -1,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 2500,
+   "dc": [
+    24,
+    42
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6880,
+   "hp": 270,
+   "lookID": 8,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 267,
+   "mp": 0,
+   "name": "鬼骨将",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "268": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 2,
+    "holy": 0,
+    "ice": 0,
+    "light": -1,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 2500,
+   "dc": [
+    24,
+    42
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6880,
+   "hp": 270,
+   "lookID": 8,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 268,
+   "mp": 0,
+   "name": "骨鬼将",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "269": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 2,
+    "holy": 0,
+    "ice": 0,
+    "light": -1,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 2500,
+   "dc": [
+    24,
+    42
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6880,
+   "hp": 270,
+   "lookID": 8,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 269,
+   "mp": 0,
+   "name": "骷髅武将",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "27": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2300,
+   "dc": [
+    16,
+    24
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4160,
+   "hp": 180,
+   "lookID": 16,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 27,
+   "mp": 0,
+   "name": "劳动蚂蚁",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "270": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 2,
+    "holy": 0,
+    "ice": 0,
+    "light": -1,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 2500,
+   "dc": [
+    24,
+    42
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6880,
+   "hp": 270,
+   "lookID": 8,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 270,
+   "mp": 0,
+   "name": "骷髅武将0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "271": {
+   "ac": [
+    9,
+    9
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": 5,
+    "phantom": 0,
+    "wind": 5
+   },
+   "attackWait": 2500,
+   "dc": [
+    77,
+    84
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 3440,
+   "hp": 540,
+   "lookID": 8,
+   "mac": [
+    27,
+    27
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 271,
+   "mp": 0,
+   "name": "守卫武将",
+   "view": 15,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "272": {
+   "ac": [
+    44,
+    44
+   ],
+   "attackWait": 1500,
+   "dc": [
+    121,
+    187
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 160000,
+   "hp": 7500,
+   "lookID": 8,
+   "mac": [
+    79,
+    79
+   ],
+   "mc": [
+    141,
+    185
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 272,
+   "mp": 0,
+   "name": "骷髅教主",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "273": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 0,
+    "fire": 1,
+    "holy": 0,
+    "ice": -1,
+    "light": 0,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 2500,
+   "dc": [
+    24,
+    37
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6240,
+   "hp": 230,
+   "lookID": 8,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    22,
+    34
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 273,
+   "mp": 0,
+   "name": "骷髅士兵",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "274": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 0,
+    "fire": 1,
+    "holy": 0,
+    "ice": -1,
+    "light": 0,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 2500,
+   "dc": [
+    24,
+    37
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6240,
+   "hp": 230,
+   "lookID": 8,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    22,
+    34
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 274,
+   "mp": 0,
+   "name": "骷髅士兵0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "275": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 0,
+    "fire": 1,
+    "holy": 0,
+    "ice": -1,
+    "light": 0,
+    "phantom": -1,
+    "wind": 0
+   },
+   "attackWait": 2500,
+   "dc": [
+    24,
+    37
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 5920,
+   "hp": 210,
+   "lookID": 8,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 275,
+   "mp": 0,
+   "name": "骷髅武士",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "276": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 0,
+    "fire": 2,
+    "holy": 0,
+    "ice": 0,
+    "light": 0,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 3000,
+   "dc": [
+    25,
+    36
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6560,
+   "hp": 250,
+   "lookID": 144,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 276,
+   "mp": 0,
+   "name": "骷髅弓箭手",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "277": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 0,
+    "fire": 2,
+    "holy": 0,
+    "ice": 0,
+    "light": 0,
+    "phantom": 0,
+    "wind": 0
+   },
+   "attackWait": 3000,
+   "dc": [
+    25,
+    36
+   ],
+   "dcDodge": 18,
+   "dcHit": 19,
+   "dropItemList": [],
+   "exp": 6560,
+   "hp": 250,
+   "lookID": 144,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 277,
+   "mp": 0,
+   "name": "骷髅弓箭手0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "278": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2200,
+   "dc": [
+    12,
+    16
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 2880,
+   "hp": 100,
+   "lookID": 145,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 278,
+   "mp": 0,
+   "name": "多脚虫1",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "279": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2200,
+   "dc": [
+    12,
+    16
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 2880,
+   "hp": 100,
+   "lookID": 145,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 279,
+   "mp": 0,
+   "name": "多脚虫10",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "28": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2300,
+   "dc": [
+    16,
+    24
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4160,
+   "hp": 180,
+   "lookID": 16,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 28,
+   "mp": 0,
+   "name": "劳动蚂蚁0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "280": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2200,
+   "dc": [
+    12,
+    16
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 2880,
+   "hp": 100,
+   "lookID": 146,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 280,
+   "mp": 0,
+   "name": "多脚虫2",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "281": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2200,
+   "dc": [
+    12,
+    16
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 2880,
+   "hp": 100,
+   "lookID": 146,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 281,
+   "mp": 0,
+   "name": "多脚虫20",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "282": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    11,
+    21
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 3200,
+   "hp": 120,
+   "lookID": 147,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 282,
+   "mp": 0,
+   "name": "胞眼虫_1",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "283": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    11,
+    21
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 3200,
+   "hp": 120,
+   "lookID": 147,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 283,
+   "mp": 0,
+   "name": "胞眼虫1",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "284": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    11,
+    21
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 3200,
+   "hp": 120,
+   "lookID": 148,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 284,
+   "mp": 0,
+   "name": "胞眼虫_2",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "285": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    11,
+    21
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 3200,
+   "hp": 120,
+   "lookID": 148,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 285,
+   "mp": 0,
+   "name": "胞眼虫2",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "286": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    11,
+    21
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 3200,
+   "hp": 120,
+   "lookID": 148,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 286,
+   "mp": 0,
+   "name": "胞眼虫20",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "287": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 1800,
+   "dc": [
+    11,
+    23
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 3840,
+   "hp": 160,
+   "lookID": 149,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 287,
+   "mp": 0,
+   "name": "蜘蛛蛙",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "288": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 1800,
+   "dc": [
+    11,
+    23
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 3840,
+   "hp": 160,
+   "lookID": 149,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 288,
+   "mp": 0,
+   "name": "蜘蛛娃",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "289": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 1800,
+   "dc": [
+    11,
+    23
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 3840,
+   "hp": 160,
+   "lookID": 149,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 289,
+   "mp": 0,
+   "name": "蜘蛛娃0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "29": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 2000,
+   "dc": [
+    29,
+    50
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8640,
+   "hp": 380,
+   "lookID": 17,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 29,
+   "mp": 0,
+   "name": "诺玛将士",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "290": {
+   "ac": [
+    6,
+    6
+   ],
+   "attackWait": 1500,
+   "dc": [
+    33,
+    55
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 48000,
+   "hp": 1500,
+   "lookID": 149,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 290,
+   "mp": 0,
+   "name": "红甲虫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "291": {
+   "ac": [
+    16,
+    16
+   ],
+   "attackWait": 2000,
+   "dc": [
+    33,
+    77
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 16000,
+   "hp": 4000,
+   "lookID": 150,
+   "mac": [
+    36,
+    36
+   ],
+   "mc": [
+    33,
+    77
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 291,
+   "mp": 0,
+   "name": "野猪王",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "292": {
+   "ac": [
+    16,
+    16
+   ],
+   "attackWait": 2000,
+   "dc": [
+    33,
+    77
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 16000,
+   "hp": 4000,
+   "lookID": 150,
+   "mac": [
+    36,
+    36
+   ],
+   "mc": [
+    33,
+    77
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 292,
+   "mp": 0,
+   "name": "赤黄猪王",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "293": {
+   "ac": [
+    22,
+    22
+   ],
+   "attackWait": 3000,
+   "dc": [
+    44,
+    88
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 16000,
+   "hp": 3500,
+   "lookID": 152,
+   "mac": [
+    22,
+    22
+   ],
+   "mc": [
+    44,
+    88
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 293,
+   "mp": 0,
+   "name": "蝎蛇王",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "294": {
+   "ac": [
+    22,
+    22
+   ],
+   "attackWait": 3000,
+   "dc": [
+    44,
+    88
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 16000,
+   "hp": 3500,
+   "lookID": 152,
+   "mac": [
+    22,
+    22
+   ],
+   "mc": [
+    44,
+    88
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 294,
+   "mp": 0,
+   "name": "怒龙神",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "295": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 500,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 0,
+   "dcHit": 0,
+   "dropItemList": [],
+   "exp": 160,
+   "hp": 30,
+   "lookID": 153,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 295,
+   "mp": 0,
+   "name": "圣诞树",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "296": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 500,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 0,
+   "dcHit": 0,
+   "dropItemList": [],
+   "exp": 160,
+   "hp": 20000,
+   "lookID": 153,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 296,
+   "mp": 0,
+   "name": "圣诞树1",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "297": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -4,
+    "fire": 4,
+    "holy": 5,
+    "ice": 5,
+    "light": -2,
+    "phantom": -1,
+    "wind": -5
+   },
+   "attackWait": 1500,
+   "dc": [
+    32,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 19360,
+   "hp": 700,
+   "lookID": 9,
+   "mac": [
+    10,
+    10
+   ],
+   "mc": [
+    33,
+    49
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 297,
+   "mp": 0,
+   "name": "猿猴战士",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "298": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -4,
+    "fire": 4,
+    "holy": 5,
+    "ice": 5,
+    "light": -2,
+    "phantom": -1,
+    "wind": -5
+   },
+   "attackWait": 1500,
+   "dc": [
+    32,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 19360,
+   "hp": 700,
+   "lookID": 9,
+   "mac": [
+    10,
+    10
+   ],
+   "mc": [
+    33,
+    49
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 298,
+   "mp": 0,
+   "name": "猿猴战士0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "299": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -4,
+    "fire": 4,
+    "holy": 5,
+    "ice": 5,
+    "light": -2,
+    "phantom": -1,
+    "wind": -5
+   },
+   "attackWait": 1500,
+   "dc": [
+    32,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 19360,
+   "hp": 700,
+   "lookID": 9,
+   "mac": [
+    10,
+    10
+   ],
+   "mc": [
+    33,
+    49
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 299,
+   "mp": 0,
+   "name": "猿猴战士8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "3": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 1000,
+   "dc": [
+    2,
+    7
+   ],
+   "dcDodge": 9,
+   "dcHit": 11,
+   "dropItemList": [],
+   "exp": 320,
+   "hp": 20,
+   "lookID": 1,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 3,
+   "mp": 0,
+   "name": "夜行鬼09",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 1000
+  },
+  "30": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 2000,
+   "dc": [
+    29,
+    50
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8640,
+   "hp": 380,
+   "lookID": 17,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 30,
+   "mp": 0,
+   "name": "诺玛将士0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "300": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -4,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": -3,
+    "phantom": -1,
+    "wind": -4
+   },
+   "attackWait": 1500,
+   "dc": [
+    32,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 19360,
+   "hp": 700,
+   "lookID": 9,
+   "mac": [
+    10,
+    10
+   ],
+   "mc": [
+    33,
+    49
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 300,
+   "mp": 0,
+   "name": "猿猴战将",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "301": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -4,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": -3,
+    "phantom": -1,
+    "wind": -4
+   },
+   "attackWait": 1500,
+   "dc": [
+    32,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 19360,
+   "hp": 700,
+   "lookID": 9,
+   "mac": [
+    10,
+    10
+   ],
+   "mc": [
+    33,
+    49
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 301,
+   "mp": 0,
+   "name": "猿猴战将0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "302": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -4,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": -3,
+    "phantom": -1,
+    "wind": -4
+   },
+   "attackWait": 1500,
+   "dc": [
+    32,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 19360,
+   "hp": 700,
+   "lookID": 9,
+   "mac": [
+    10,
+    10
+   ],
+   "mc": [
+    33,
+    49
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 302,
+   "mp": 0,
+   "name": "猿猴战将8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "303": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": -4,
+    "fire": 4,
+    "holy": 5,
+    "ice": 5,
+    "light": -2,
+    "phantom": -1,
+    "wind": -5
+   },
+   "attackWait": 2200,
+   "dc": [
+    37,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 21120,
+   "hp": 800,
+   "lookID": 9,
+   "mac": [
+    12,
+    12
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 303,
+   "mp": 0,
+   "name": "魔神怪_1",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "304": {
+   "ac": [
+    5,
+    5
+   ],
+   "acElem": {
+    "dark": -4,
+    "fire": 4,
+    "holy": 5,
+    "ice": 5,
+    "light": -2,
+    "phantom": -1,
+    "wind": -5
+   },
+   "attackWait": 2200,
+   "dc": [
+    37,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 21120,
+   "hp": 800,
+   "lookID": 9,
+   "mac": [
+    12,
+    12
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 304,
+   "mp": 0,
+   "name": "魔神怪1",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "305": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -3,
+    "fire": 5,
+    "holy": 4,
+    "ice": 4,
+    "light": -1,
+    "phantom": 0,
+    "wind": -4
+   },
+   "attackWait": 1000,
+   "dc": [
+    21,
+    43
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 21120,
+   "hp": 800,
+   "lookID": 9,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    22,
+    44
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 305,
+   "mp": 0,
+   "name": "魔神怪10",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "306": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -3,
+    "fire": 5,
+    "holy": 4,
+    "ice": 4,
+    "light": -1,
+    "phantom": 0,
+    "wind": -4
+   },
+   "attackWait": 1000,
+   "dc": [
+    21,
+    43
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 21120,
+   "hp": 800,
+   "lookID": 9,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    22,
+    44
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 306,
+   "mp": 0,
+   "name": "魔神怪_2",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "307": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -3,
+    "fire": 5,
+    "holy": 4,
+    "ice": 4,
+    "light": -1,
+    "phantom": 0,
+    "wind": -4
+   },
+   "attackWait": 1000,
+   "dc": [
+    21,
+    43
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 21120,
+   "hp": 800,
+   "lookID": 9,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    22,
+    44
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 307,
+   "mp": 0,
+   "name": "魔神怪2",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "308": {
+   "ac": [
+    22,
+    22
+   ],
+   "acElem": {
+    "dark": -3,
+    "fire": 4,
+    "holy": 5,
+    "ice": 5,
+    "light": -1,
+    "phantom": -1,
+    "wind": -4
+   },
+   "attackWait": 1500,
+   "dc": [
+    60,
+    99
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 128000,
+   "hp": 4000,
+   "lookID": 9,
+   "mac": [
+    37,
+    37
+   ],
+   "mc": [
+    60,
+    88
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 308,
+   "mp": 0,
+   "name": "魔神怪20",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "309": {
+   "ac": [
+    22,
+    22
+   ],
+   "acElem": {
+    "dark": -3,
+    "fire": 4,
+    "holy": 5,
+    "ice": 5,
+    "light": -1,
+    "phantom": -1,
+    "wind": -4
+   },
+   "attackWait": 1500,
+   "dc": [
+    60,
+    99
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 128000,
+   "hp": 4000,
+   "lookID": 9,
+   "mac": [
+    37,
+    37
+   ],
+   "mc": [
+    60,
+    88
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 309,
+   "mp": 0,
+   "name": "魔神怪8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "31": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 2000,
+   "dc": [
+    29,
+    46
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8000,
+   "hp": 340,
+   "lookID": 18,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 31,
+   "mp": 0,
+   "name": "诺玛0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "310": {
+   "ac": [
+    22,
+    22
+   ],
+   "acElem": {
+    "dark": -3,
+    "fire": 4,
+    "holy": 5,
+    "ice": 5,
+    "light": -1,
+    "phantom": -1,
+    "wind": -4
+   },
+   "attackWait": 1500,
+   "dc": [
+    60,
+    99
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 128000,
+   "hp": 4000,
+   "lookID": 9,
+   "mac": [
+    37,
+    37
+   ],
+   "mc": [
+    60,
+    88
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 310,
+   "mp": 0,
+   "name": "疯狂魔神盗",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "311": {
+   "ac": [
+    8,
+    8
+   ],
+   "acElem": {
+    "dark": -5,
+    "fire": 5,
+    "holy": 4,
+    "ice": 5,
+    "light": -1,
+    "phantom": -2,
+    "wind": -4
+   },
+   "attackWait": 3000,
+   "dc": [
+    43,
+    54
+   ],
+   "dcDodge": 18,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 28160,
+   "hp": 1100,
+   "lookID": 9,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    44,
+    55
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 311,
+   "mp": 0,
+   "name": "巨象兽",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "312": {
+   "ac": [
+    8,
+    8
+   ],
+   "acElem": {
+    "dark": -5,
+    "fire": 5,
+    "holy": 4,
+    "ice": 5,
+    "light": -1,
+    "phantom": -2,
+    "wind": -4
+   },
+   "attackWait": 3000,
+   "dc": [
+    43,
+    54
+   ],
+   "dcDodge": 18,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 28160,
+   "hp": 1100,
+   "lookID": 9,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    44,
+    55
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 312,
+   "mp": 0,
+   "name": "巨象兽0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "313": {
+   "ac": [
+    8,
+    8
+   ],
+   "acElem": {
+    "dark": -5,
+    "fire": 5,
+    "holy": 4,
+    "ice": 5,
+    "light": -1,
+    "phantom": -2,
+    "wind": -4
+   },
+   "attackWait": 3000,
+   "dc": [
+    43,
+    54
+   ],
+   "dcDodge": 18,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 28160,
+   "hp": 1100,
+   "lookID": 9,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    44,
+    55
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 313,
+   "mp": 0,
+   "name": "巨象兽8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "314": {
+   "ac": [
+    11,
+    11
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -4,
+    "holy": -3,
+    "ice": 5,
+    "light": 5,
+    "phantom": -3,
+    "wind": -4
+   },
+   "attackWait": 2000,
+   "dc": [
+    50,
+    60
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 57600,
+   "hp": 1600,
+   "lookID": 9,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    44,
+    55
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 314,
+   "mp": 0,
+   "name": "火焰狮子",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "315": {
+   "ac": [
+    14,
+    14
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -4,
+    "holy": -3,
+    "ice": 5,
+    "light": 5,
+    "phantom": -3,
+    "wind": -4
+   },
+   "attackWait": 2000,
+   "dc": [
+    50,
+    60
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 57600,
+   "hp": 1600,
+   "lookID": 9,
+   "mac": [
+    27,
+    27
+   ],
+   "mc": [
+    70,
+    88
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 315,
+   "mp": 0,
+   "name": "火焰狮子8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "316": {
+   "ac": [
+    14,
+    14
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -4,
+    "holy": -3,
+    "ice": 5,
+    "light": 5,
+    "phantom": -3,
+    "wind": -4
+   },
+   "attackWait": 2000,
+   "dc": [
+    50,
+    60
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 57600,
+   "hp": 1600,
+   "lookID": 9,
+   "mac": [
+    27,
+    27
+   ],
+   "mc": [
+    70,
+    88
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 316,
+   "mp": 0,
+   "name": "火焰狮子97",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "317": {
+   "ac": [
+    11,
+    11
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -4,
+    "holy": -3,
+    "ice": 5,
+    "light": 5,
+    "phantom": -3,
+    "wind": -4
+   },
+   "attackWait": 2000,
+   "dc": [
+    50,
+    60
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 57600,
+   "hp": 1600,
+   "lookID": 9,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    44,
+    55
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 317,
+   "mp": 0,
+   "name": "火焰狮子99",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "318": {
+   "ac": [
+    11,
+    11
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -4,
+    "holy": -3,
+    "ice": 5,
+    "light": 5,
+    "phantom": -3,
+    "wind": -4
+   },
+   "attackWait": 2500,
+   "dc": [
+    50,
+    60
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 60800,
+   "hp": 1300,
+   "lookID": 0,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    50,
+    60
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 318,
+   "mp": 0,
+   "name": "石头狮子",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "319": {
+   "ac": [
+    14,
+    14
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -4,
+    "holy": -3,
+    "ice": 5,
+    "light": 5,
+    "phantom": -3,
+    "wind": -4
+   },
+   "attackWait": 2500,
+   "dc": [
+    50,
+    60
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 60800,
+   "hp": 1300,
+   "lookID": 0,
+   "mac": [
+    27,
+    27
+   ],
+   "mc": [
+    79,
+    97
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 319,
+   "mp": 0,
+   "name": "石像狮子",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "32": {
+   "ac": [
+    3,
+    3
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 2000,
+   "dc": [
+    29,
+    46
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8000,
+   "hp": 340,
+   "lookID": 18,
+   "mac": [
+    8,
+    8
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 32,
+   "mp": 0,
+   "name": "诺玛00",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "320": {
+   "ac": [
+    14,
+    14
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -4,
+    "holy": -3,
+    "ice": 5,
+    "light": 5,
+    "phantom": -3,
+    "wind": -4
+   },
+   "attackWait": 2500,
+   "dc": [
+    50,
+    60
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 60800,
+   "hp": 1300,
+   "lookID": 0,
+   "mac": [
+    27,
+    27
+   ],
+   "mc": [
+    79,
+    97
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 320,
+   "mp": 0,
+   "name": "石像狮子8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "321": {
+   "ac": [
+    11,
+    11
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -4,
+    "holy": -3,
+    "ice": 5,
+    "light": 5,
+    "phantom": -3,
+    "wind": -4
+   },
+   "attackWait": 2500,
+   "dc": [
+    50,
+    60
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 60800,
+   "hp": 1300,
+   "lookID": 0,
+   "mac": [
+    13,
+    13
+   ],
+   "mc": [
+    50,
+    60
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 321,
+   "mp": 0,
+   "name": "石像狮子96",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "322": {
+   "ac": [
+    11,
+    11
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -4,
+    "holy": -3,
+    "ice": 5,
+    "light": 5,
+    "phantom": -3,
+    "wind": -4
+   },
+   "attackWait": 2500,
+   "dc": [
+    50,
+    60
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 91200,
+   "hp": 2000,
+   "lookID": 0,
+   "mac": [
+    16,
+    16
+   ],
+   "mc": [
+    60,
+    70
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 322,
+   "mp": 0,
+   "name": "石像狮子98",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "323": {
+   "ac": [
+    11,
+    11
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -4,
+    "holy": -3,
+    "ice": 5,
+    "light": 5,
+    "phantom": -3,
+    "wind": -4
+   },
+   "attackWait": 2500,
+   "dc": [
+    50,
+    60
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 109440,
+   "hp": 2000,
+   "lookID": 0,
+   "mac": [
+    16,
+    16
+   ],
+   "mc": [
+    60,
+    70
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 323,
+   "mp": 0,
+   "name": "守卫狮子",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "324": {
+   "ac": [
+    16,
+    16
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -2,
+    "holy": -5,
+    "ice": 3,
+    "light": 3,
+    "phantom": -1,
+    "wind": -2
+   },
+   "attackWait": 1500,
+   "dc": [
+    60,
+    77
+   ],
+   "dcDodge": 18,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 72000,
+   "hp": 2300,
+   "lookID": 0,
+   "mac": [
+    17,
+    17
+   ],
+   "mc": [
+    77,
+    88
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 324,
+   "mp": 0,
+   "name": "武力神将",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "325": {
+   "ac": [
+    27,
+    27
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -3,
+    "holy": -4,
+    "ice": 5,
+    "light": -3,
+    "phantom": 2,
+    "wind": 5
+   },
+   "attackWait": 1500,
+   "dc": [
+    66,
+    110
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 144000,
+   "hp": 4500,
+   "lookID": 0,
+   "mac": [
+    44,
+    44
+   ],
+   "mc": [
+    66,
+    99
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 325,
+   "mp": 0,
+   "name": "震天首将",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "326": {
+   "ac": [
+    22,
+    22
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -2,
+    "holy": -5,
+    "ice": 3,
+    "light": 3,
+    "phantom": -1,
+    "wind": -2
+   },
+   "attackWait": 1500,
+   "dc": [
+    60,
+    77
+   ],
+   "dcDodge": 18,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 72000,
+   "hp": 2300,
+   "lookID": 0,
+   "mac": [
+    38,
+    38
+   ],
+   "mc": [
+    123,
+    140
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 326,
+   "mp": 0,
+   "name": "武力神将8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "327": {
+   "ac": [
+    16,
+    16
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -2,
+    "holy": -5,
+    "ice": 3,
+    "light": 3,
+    "phantom": -1,
+    "wind": -2
+   },
+   "attackWait": 1500,
+   "dc": [
+    60,
+    77
+   ],
+   "dcDodge": 18,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 72000,
+   "hp": 2300,
+   "lookID": 0,
+   "mac": [
+    17,
+    17
+   ],
+   "mc": [
+    77,
+    88
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 327,
+   "mp": 0,
+   "name": "武力神将81",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "328": {
+   "ac": [
+    13,
+    13
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -3,
+    "holy": -4,
+    "ice": 4,
+    "light": 4,
+    "phantom": -2,
+    "wind": -3
+   },
+   "attackWait": 1200,
+   "dc": [
+    44,
+    55
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 64000,
+   "hp": 1800,
+   "lookID": 0,
+   "mac": [
+    15,
+    15
+   ],
+   "mc": [
+    44,
+    55
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 328,
+   "mp": 0,
+   "name": "地牢女神1",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "329": {
+   "ac": [
+    13,
+    13
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -3,
+    "holy": -4,
+    "ice": 4,
+    "light": 4,
+    "phantom": -2,
+    "wind": -3
+   },
+   "attackWait": 1200,
+   "dc": [
+    44,
+    55
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 65600,
+   "hp": 1500,
+   "lookID": 0,
+   "mac": [
+    15,
+    15
+   ],
+   "mc": [
+    44,
+    55
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 329,
+   "mp": 0,
+   "name": "地牢女神2",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "33": {
+   "ac": [
+    17,
+    17
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -1,
+    "holy": -2,
+    "ice": 5,
+    "light": -4,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 2200,
+   "dc": [
+    95,
+    128
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 166400,
+   "hp": 2800,
+   "lookID": 19,
+   "mac": [
+    53,
+    53
+   ],
+   "mc": [
+    95,
+    128
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 33,
+   "mp": 0,
+   "name": "红衣法师",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "330": {
+   "ac": [
+    13,
+    13
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -3,
+    "holy": -4,
+    "ice": 4,
+    "light": 4,
+    "phantom": -2,
+    "wind": -3
+   },
+   "attackWait": 1200,
+   "dc": [
+    44,
+    55
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 65600,
+   "hp": 1500,
+   "lookID": 0,
+   "mac": [
+    15,
+    15
+   ],
+   "mc": [
+    44,
+    55
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 330,
+   "mp": 0,
+   "name": "地牢女神8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "331": {
+   "ac": [
+    60,
+    60
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -1,
+    "holy": -2,
+    "ice": 5,
+    "light": -1,
+    "phantom": 4,
+    "wind": 5
+   },
+   "attackWait": 1500,
+   "dc": [
+    220,
+    275
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 240000,
+   "hp": 11250,
+   "lookID": 0,
+   "mac": [
+    110,
+    110
+   ],
+   "mc": [
+    160,
+    215
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 331,
+   "mp": 0,
+   "name": "震天魔神",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "332": {
+   "ac": [
+    220,
+    220
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": 5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    165,
+    165
+   ],
+   "dcDodge": 200,
+   "dcHit": 200,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 9999,
+   "lookID": 0,
+   "mac": [
+    220,
+    220
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 332,
+   "mp": 0,
+   "name": "丛林战士1",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "333": {
+   "ac": [
+    220,
+    220
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": 5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    165,
+    165
+   ],
+   "dcDodge": 200,
+   "dcHit": 200,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 9999,
+   "lookID": 0,
+   "mac": [
+    220,
+    220
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 333,
+   "mp": 0,
+   "name": "丛林战士2",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "334": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    165,
+    220
+   ],
+   "dcDodge": 1,
+   "dcHit": 20,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 1000,
+   "lookID": 0,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 334,
+   "mp": 0,
+   "name": "投石车",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "335": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    88,
+    143
+   ],
+   "dcDodge": 1,
+   "dcHit": 20,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 1000,
+   "lookID": 0,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 335,
+   "mp": 0,
+   "name": "弩车",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "336": {
+   "ac": [
+    45,
+    45
+   ],
+   "acElem": {
+    "dark": 3,
+    "fire": -4,
+    "holy": -5,
+    "ice": 5,
+    "light": -2,
+    "phantom": -1,
+    "wind": 0
+   },
+   "attackWait": 1000,
+   "dc": [
+    120,
+    185
+   ],
+   "dcDodge": 18,
+   "dcHit": 20,
+   "dropItemList": [],
+   "exp": 217600,
+   "hp": 3000,
+   "lookID": 0,
+   "mac": [
+    75,
+    75
+   ],
+   "mc": [
+    120,
+    185
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 336,
+   "mp": 0,
+   "name": "冰宫守卫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "337": {
+   "ac": [
+    30,
+    30
+   ],
+   "acElem": {
+    "dark": 4,
+    "fire": -2,
+    "holy": -4,
+    "ice": 4,
+    "light": -5,
+    "phantom": -1,
+    "wind": 4
+   },
+   "attackWait": 1200,
+   "dc": [
+    70,
+    130
+   ],
+   "dcDodge": 10,
+   "dcHit": 10,
+   "dropItemList": [],
+   "exp": 104000,
+   "hp": 2700,
+   "lookID": 0,
+   "mac": [
+    40,
+    40
+   ],
+   "mc": [
+    125,
+    185
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 337,
+   "mp": 0,
+   "name": "冰原火猪",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "338": {
+   "ac": [
+    50,
+    50
+   ],
+   "acElem": {
+    "dark": -3,
+    "fire": -2,
+    "holy": 4,
+    "ice": 5,
+    "light": 1,
+    "phantom": -2,
+    "wind": 3
+   },
+   "attackWait": 1200,
+   "dc": [
+    190,
+    240
+   ],
+   "dcDodge": 18,
+   "dcHit": 18,
+   "dropItemList": [],
+   "exp": 400000,
+   "hp": 10000,
+   "lookID": 0,
+   "mac": [
+    125,
+    125
+   ],
+   "mc": [
+    185,
+    248
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 338,
+   "mp": 10,
+   "name": "寒冰守护神",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "339": {
+   "ac": [
+    33,
+    33
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": 5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 500,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 15,
+   "dcHit": 1,
+   "dropItemList": [],
+   "exp": 0,
+   "hp": 10000,
+   "lookID": 0,
+   "mac": [
+    109,
+    109
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 339,
+   "mp": 0,
+   "name": "木障",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "34": {
+   "ac": [
+    17,
+    17
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -1,
+    "holy": -2,
+    "ice": 5,
+    "light": -4,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 2200,
+   "dc": [
+    95,
+    128
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 166400,
+   "hp": 2800,
+   "lookID": 19,
+   "mac": [
+    53,
+    53
+   ],
+   "mc": [
+    95,
+    128
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 34,
+   "mp": 0,
+   "name": "红衣法师8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "340": {
+   "ac": [
+    0,
+    5
+   ],
+   "attackWait": 3000,
+   "dc": [
+    0,
+    4
+   ],
+   "dcDodge": 5,
+   "dcHit": 10,
+   "dropItemList": [],
+   "exp": 7200,
+   "hp": 250,
+   "lookID": 0,
+   "mac": [
+    10,
+    10
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 340,
+   "mp": 0,
+   "name": "雄诺玛",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "341": {
+   "ac": [
+    0,
+    5
+   ],
+   "attackWait": 3000,
+   "dc": [
+    0,
+    4
+   ],
+   "dcDodge": 5,
+   "dcHit": 10,
+   "dropItemList": [],
+   "exp": 7200,
+   "hp": 250,
+   "lookID": 0,
+   "mac": [
+    10,
+    10
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 341,
+   "mp": 0,
+   "name": "雌诺玛",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "342": {
+   "ac": [
+    0,
+    5
+   ],
+   "attackWait": 3000,
+   "dc": [
+    0,
+    4
+   ],
+   "dcDodge": 5,
+   "dcHit": 10,
+   "dropItemList": [],
+   "exp": 7200,
+   "hp": 250,
+   "lookID": 0,
+   "mac": [
+    10,
+    10
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 342,
+   "mp": 0,
+   "name": "小诺玛",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "343": {
+   "ac": [
+    0,
+    5
+   ],
+   "attackWait": 3000,
+   "dc": [
+    0,
+    4
+   ],
+   "dcDodge": 5,
+   "dcHit": 10,
+   "dropItemList": [],
+   "exp": 7200,
+   "hp": 250,
+   "lookID": 0,
+   "mac": [
+    10,
+    10
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 343,
+   "mp": 0,
+   "name": "单腿诺玛",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "344": {
+   "ac": [
+    0,
+    5
+   ],
+   "attackWait": 3000,
+   "dc": [
+    0,
+    4
+   ],
+   "dcDodge": 5,
+   "dcHit": 10,
+   "dropItemList": [],
+   "exp": 7200,
+   "hp": 250,
+   "lookID": 0,
+   "mac": [
+    10,
+    10
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 344,
+   "mp": 0,
+   "name": "独臂诺玛",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "345": {
+   "ac": [
+    220,
+    220
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": 5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 2000,
+   "dc": [
+    165,
+    165
+   ],
+   "dcDodge": 200,
+   "dcHit": 200,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 9999,
+   "lookID": 0,
+   "mac": [
+    220,
+    220
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 345,
+   "mp": 0,
+   "name": "诺玛卫士",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "346": {
+   "ac": [
+    26,
+    26
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 3,
+    "holy": -3,
+    "ice": 3,
+    "light": 1,
+    "phantom": -3,
+    "wind": -4
+   },
+   "attackWait": 1100,
+   "dc": [
+    62,
+    206
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 131200,
+   "hp": 2500,
+   "lookID": 0,
+   "mac": [
+    68,
+    68
+   ],
+   "mc": [
+    50,
+    170
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 346,
+   "mp": 0,
+   "name": "诺玛骑兵",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "347": {
+   "ac": [
+    30,
+    30
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 3,
+    "holy": -3,
+    "ice": 3,
+    "light": 1,
+    "phantom": -3,
+    "wind": -4
+   },
+   "attackWait": 1100,
+   "dc": [
+    82,
+    226
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 160000,
+   "hp": 3000,
+   "lookID": 0,
+   "mac": [
+    85,
+    85
+   ],
+   "mc": [
+    90,
+    210
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 347,
+   "mp": 0,
+   "name": "诺玛骑兵8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "348": {
+   "ac": [
+    42,
+    42
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 2,
+    "holy": -4,
+    "ice": 3,
+    "light": 1,
+    "phantom": -3,
+    "wind": -2
+   },
+   "attackWait": 2200,
+   "dc": [
+    90,
+    190
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 60800,
+   "hp": 2700,
+   "lookID": 0,
+   "mac": [
+    68,
+    68
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 348,
+   "mp": 0,
+   "name": "诺玛装甲兵",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "349": {
+   "ac": [
+    45,
+    45
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 2,
+    "holy": -4,
+    "ice": 3,
+    "light": 1,
+    "phantom": -3,
+    "wind": -2
+   },
+   "attackWait": 2200,
+   "dc": [
+    130,
+    230
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 75200,
+   "hp": 3400,
+   "lookID": 0,
+   "mac": [
+    85,
+    85
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 349,
+   "mp": 0,
+   "name": "诺玛装甲兵8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "35": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    0,
+    1
+   ],
+   "dcDodge": 5,
+   "dcHit": 6,
+   "dropItemList": [],
+   "exp": 80,
+   "hp": 10,
+   "lookID": 20,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 35,
+   "mp": 0,
+   "name": "鸡",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "350": {
+   "ac": [
+    26,
+    26
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 4,
+    "holy": -2,
+    "ice": 2,
+    "light": 0,
+    "phantom": -4,
+    "wind": -3
+   },
+   "attackWait": 1100,
+   "dc": [
+    98,
+    158
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 128000,
+   "hp": 2400,
+   "lookID": 0,
+   "mac": [
+    75,
+    75
+   ],
+   "mc": [
+    80,
+    130
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 350,
+   "mp": 0,
+   "name": "诺玛抛石兵",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "351": {
+   "ac": [
+    30,
+    30
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 4,
+    "holy": -2,
+    "ice": 2,
+    "light": 0,
+    "phantom": -4,
+    "wind": -3
+   },
+   "attackWait": 1100,
+   "dc": [
+    118,
+    178
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 160000,
+   "hp": 3000,
+   "lookID": 0,
+   "mac": [
+    90,
+    90
+   ],
+   "mc": [
+    120,
+    170
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 351,
+   "mp": 0,
+   "name": "诺玛抛石兵8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "352": {
+   "ac": [
+    32,
+    32
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 1,
+    "holy": -5,
+    "ice": 3,
+    "light": 3,
+    "phantom": -1,
+    "wind": -2
+   },
+   "attackWait": 1000,
+   "dc": [
+    130,
+    150
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 136000,
+   "hp": 2600,
+   "lookID": 0,
+   "mac": [
+    81,
+    81
+   ],
+   "mc": [
+    130,
+    150
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 352,
+   "mp": 0,
+   "name": "诺玛司令",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "353": {
+   "ac": [
+    35,
+    35
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 1,
+    "holy": -5,
+    "ice": 3,
+    "light": 3,
+    "phantom": -1,
+    "wind": -2
+   },
+   "attackWait": 1000,
+   "dc": [
+    160,
+    180
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 168000,
+   "hp": 3200,
+   "lookID": 0,
+   "mac": [
+    100,
+    100
+   ],
+   "mc": [
+    170,
+    190
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 353,
+   "mp": 0,
+   "name": "诺玛司令8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "354": {
+   "ac": [
+    59,
+    59
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 3,
+    "holy": -3,
+    "ice": 2,
+    "light": 1,
+    "phantom": -2,
+    "wind": -2
+   },
+   "attackWait": 2200,
+   "dc": [
+    220,
+    250
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 320000,
+   "hp": 8400,
+   "lookID": 0,
+   "mac": [
+    94,
+    94
+   ],
+   "mc": [
+    220,
+    250
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 354,
+   "mp": 0,
+   "name": "诺玛突击队长",
+   "view": 12,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "355": {
+   "ac": [
+    39,
+    39
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 3,
+    "holy": -3,
+    "ice": 2,
+    "light": 1,
+    "phantom": -3,
+    "wind": -3
+   },
+   "attackWait": 1000,
+   "dc": [
+    110,
+    210
+   ],
+   "dcDodge": 18,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 140800,
+   "hp": 2500,
+   "lookID": 0,
+   "mac": [
+    76,
+    76
+   ],
+   "mc": [
+    110,
+    210
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 355,
+   "mp": 0,
+   "name": "诺玛斧兵",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "356": {
+   "ac": [
+    45,
+    45
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 3,
+    "holy": -3,
+    "ice": 2,
+    "light": 1,
+    "phantom": -3,
+    "wind": -3
+   },
+   "attackWait": 1000,
+   "dc": [
+    140,
+    240
+   ],
+   "dcDodge": 18,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 172800,
+   "hp": 3100,
+   "lookID": 0,
+   "mac": [
+    98,
+    98
+   ],
+   "mc": [
+    150,
+    250
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 356,
+   "mp": 0,
+   "name": "诺玛斧兵8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "357": {
+   "ac": [
+    66,
+    66
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 4,
+    "holy": -3,
+    "ice": 2,
+    "light": 3,
+    "phantom": -2,
+    "wind": -3
+   },
+   "attackWait": 1000,
+   "dc": [
+    264,
+    275
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 320000,
+   "hp": 12750,
+   "lookID": 0,
+   "mac": [
+    114,
+    114
+   ],
+   "mc": [
+    225,
+    253
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 357,
+   "mp": 0,
+   "name": "诺玛教主",
+   "view": 12,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "358": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 500,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 0,
+   "dcHit": 0,
+   "dropItemList": [],
+   "exp": 320,
+   "hp": 20,
+   "lookID": 0,
+   "mac": [
+    200,
+    200
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 358,
+   "mp": 0,
+   "name": "霸群大怪",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "359": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": 5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 500,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 0,
+   "dcHit": 0,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 30,
+   "lookID": 0,
+   "mac": [
+    220,
+    220
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 359,
+   "mp": 0,
+   "name": "聚宝箱",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "36": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    0,
+    6
+   ],
+   "dcDodge": 8,
+   "dcHit": 9,
+   "dropItemList": [],
+   "exp": 272,
+   "hp": 50,
+   "lookID": 21,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 36,
+   "mp": 0,
+   "name": "鹿",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "360": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 400,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 0,
+   "dcHit": 0,
+   "dropItemList": [],
+   "exp": 0,
+   "hp": 50,
+   "lookID": 0,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 360,
+   "mp": 10,
+   "name": "未知",
+   "view": 9,
+   "walkStep": 0,
+   "walkWait": 400
+  },
+  "361": {
+   "ac": [
+    0,
+    0
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": 5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 5000,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 0,
+   "dcHit": 0,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 20,
+   "lookID": 0,
+   "mac": [
+    220,
+    220
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 361,
+   "mp": 0,
+   "name": "雪人",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "362": {
+   "ac": [
+    45,
+    45
+   ],
+   "acElem": {
+    "dark": 1,
+    "fire": 1,
+    "holy": -1,
+    "ice": -2,
+    "light": 3,
+    "phantom": -3,
+    "wind": -3
+   },
+   "attackWait": 1200,
+   "dc": [
+    160,
+    190
+   ],
+   "dcDodge": 50,
+   "dcHit": 20,
+   "dropItemList": [],
+   "exp": 231200,
+   "hp": 3600,
+   "lookID": 0,
+   "mac": [
+    90,
+    90
+   ],
+   "mc": [
+    160,
+    200
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 362,
+   "mp": 0,
+   "name": "变异雪人",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "363": {
+   "ac": [
+    10,
+    10
+   ],
+   "acElem": {
+    "dark": 0,
+    "fire": 3,
+    "holy": -2,
+    "ice": -3,
+    "light": 1,
+    "phantom": -5,
+    "wind": -2
+   },
+   "attackWait": 1200,
+   "dc": [
+    180,
+    220
+   ],
+   "dcDodge": 20,
+   "dcHit": 20,
+   "dropItemList": [],
+   "exp": 234400,
+   "hp": 3700,
+   "lookID": 0,
+   "mac": [
+    90,
+    90
+   ],
+   "mc": [
+    180,
+    220
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 363,
+   "mp": 0,
+   "name": "彩鸡",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "364": {
+   "ac": [
+    44,
+    44
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -2,
+    "holy": -3,
+    "ice": 4,
+    "light": -5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 1500,
+   "dc": [
+    187,
+    253
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 160000,
+   "hp": 4000,
+   "lookID": 0,
+   "mac": [
+    118,
+    118
+   ],
+   "mc": [
+    187,
+    253
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 364,
+   "mp": 0,
+   "name": "年兽",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "37": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    4,
+    8
+   ],
+   "dcDodge": 10,
+   "dcHit": 12,
+   "dropItemList": [],
+   "exp": 480,
+   "hp": 30,
+   "lookID": 22,
+   "mac": [
+    1,
+    1
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 37,
+   "mp": 0,
+   "name": "半兽人",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "38": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    4,
+    8
+   ],
+   "dcDodge": 10,
+   "dcHit": 12,
+   "dropItemList": [],
+   "exp": 480,
+   "hp": 30,
+   "lookID": 22,
+   "mac": [
+    1,
+    1
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 38,
+   "mp": 0,
+   "name": "半兽人0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "39": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    4,
+    12
+   ],
+   "dcDodge": 10,
+   "dcHit": 12,
+   "dropItemList": [],
+   "exp": 800,
+   "hp": 50,
+   "lookID": 23,
+   "mac": [
+    1,
+    1
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 39,
+   "mp": 0,
+   "name": "半兽战士",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "4": {
+   "ac": [
+    20,
+    20
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -1,
+    "holy": -3,
+    "ice": 3,
+    "light": -4,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 400,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 153600,
+   "hp": 2500,
+   "lookID": 2,
+   "mac": [
+    53,
+    53
+   ],
+   "mc": [
+    99,
+    107
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 4,
+   "mp": 0,
+   "name": "触角神魔",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 400
+  },
+  "40": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    4,
+    12
+   ],
+   "dcDodge": 10,
+   "dcHit": 12,
+   "dropItemList": [],
+   "exp": 800,
+   "hp": 50,
+   "lookID": 23,
+   "mac": [
+    1,
+    1
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 40,
+   "mp": 0,
+   "name": "半兽战士0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "41": {
+   "ac": [
+    3,
+    3
+   ],
+   "attackWait": 1500,
+   "dc": [
+    16,
+    55
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 19200,
+   "hp": 600,
+   "lookID": 24,
+   "mac": [
+    9,
+    9
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 41,
+   "mp": 0,
+   "name": "半兽勇士",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "42": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    2,
+    9
+   ],
+   "dcDodge": 9,
+   "dcHit": 11,
+   "dropItemList": [],
+   "exp": 352,
+   "hp": 22,
+   "lookID": 25,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    2,
+    9
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 42,
+   "mp": 0,
+   "name": "毒蜘蛛",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "43": {
+   "ac": [
+    110,
+    110
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": 5,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 200,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 200,
+   "dcHit": 200,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 9999,
+   "lookID": 1,
+   "mac": [
+    110,
+    110
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 43,
+   "mp": 0,
+   "name": "大刀卫士",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 100
+  },
+  "44": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    2,
+    6
+   ],
+   "dcDodge": 9,
+   "dcHit": 11,
+   "dropItemList": [],
+   "exp": 304,
+   "hp": 19,
+   "lookID": 1,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 44,
+   "mp": 0,
+   "name": "蛤蟆",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "45": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    2,
+    6
+   ],
+   "dcDodge": 9,
+   "dcHit": 11,
+   "dropItemList": [],
+   "exp": 304,
+   "hp": 19,
+   "lookID": 1,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 45,
+   "mp": 0,
+   "name": "蛤蟆0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "46": {
+   "ac": [
+    1,
+    1
+   ],
+   "attackWait": 2500,
+   "dc": [
+    8,
+    15
+   ],
+   "dcDodge": 12,
+   "dcHit": 14,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 95,
+   "lookID": 1,
+   "mac": [
+    3,
+    3
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 46,
+   "mp": 0,
+   "name": "蝎子",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "47": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    8,
+    14
+   ],
+   "dcDodge": 12,
+   "dcHit": 14,
+   "dropItemList": [],
+   "exp": 1440,
+   "hp": 90,
+   "lookID": 1,
+   "mac": [
+    3,
+    3
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 47,
+   "mp": 0,
+   "name": "山洞蝙蝠",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "48": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    8,
+    14
+   ],
+   "dcDodge": 12,
+   "dcHit": 14,
+   "dropItemList": [],
+   "exp": 1440,
+   "hp": 90,
+   "lookID": 1,
+   "mac": [
+    3,
+    3
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 48,
+   "mp": 0,
+   "name": "山洞蝙蝠0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "49": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    4,
+    10
+   ],
+   "dcDodge": 10,
+   "dcHit": 12,
+   "dropItemList": [],
+   "exp": 640,
+   "hp": 40,
+   "lookID": 1,
+   "mac": [
+    1,
+    1
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 49,
+   "mp": 0,
+   "name": "森林雪人",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "5": {
+   "ac": [
+    20,
+    20
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": -1,
+    "holy": -3,
+    "ice": 3,
+    "light": -4,
+    "phantom": 5,
+    "wind": 5
+   },
+   "attackWait": 400,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 18,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 153600,
+   "hp": 2500,
+   "lookID": 2,
+   "mac": [
+    53,
+    53
+   ],
+   "mc": [
+    99,
+    107
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 5,
+   "mp": 0,
+   "name": "触角神魔8",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 400
+  },
+  "50": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    4,
+    10
+   ],
+   "dcDodge": 10,
+   "dcHit": 12,
+   "dropItemList": [],
+   "exp": 640,
+   "hp": 40,
+   "lookID": 1,
+   "mac": [
+    1,
+    1
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 50,
+   "mp": 0,
+   "name": "森林雪人0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "51": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    2,
+    8
+   ],
+   "dcDodge": 9,
+   "dcHit": 11,
+   "dropItemList": [],
+   "exp": 336,
+   "hp": 21,
+   "lookID": 1,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 51,
+   "mp": 0,
+   "name": "食人花",
+   "view": 1,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "52": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    8,
+    16
+   ],
+   "dcDodge": 12,
+   "dcHit": 14,
+   "dropItemList": [],
+   "exp": 1600,
+   "hp": 100,
+   "lookID": 32,
+   "mac": [
+    3,
+    3
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 52,
+   "mp": 0,
+   "name": "骷髅",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "53": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    8,
+    16
+   ],
+   "dcDodge": 12,
+   "dcHit": 14,
+   "dropItemList": [],
+   "exp": 1600,
+   "hp": 100,
+   "lookID": 32,
+   "mac": [
+    3,
+    3
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 53,
+   "mp": 0,
+   "name": "骷髅0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "54": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    9,
+    13
+   ],
+   "dcDodge": 12,
+   "dcHit": 14,
+   "dropItemList": [],
+   "exp": 1600,
+   "hp": 100,
+   "lookID": 33,
+   "mac": [
+    3,
+    3
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 54,
+   "mp": 0,
+   "name": "掷斧骷髅",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "55": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    9,
+    13
+   ],
+   "dcDodge": 12,
+   "dcHit": 14,
+   "dropItemList": [],
+   "exp": 1600,
+   "hp": 100,
+   "lookID": 33,
+   "mac": [
+    3,
+    3
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 55,
+   "mp": 0,
+   "name": "掷斧骷髅0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "56": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    8,
+    17
+   ],
+   "dcDodge": 12,
+   "dcHit": 14,
+   "dropItemList": [],
+   "exp": 1680,
+   "hp": 105,
+   "lookID": 34,
+   "mac": [
+    3,
+    3
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 56,
+   "mp": 0,
+   "name": "骷髅战士",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "57": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    8,
+    17
+   ],
+   "dcDodge": 12,
+   "dcHit": 14,
+   "dropItemList": [],
+   "exp": 1680,
+   "hp": 105,
+   "lookID": 34,
+   "mac": [
+    3,
+    3
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 57,
+   "mp": 0,
+   "name": "骷髅战士0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "58": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2300,
+   "dc": [
+    8,
+    18
+   ],
+   "dcDodge": 12,
+   "dcHit": 14,
+   "dropItemList": [],
+   "exp": 1760,
+   "hp": 110,
+   "lookID": 35,
+   "mac": [
+    3,
+    3
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 58,
+   "mp": 0,
+   "name": "骷髅战将",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "59": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2300,
+   "dc": [
+    8,
+    18
+   ],
+   "dcDodge": 12,
+   "dcHit": 14,
+   "dropItemList": [],
+   "exp": 1760,
+   "hp": 110,
+   "lookID": 35,
+   "mac": [
+    3,
+    3
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 59,
+   "mp": 0,
+   "name": "骷髅战将0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "6": {
+   "ac": [
+    2,
+    2
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 400,
+   "dc": [
+    29,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 8480,
+   "hp": 370,
+   "lookID": 3,
+   "mac": [
+    9,
+    9
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 6,
+   "mp": 0,
+   "name": "沙鬼",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 400
+  },
+  "60": {
+   "ac": [
+    5,
+    5
+   ],
+   "attackWait": 1500,
+   "dc": [
+    27,
+    55
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 16000,
+   "hp": 500,
+   "lookID": 36,
+   "mac": [
+    9,
+    9
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 60,
+   "mp": 0,
+   "name": "骷髅精灵",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "61": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    11,
+    11
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 2560,
+   "hp": 100,
+   "lookID": 37,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    10,
+    10
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 61,
+   "mp": 0,
+   "name": "洞蛆",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "62": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    2,
+    7
+   ],
+   "dcDodge": 9,
+   "dcHit": 11,
+   "dropItemList": [],
+   "exp": 320,
+   "hp": 20,
+   "lookID": 38,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 62,
+   "mp": 0,
+   "name": "多钩猫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "63": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    2,
+    7
+   ],
+   "dcDodge": 9,
+   "dcHit": 11,
+   "dropItemList": [],
+   "exp": 320,
+   "hp": 20,
+   "lookID": 38,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 63,
+   "mp": 0,
+   "name": "多钩猫0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "64": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    2,
+    7
+   ],
+   "dcDodge": 9,
+   "dcHit": 11,
+   "dropItemList": [],
+   "exp": 320,
+   "hp": 20,
+   "lookID": 39,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 64,
+   "mp": 0,
+   "name": "钉耙猫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "65": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    2,
+    7
+   ],
+   "dcDodge": 9,
+   "dcHit": 11,
+   "dropItemList": [],
+   "exp": 320,
+   "hp": 20,
+   "lookID": 39,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 65,
+   "mp": 0,
+   "name": "钉耙猫0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "66": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    2,
+    5
+   ],
+   "dcDodge": 9,
+   "dcHit": 7,
+   "dropItemList": [],
+   "exp": 288,
+   "hp": 18,
+   "lookID": 40,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 66,
+   "mp": 0,
+   "name": "稻草人",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "67": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    2,
+    5
+   ],
+   "dcDodge": 9,
+   "dcHit": 11,
+   "dropItemList": [],
+   "exp": 288,
+   "hp": 18,
+   "lookID": 40,
+   "mac": [
+    0,
+    0
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 67,
+   "mp": 0,
+   "name": "稻草人0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "68": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    15,
+    25
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4480,
+   "hp": 200,
+   "lookID": 41,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 68,
+   "mp": 0,
+   "name": "沃玛战士",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "69": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    15,
+    25
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4480,
+   "hp": 200,
+   "lookID": 41,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 69,
+   "mp": 0,
+   "name": "沃玛战士0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "7": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 1000,
+   "dc": [
+    29,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 7680,
+   "hp": 320,
+   "lookID": 4,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 7,
+   "mp": 0,
+   "name": "沙漠石人",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 1000
+  },
+  "70": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    15,
+    25
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4800,
+   "hp": 220,
+   "lookID": 2,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 70,
+   "mp": 0,
+   "name": "沃玛勇士",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "71": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2000,
+   "dc": [
+    15,
+    25
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4800,
+   "hp": 220,
+   "lookID": 2,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 71,
+   "mp": 0,
+   "name": "沃玛勇士0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "72": {
+   "ac": [
+    4,
+    4
+   ],
+   "attackWait": 2000,
+   "dc": [
+    24,
+    44
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4800,
+   "hp": 220,
+   "lookID": 2,
+   "mac": [
+    12,
+    12
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 72,
+   "mp": 0,
+   "name": "沃玛勇士10",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "73": {
+   "ac": [
+    5,
+    5
+   ],
+   "attackWait": 2000,
+   "dc": [
+    15,
+    25
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4800,
+   "hp": 220,
+   "lookID": 2,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 73,
+   "mp": 0,
+   "name": "沃玛勇士60",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "74": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 1700,
+   "dc": [
+    15,
+    31
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 5440,
+   "hp": 260,
+   "lookID": 2,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    15,
+    31
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 74,
+   "mp": 0,
+   "name": "火焰沃玛",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "75": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 1700,
+   "dc": [
+    15,
+    31
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 5440,
+   "hp": 260,
+   "lookID": 2,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    15,
+    31
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 75,
+   "mp": 0,
+   "name": "火焰沃玛0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "76": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 1700,
+   "dc": [
+    15,
+    31
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 5440,
+   "hp": 260,
+   "lookID": 2,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    15,
+    31
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 76,
+   "mp": 0,
+   "name": "火焰沃玛30",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "77": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 1700,
+   "dc": [
+    15,
+    31
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 5440,
+   "hp": 260,
+   "lookID": 2,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    15,
+    31
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 77,
+   "mp": 0,
+   "name": "火焰沃玛61",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "78": {
+   "ac": [
+    8,
+    8
+   ],
+   "acElem": {
+    "dark": 5,
+    "fire": 5,
+    "holy": 5,
+    "ice": 5,
+    "light": 5,
+    "phantom": 0,
+    "wind": 5
+   },
+   "attackWait": 1700,
+   "dc": [
+    31,
+    62
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 2720,
+   "hp": 520,
+   "lookID": 2,
+   "mac": [
+    24,
+    24
+   ],
+   "mc": [
+    49,
+    99
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 78,
+   "mp": 0,
+   "name": "守卫沃玛",
+   "view": 15,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "79": {
+   "ac": [
+    7,
+    7
+   ],
+   "attackWait": 1500,
+   "dc": [
+    19,
+    40
+   ],
+   "dcDodge": 20,
+   "dcHit": 22,
+   "dropItemList": [],
+   "exp": 16000,
+   "hp": 1000,
+   "lookID": 2,
+   "mac": [
+    12,
+    12
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 79,
+   "mp": 0,
+   "name": "沃玛护卫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "8": {
+   "ac": [
+    4,
+    4
+   ],
+   "acElem": {
+    "dark": -1,
+    "fire": 0,
+    "holy": 1,
+    "ice": 1,
+    "light": 0,
+    "phantom": 0,
+    "wind": -1
+   },
+   "attackWait": 1000,
+   "dc": [
+    29,
+    48
+   ],
+   "dcDodge": 18,
+   "dcHit": 21,
+   "dropItemList": [],
+   "exp": 7680,
+   "hp": 320,
+   "lookID": 4,
+   "mac": [
+    7,
+    7
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 8,
+   "mp": 0,
+   "name": "沙漠石人0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 1000
+  },
+  "80": {
+   "ac": [
+    11,
+    11
+   ],
+   "attackWait": 1500,
+   "dc": [
+    38,
+    55
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 32000,
+   "hp": 1000,
+   "lookID": 2,
+   "mac": [
+    11,
+    11
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 80,
+   "mp": 0,
+   "name": "沃玛卫士",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "81": {
+   "ac": [
+    39,
+    39
+   ],
+   "attackWait": 1500,
+   "dc": [
+    129,
+    173
+   ],
+   "dcDodge": 23,
+   "dcHit": 25,
+   "dropItemList": [],
+   "exp": 128000,
+   "hp": 6000,
+   "lookID": 2,
+   "mac": [
+    92,
+    92
+   ],
+   "mc": [
+    129,
+    151
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 81,
+   "mp": 0,
+   "name": "沃玛教主",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "82": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 1800,
+   "dc": [
+    14,
+    28
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 5120,
+   "hp": 240,
+   "lookID": 2,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 82,
+   "mp": 0,
+   "name": "暗黑战士",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "83": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 1800,
+   "dc": [
+    14,
+    28
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 5120,
+   "hp": 240,
+   "lookID": 2,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 83,
+   "mp": 0,
+   "name": "暗黑战士0",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "84": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 1800,
+   "dc": [
+    14,
+    28
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 5120,
+   "hp": 240,
+   "lookID": 2,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 84,
+   "mp": 0,
+   "name": "暗黑战士40",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "85": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 2500,
+   "dc": [
+    15,
+    24
+   ],
+   "dcDodge": 15,
+   "dcHit": 17,
+   "dropItemList": [],
+   "exp": 4160,
+   "hp": 180,
+   "lookID": 2,
+   "mac": [
+    6,
+    6
+   ],
+   "mc": [
+    16,
+    23
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 85,
+   "mp": 0,
+   "name": "粪虫",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "86": {
+   "ac": [
+    4,
+    4
+   ],
+   "attackWait": 3000,
+   "dc": [
+    12,
+    24
+   ],
+   "dcDodge": 14,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 3840,
+   "hp": 160,
+   "lookID": 48,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    11,
+    22
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 86,
+   "mp": 0,
+   "name": "雷电僵尸",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "87": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    10,
+    22
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 3840,
+   "hp": 160,
+   "lookID": 48,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    9,
+    20
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 87,
+   "mp": 0,
+   "name": "僵尸1",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "88": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    10,
+    22
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 3840,
+   "hp": 160,
+   "lookID": 48,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    9,
+    20
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 88,
+   "mp": 0,
+   "name": "僵尸10",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "89": {
+   "ac": [
+    4,
+    4
+   ],
+   "attackWait": 3000,
+   "dc": [
+    13,
+    24
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 140,
+   "lookID": 49,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 89,
+   "mp": 0,
+   "name": "僧侣僵尸",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "9": {
+   "ac": [
+    999,
+    999
+   ],
+   "attackWait": 500,
+   "dc": [
+    0,
+    0
+   ],
+   "dcDodge": 200,
+   "dcHit": 200,
+   "dropItemList": [],
+   "exp": 0,
+   "hp": 9998,
+   "lookID": 5,
+   "mac": [
+    999,
+    999
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 9,
+   "mp": 0,
+   "name": "异界之门",
+   "view": 10,
+   "walkStep": 0,
+   "walkWait": 500
+  },
+  "90": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    11,
+    22
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 3520,
+   "hp": 140,
+   "lookID": 49,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 90,
+   "mp": 0,
+   "name": "僵尸20",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "91": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    11,
+    21
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 3200,
+   "hp": 120,
+   "lookID": 50,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 91,
+   "mp": 0,
+   "name": "僵尸_1",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "92": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    11,
+    21
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 3200,
+   "hp": 120,
+   "lookID": 50,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 92,
+   "mp": 0,
+   "name": "僵尸3",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "93": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    11,
+    21
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 3200,
+   "hp": 120,
+   "lookID": 50,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 93,
+   "mp": 0,
+   "name": "僵尸30",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "94": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    11,
+    21
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 3200,
+   "hp": 120,
+   "lookID": 51,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 94,
+   "mp": 0,
+   "name": "僵尸_2",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "95": {
+   "ac": [
+    3,
+    3
+   ],
+   "attackWait": 3000,
+   "dc": [
+    11,
+    21
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 16,
+   "hp": 120,
+   "lookID": 51,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 95,
+   "mp": 0,
+   "name": "僵尸4",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "96": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    11,
+    21
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 3200,
+   "hp": 120,
+   "lookID": 51,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 96,
+   "mp": 0,
+   "name": "僵尸40",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "97": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    11,
+    20
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 2880,
+   "hp": 100,
+   "lookID": 52,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 97,
+   "mp": 0,
+   "name": "腐僵",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "98": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    11,
+    20
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 2880,
+   "hp": 100,
+   "lookID": 52,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 98,
+   "mp": 0,
+   "name": "僵尸5",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  },
+  "99": {
+   "ac": [
+    0,
+    0
+   ],
+   "attackWait": 3000,
+   "dc": [
+    11,
+    20
+   ],
+   "dcDodge": 13,
+   "dcHit": 15,
+   "dropItemList": [],
+   "exp": 2880,
+   "hp": 100,
+   "lookID": 52,
+   "mac": [
+    5,
+    5
+   ],
+   "mc": [
+    0,
+    0
+   ],
+   "mcDodge": 0,
+   "mcHit": 0,
+   "monsterID": 99,
+   "mp": 0,
+   "name": "僵尸50",
+   "view": 10,
+   "walkStep": 1,
+   "walkWait": 500
+  }
+ }
+}

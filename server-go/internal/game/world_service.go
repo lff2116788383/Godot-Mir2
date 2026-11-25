@@ -42,6 +42,8 @@ type WorldService struct {
 	Magics *MagicDB
 	// NPCs NPC 脚本管理器。进场时用它加载该地图的 NPC。
 	NPCs *NPCManager
+	// MapScripts 地图脚本管理器（刷怪/守卫/安全区）。
+	MapScripts *MapScriptManager
 	// Ticker 世界时钟驱动器。地图建好后要 Track 它，
 	// 否则这张图的 NowMS 永远不动（技能冷却永远不结束）。
 	Ticker *MapTicker
@@ -140,7 +142,28 @@ func (s *WorldService) LoadMap(ctx context.Context, mapID uint32) error {
 		// NPC 加载失败不影响地图可用性，只记日志
 		s.Logger.Warn("load map npcs failed", "map", mapID, "error", err)
 	}
+	// 加载地图脚本（刷怪/守卫/安全区，原版 servermap.cpp:577）
+	if err := s.loadMapScript(ctx, mapID); err != nil {
+		s.Logger.Warn("load map script failed", "map", mapID, "error", err)
+	}
 	return nil
+}
+
+// loadMapScript 加载本图的地图脚本。
+//
+// 顺序必须在 NPC 之后：地图脚本的 addGuard 会在安全区上放守卫，
+// 安全区要先由脚本自己 addSafeZone 建立（脚本内顺序），
+// 但 NPC 与人无关，先加载不影响。
+func (s *WorldService) loadMapScript(ctx context.Context, mapID uint32) error {
+	if s.MapScripts == nil {
+		return nil
+	}
+	mapName := world.MapNameOf(mapID)
+	if mapName == "" {
+		return nil
+	}
+	_, err := s.MapScripts.LoadMap(ctx, mapID, mapName, s.Worlds, s.Players)
+	return err
 }
 
 // loadMapNPCs 为本图加载 NPC 脚本并在世界层生成实体。

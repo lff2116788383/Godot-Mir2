@@ -177,6 +177,20 @@ func main() {
 		Chars:     storage.NewCharacterRepository(store),
 	}
 
+	// 怪物表（刷怪需要完整数值：hp/dc/ac/元素抗性/掉落）
+	monstersPath := filepath.Join("content", "monsters.json")
+	monsterDB, err := world.LoadMonsterDB(monstersPath)
+	if err != nil {
+		slog.Error("load monster db", "path", monstersPath, "error", err)
+		os.Exit(1)
+	}
+	slog.Info("monster db loaded", "count", monsterDB.Count())
+
+	// 地图脚本运行时（刷怪/守卫/安全区）
+	mapScripts := game.NewMapScriptManager(monsterDB, slog.Default())
+	defer mapScripts.Close()
+	worldService.MapScripts = mapScripts
+
 	// NPC：加载原版 Lua 脚本（每个 NPC 一个独立 Lua state）
 	npcManager := game.NewNPCManager(itemDB, magicDB, slog.Default())
 	defer npcManager.Close()

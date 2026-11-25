@@ -461,3 +461,82 @@ func (w *World) Teleport(ctx context.Context, mapID uint32, uid uint64, x, y int
 	result, _ := value.(moveEntityResult)
 	return result.Entity, result.OK, nil
 }
+
+// MapSize 返回地图尺寸（w, h）。
+func (w *World) MapSize(ctx context.Context, mapID uint32) (int, int, error) {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return [2]int{state.Data.Width, state.Data.Height}, nil
+	}))
+	if err != nil {
+		return 0, 0, err
+	}
+	size, _ := value.([2]int)
+	return size[0], size[1], nil
+}
+
+// CanWalk 判断某格地形是否可走。
+//
+// ★ 只看地形，不看实体占用：
+//
+//	刷怪/随机取点用的是这个语义（原版 groundValid）。
+//	如果要判「这格现在能不能站人」用 CanOccupy。
+func (w *World) CanWalk(ctx context.Context, mapID uint32, x, y int) bool {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		if !state.Data.InBounds(Point{X: x, Y: y}) {
+			return false, nil
+		}
+		return state.Data.CanWalk(x, y), nil
+	}))
+	if err != nil {
+		return false
+	}
+	ok, _ := value.(bool)
+	return ok
+}
+
+// AddSafeZoneCircle 追加一个圆形安全区。
+//
+// 地图脚本会多次调用（一张图可能有多个安全区），所以是「追加」不是「覆盖」。
+func (w *World) AddSafeZoneCircle(ctx context.Context, mapID uint32, x, y, radius int) error {
+	_, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		zone := state.Zone.Clone()
+		zone.Circles = append(zone.Circles, [3]int{x, y, radius})
+		state.SetSafeZone(zone)
+		return nil, nil
+	}))
+	return err
+}
+
+// CountWalkable 统计矩形区域内可走格数。
+//
+// 一次 actor 调用算完整块。
+//
+// ★ 为什么不暴露「逐格 CanWalk + Lua 循环」：
+//
+//	道馆_1 的刷怪配置要扫 41 万格。每次跨语言回调约 200μs
+//	（gopher-lua 是 AST 解释器），累计 30 秒以上 —— 加载一张图卡半分钟。
+//	批量算完再返回，整个区域只花一次往返。
+func (w *World) CountWalkable(ctx context.Context, mapID uint32, x, y, width, height int) int {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		count := 0
+		for yy := y; yy < y+height; yy++ {
+			if yy < 0 || yy >= state.Data.Height {
+				continue
+			}
+			for xx := x; xx < x+width; xx++ {
+				if xx < 0 || xx >= state.Data.Width {
+					continue
+				}
+				if state.Data.CanWalk(xx, yy) {
+					count++
+				}
+			}
+		}
+		return count, nil
+	}))
+	if err != nil {
+		return 0
+	}
+	n, _ := value.(int)
+	return n
+}

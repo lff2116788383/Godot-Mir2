@@ -167,6 +167,18 @@ func (t *MapTicker) Tick(ctx context.Context) {
 		}
 		t.dispatch(mapID, events)
 	}
+
+	// 推进地图脚本的刷怪协程
+	//
+	// ★ 必须放在 Advance 之后：
+	//
+	//	Advance 会把 HP=0 的实体标记成死亡，刷怪协程下一轮
+	//	判断 uidAlive 才能正确看到「这只怪死了，可以补刷」。
+	//	反过来（先刷怪后判死）会让刷新延迟一个 tick，
+	//	怪物密集的图上会明显感觉「怪死了半天不补」。
+	if t.WorldSvc != nil && t.WorldSvc.MapScripts != nil {
+		t.WorldSvc.MapScripts.Tick(nowMS)
+	}
 }
 
 // dispatch 把 tick 事件转成网络消息。
