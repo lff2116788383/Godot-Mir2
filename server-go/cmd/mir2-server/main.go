@@ -117,6 +117,8 @@ func main() {
 		os.Exit(1)
 	}
 	slog.Info("magic db loaded", "count", magicDB.Count(), "learnable", magicDB.LearnableCount())
+	// 元素抗性解析器只在启动时绑一次（每帧重设会数据竞争）
+	game.BindElementResolver(magicDB)
 
 	// 属性计算与施法都要读物品/魔法表，回填到 worldService
 	worldService.Items = itemDB

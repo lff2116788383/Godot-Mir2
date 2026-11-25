@@ -97,6 +97,7 @@ func startE2EServer(t *testing.T) *e2eServer {
 		cancel()
 		t.Fatalf("load magic db: %v", err)
 	}
+	BindElementResolver(magicDB)
 
 	inventory := &InventoryHandler{
 		Players: players, Items: itemDB, Worlds: worlds, Broadcast: cast,

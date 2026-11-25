@@ -101,8 +101,17 @@ func (h *SpellHandler) Cast(ctx context.Context, channelID uint64, action common
 
 	// 冷却：原版靠 magicrecord.coolDown，客户端也有一份，但服务端必须
 	// 自己判 —— 否则改客户端就能无冷却连放。
+	//
+	// ★ 用 `seen && last != 0` 而不是只看 seen：
+	//
+	//	世界时钟在「地图刚建、ticker 还没跑第一帧」时是 0，
+	//	记录下来的冷却值也是 0。若只判 seen，`now(0) - last(0) = 0`
+	//	会让刚放过的技能被判成冷却中（或反过来，0 掩盖了真实状态）。
+	//	把 0 当作「未记录」是唯一能自洽的处理：
+	//	反正 NowMS 为 0 的窗口只有一个 tick 周期（100ms），
+	//	代价是这一帧内可以连放 —— 比「永久冷却」安全得多。
 	nowMS := h.Worlds.NowMS(ctx, p.MapID)
-	if last, seen := p.MagicCooldown[magicID]; seen && nowMS-last < int64(rec.CoolDown) {
+	if last := p.MagicCooldown[magicID]; last != 0 && nowMS-last < int64(rec.CoolDown) {
 		return h.reject(ctx, p, spellFailCooling, magicID)
 	}
 
@@ -236,13 +245,9 @@ func (h *SpellHandler) castDamage(ctx context.Context, p *Player, rec MagicRecor
 		atkHit = stats.MCHit
 	}
 
-	// 元素抗性：把技能的 elem 塞进 world 的元素解析器
-	world.SetMagicElementResolver(func(id int) world.Element {
-		if r, ok := h.Magics.Get(uint32(id)); ok {
-			return world.ElementFromName(r.Elem)
-		}
-		return world.ElemNone
-	})
+	// 元素抗性由 h.bindElementResolver() 在构造时一次性注入，
+	// 这里不能每帧重设 —— world.elemOfMagic 是包级变量，
+	// 每个 goroutine 都写一遍就是数据竞争（-race 会报）。
 
 	result, err := h.Worlds.CombatWithBounds(ctx, p.MapID, p.UID, aimUID, rec.MagicID,
 		atkBounds, atkHit)
@@ -689,4 +694,26 @@ func (h *SpellHandler) SetMagicKey(ctx context.Context, channelID uint64, req pr
 //	belt items。放行会让两个功能抢同一个键，客户端没法区分意图。
 func ValidMagicKey(key uint8) bool {
 	return (key >= 'a' && key <= 'z') || key == '0' || (key >= '7' && key <= '9')
+}
+
+// BindElementResolver 把魔法表接到 world 的元素解析钩子上。
+//
+// 为什么必须是「一次性绑定」而不是「每次施法设置」：
+//
+//	world.elemOfMagic 是包级变量，SetMagicElementResolver 直接赋值。
+//	每个连接一个 goroutine，若每帧都写一遍，就是典型的数据竞争
+//	（go test -race 会直接报 DATA RACE），而且解析器可能被改成
+//	别的玩家的表 —— 多张地图用不同魔法表时会算错抗性。
+//
+// 调用时机：main 装配阶段（LoadMagicDB 之后、服务启动之前）。
+func BindElementResolver(magics *MagicDB) {
+	if magics == nil {
+		return
+	}
+	world.SetMagicElementResolver(func(id int) world.Element {
+		if rec, ok := magics.Get(uint32(id)); ok {
+			return world.ElementFromName(rec.Elem)
+		}
+		return world.ElemNone
+	})
 }
