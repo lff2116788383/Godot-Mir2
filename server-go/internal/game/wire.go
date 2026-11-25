@@ -2,6 +2,7 @@ package game
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 
 	"github.com/lff2116788383/godot-mir2/server-go/internal/protocol"
@@ -325,4 +326,98 @@ func RegisterNPCRoutes(dispatcher *transport.Dispatcher, handler *NPCHandler) er
 			}
 			return handler.HandleEvent(ctx, s.ID(), req)
 		})
+}
+
+// RegisterChatRoutes 注册聊天类消息。
+//
+// 三条消息的编码方式不同，容易踩坑：
+//
+//	CM_PLAYERSAY / CM_PLAYERBROADCAST  定长 128 字节（FixedCompressed）
+//	CM_CHATMESSAGE                     变长：16 字节头 + 原始正文
+//
+// 前两条用 decode（wire 解码会做 XOR/压缩还原），
+// 后者不能整体 wire 解码 —— 因为正文是裸字符串没有长度前缀，
+// 必须手工切前 16 字节当头部，其余当正文。
+func RegisterChatRoutes(dispatcher *transport.Dispatcher, handler *ChatHandler) error {
+	if handler == nil {
+		return nil
+	}
+	routes := []struct {
+		id      protocol.CMType
+		handler transport.HandlerFunc
+	}{
+		{protocol.CM_PLAYERSAY, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMPlayerSay
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return handler.Say(ctx, s.ID(), req)
+		}},
+		{protocol.CM_PLAYERBROADCAST, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMPlayerBroadcast
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return handler.BroadcastSay(ctx, s.ID(), req)
+		}},
+		{protocol.CM_CHATMESSAGE, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			header, body, err := splitChatMessage(p.Payload)
+			if err != nil {
+				return err
+			}
+			return handler.ChatMessage(ctx, s.ID(), header, body)
+		}},
+	}
+	for _, route := range routes {
+		if err := dispatcher.Register(route.id, route.handler); err != nil {
+			return fmt.Errorf("register %v: %w", route.id, err)
+		}
+	}
+	return nil
+}
+
+// chatMessageHeaderSize 是 CMChatMessageHeader 的固定长度。
+//
+// 【依据】common/src/clientmsg.hpp:219-224：
+//
+//	uint64_t toCPID;
+//	uint64_t hasRef : 1;   // 与 refID 共用同一个 uint64
+//	uint64_t refID  : 63;
+//
+// 所以是 8 + 8 = 16 字节。
+const chatMessageHeaderSize = 16
+
+// splitChatMessage 把 CM_CHATMESSAGE 的 body 切成「头部 + 正文」。
+//
+// 【依据】common/src/clientmsg.hpp:219-224：
+//
+//	uint64_t toCPID;
+//	uint64_t hasRef :  1;
+//	uint64_t refID  : 63;
+//
+// 后两个字段共用一个 uint64（GCC x86 的位域从最低位开始排）：
+//
+//	bit 0     → hasRef
+//	bit 1..63 → refID
+//
+// ★ 为什么不用 wire 解码：
+//
+//	CM_CHATMESSAGE 是 MessageVariable，body = 16 字节头 + 裸字符串正文。
+//	正文没有长度前缀（靠整包长度算），wire 解码器按结构体字段读会读到越界
+//	或者把正文前几个字节当成别的字段。
+func splitChatMessage(payload []byte) (protocol.CMChatMessageHeader, string, error) {
+	if len(payload) < chatMessageHeaderSize {
+		return protocol.CMChatMessageHeader{}, "", fmt.Errorf(
+			"chat message too short: %d < %d", len(payload), chatMessageHeaderSize)
+	}
+	toCPID := binary.LittleEndian.Uint64(payload[0:8])
+	flags := binary.LittleEndian.Uint64(payload[8:16])
+
+	header := protocol.CMChatMessageHeader{
+		ToCPID: toCPID,
+		HasRef: flags&1 != 0,
+		RefID:  flags >> 1,
+	}
+	body := string(payload[chatMessageHeaderSize:])
+	return header, body, nil
 }

@@ -222,8 +222,28 @@ func main() {
 	}
 	worldService.NPCs = npcManager
 
+	// 聊天：私聊/群聊走 DB，原地说话走 AOI。
+	chatHandler := &game.ChatHandler{
+		Players:   players,
+		Sessions:  loginHandler.Sessions,
+		Broadcast: broadcaster,
+		Logger:    slog.Default(),
+		Chat:      storage.NewChatRepository(store),
+		// 原地说话只传给视野内的玩家（原版 m_inViewCOList）
+		//
+		// 用 ObserversAt（哪些实体能看到这一格）而不是「同图所有人」：
+		// 隔了半张地图还听得见就不合理。
+		Viewers: func(ctx context.Context, mapID uint32, x, y int) []uint64 {
+			uids, err := worlds.ObserversAt(ctx, mapID, x, y)
+			if err != nil {
+				return nil
+			}
+			return uids
+		},
+	}
+
 	if err := game.RegisterAllRoutes(dispatcher, loginHandler, actionHandler,
-		inventoryHandler, spellHandler, deathHandler, shopHandler, npcHandler); err != nil {
+		inventoryHandler, spellHandler, deathHandler, shopHandler, npcHandler, chatHandler); err != nil {
 		slog.Error("register routes", "error", err)
 		os.Exit(1)
 	}

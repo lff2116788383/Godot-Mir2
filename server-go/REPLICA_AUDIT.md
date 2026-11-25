@@ -901,3 +901,90 @@ if(getMR().deadFadeOut){
 | 金币入背包 | 金币（小）作为物品落地，还没接「拾取后加到 Gold 字段」 |
 | 怪与怪阵营 | 守卫仍不打敌对怪物（`pickTarget` 只筛玩家） |
 | 火墙击杀结算 | 火墙命中还没接 `SM_STRIKEGRID` |
+
+### B5 第十批：聊天系统（本轮）
+
+**补上 MMORPG 最基础的社交功能。** 之前服务端三条聊天消息全没注册 ——
+客户端 `say()` 发出去，服务端不响应，表现是「按回车打字，字打出去了，谁也看不到」。
+
+**三条消息的区别（很容易混）**
+
+| 消息 | 语义 | 可见范围 | 入库 |
+|---|---|---|---|
+| `CM_PLAYERSAY` | 原地说话 | **视野内**（原版 `m_inViewCOList`） | ❌ |
+| `CM_PLAYERBROADCAST` | 喇叭 | **全服** | ❌ |
+| `CM_CHATMESSAGE` | 私聊 / 群聊 | 指定对端 / 群成员 | ✅ 有 msgId |
+
+**编码方式也不同**（这是本轮最容易踩的坑）
+
+```
+CM_PLAYERSAY / CM_PLAYERBROADCAST   定长 128 字节（FixedCompressed）
+CM_CHATMESSAGE                      变长：16 字节头 + 裸字符串正文
+```
+
+`CM_CHATMESSAGE` **不能走 wire 解码**：正文没有长度前缀（靠整包长度算），
+按结构体字段读会越界或把正文前几个字节当成别的字段。必须手工切前 16 字节。
+
+16 字节头的布局（`clientmsg.hpp:219-224`）：
+
+```c
+uint64_t toCPID;
+uint64_t hasRef :  1;   // 与 refID 共用同一个 uint64
+uint64_t refID  : 63;
+```
+
+GCC x86 位域从最低位开始 → `bit0 = hasRef`，`bit1..63 = refID`。
+
+**关键实现决策**
+
+1. **`CM_PLAYERSAY` 必须回给自己一份**
+   客户端本地不显示自己说的话，全靠这条回包。
+   不回的话玩家会以为「字没打出去」而反复重打。
+
+2. **`CM_PLAYERSAY` 只发视野内，不是全图**
+   隔了半张地图还听得见就不合理。用 `World.ObserversAt`（观察这一格的实体，
+   天然过滤掉非玩家 —— `Players.Get(uid)` 查不到就跳过）。
+
+3. **`SM_CHATMESSAGEOK` 即使发给别人也要回给自己**
+   客户端靠它把「发送中」替换成「已送达」（带 msgId）。
+   不回的话，自己发出去的气泡会一直转圈。
+
+4. **入库失败不阻塞发送**
+   聊天记录丢了不该影响即时通讯。先发再记日志。
+
+5. **`truncateCString` 必须按 UTF-8 字符边界截断**
+   中文一个字 3 字节，切在中间会产生非法 UTF-8，
+   客户端解析时整条消息变乱码或直接丢弃。
+   实测：189 字节的中文截到 126 字节（42 个字），合法。
+
+**新增文件**
+
+| 文件 | 行数 | 内容 |
+|---|---|---|
+| `internal/game/chat.go` | 300 | 三条消息的处理 + UTF-8 安全截断 |
+| `internal/game/wire.go` 补 | +90 | 路由注册 + 16 字节头位域解析 |
+
+**存储层复用**：`storage/chat.go` 早就写好（427 行，含私聊/群聊/好友/黑名单），
+只需在 game 层接上。**没有新增存储代码**。
+
+**验证**
+
+| 测试 | 结果 |
+|---|---|
+| `TestSayBroadcastsToSelfAndViewers` | 自己收到 1 条 |
+| `TestSayIgnoresEmptyContent` | 空白内容不广播 |
+| `TestBroadcastSayReachesEveryone` | 三人各收到 1 条喇叭 |
+| `TestChatMessageRepliesWithOK` | 发送者收 `CHATMESSAGEOK`、接收者收 `CHATMESSAGELIST` |
+| `TestSplitChatMessageHeader` | 位域解析正确（hasRef/refID/toCPID） |
+| `TestTruncateCStringUTF8Safe` | 189 字节 → 126 字节，无非法 UTF-8 |
+| `TestE2ESayOverNetwork` | **真 TCP**：`say()` → 回显「有人吗」 |
+| 客户端 c9c8 | 15 项全过 |
+
+**本轮未做**
+
+| 项目 | 影响 |
+|---|---|
+| 喇叭收费 + 限流 | 免费全服广播可能被用来刷屏。原版要花金币 |
+| 好友 / 黑名单路由 | `storage` 已实现（`AddFriend`/`BlockPlayer`），路由未注册 |
+| 群聊创建 | `CM_CREATECHATGROUP` 未注册 |
+| 聊天记录查询 | `CM_QUERYCHATMESSAGE` 未注册（storage 有 `RetrieveLatest`） |

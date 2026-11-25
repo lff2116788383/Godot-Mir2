@@ -117,9 +117,22 @@ func startE2EServer(t *testing.T) *e2eServer {
 	}
 	actions.Spells = spells
 
+	chats := &ChatHandler{
+		Players: players, Sessions: loginHandler.Sessions,
+		Broadcast: cast, Logger: discardLogger(),
+		Chat: storage.NewChatRepository(store),
+		Viewers: func(ctx context.Context, mapID uint32, x, y int) []uint64 {
+			uids, err := worlds.ObserversAt(ctx, mapID, x, y)
+			if err != nil {
+				return nil
+			}
+			return uids
+		},
+	}
+
 	dispatcher := transport.NewDispatcher()
 	if err := RegisterAllRoutes(dispatcher, loginHandler, actions, inventory,
-		spells, deaths, shops, nil); err != nil {
+		spells, deaths, shops, nil, chats); err != nil {
 		cancel()
 		t.Fatalf("register routes: %v", err)
 	}
@@ -613,4 +626,45 @@ func TestE2EMagicKeyOverNetwork(t *testing.T) {
 	c.send(t, protocol.CM_REQUESTADDHEALTH, hbody)
 	c.recvUntil(t, protocol.SM_HEALTH, 3*time.Second)
 	t.Log("connection alive after CM_SETMAGICKEY")
+}
+
+// TestE2ESayOverNetwork 走真网络验证「原地说话」。
+//
+// 客户端 `say()` 发 CM_PLAYERSAY（128 字节定长），
+// 服务端应当回一条 SM_PLAYERSAY 给发言者自己 ——
+// 客户端本地不显示自己说的话，全靠这条回包。
+//
+// 不回的话表现是「按回车打字，字打出去了但框里没反应」，
+// 玩家会反复重打，很难判断是网络问题还是服务端没实现。
+func TestE2ESayOverNetwork(t *testing.T) {
+	srv := startE2EServer(t)
+	c, _ := e2eLogin(t, srv.addr, "alice")
+	defer c.close()
+
+	var say protocol.CMPlayerSay
+	copy(say.Content[:], "有人吗")
+	c.send(t, protocol.CM_PLAYERSAY, mustWire(t, say))
+
+	pkt := c.recvUntil(t, protocol.SM_PLAYERSAY, 3*time.Second)
+	var got protocol.SMPlayerSay
+	if _, err := protocol.ReadWirePayload(&got, pkt.Payload); err != nil {
+		t.Fatalf("decode SM_PLAYERSAY: %v", err)
+	}
+	content := string(trimCStringBytes(got.Content[:]))
+	if content != "有人吗" {
+		t.Fatalf("回显内容 = %q, want 有人吗", content)
+	}
+	if got.UID == 0 {
+		t.Fatal("SM_PLAYERSAY 应该带发言者 UID")
+	}
+	t.Logf("说了：%s (uid=%#x)", content, got.UID)
+}
+
+// trimCStringBytes 去掉定长数组尾部 0（e2e 断言用）。
+func trimCStringBytes(buf []byte) []byte {
+	end := len(buf)
+	for end > 0 && buf[end-1] == 0 {
+		end--
+	}
+	return buf[:end]
 }

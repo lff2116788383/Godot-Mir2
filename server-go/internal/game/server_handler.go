@@ -70,7 +70,7 @@ func RegisterBootstrapRoutes(dispatcher *transport.Dispatcher, handler *Handler)
 func RegisterAllRoutes(dispatcher *transport.Dispatcher, handler *Handler,
 	actions *ActionHandler, inventory *InventoryHandler,
 	spells *SpellHandler, deaths *DeathHandler, shops *ShopHandler,
-	npcs *NPCHandler) error {
+	npcs *NPCHandler, chats *ChatHandler) error {
 	if err := RegisterBootstrapRoutes(dispatcher, handler); err != nil {
 		return err
 	}
@@ -89,5 +89,8 @@ func RegisterAllRoutes(dispatcher *transport.Dispatcher, handler *Handler,
 	if err := RegisterShopRoutes(dispatcher, shops); err != nil {
 		return err
 	}
-	return RegisterNPCRoutes(dispatcher, npcs)
+	if err := RegisterNPCRoutes(dispatcher, npcs); err != nil {
+		return err
+	}
+	return RegisterChatRoutes(dispatcher, chats)
 }

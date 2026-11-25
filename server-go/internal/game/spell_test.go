@@ -21,6 +21,7 @@ type b5spellFixture struct {
 	Spells    *SpellHandler
 	Deaths    *DeathHandler
 	Shops     *ShopHandler
+	Chat      *ChatHandler
 	Ticker    *MapTicker
 	clockMS   int64
 	clockStep int64
@@ -68,6 +69,19 @@ func newB5SpellFixture(t *testing.T) *b5spellFixture {
 		Items: items, Broadcast: base.Cast, Logger: discardLogger(),
 		Chars: base.Chars,
 	}
+	f.Chat = &ChatHandler{
+		Players: base.Players, Sessions: base.Sessions,
+		Broadcast: base.Cast, Logger: discardLogger(),
+		// 视野判定用 world 的观察圈
+		Viewers: func(ctx context.Context, mapID uint32, x, y int) []uint64 {
+			uids, err := base.Worlds.Worlds.ObserversAt(ctx, mapID, x, y)
+			if err != nil {
+				return nil
+			}
+			return uids
+		},
+	}
+
 	f.Actions.Spells = f.Spells
 	// 物理攻击的击杀结算 —— 与 main 装配一致，共用同一个 settler
 	f.Actions.Kills = f.Spells.Kills
