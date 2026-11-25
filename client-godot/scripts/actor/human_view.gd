@@ -28,6 +28,8 @@ var _name_label: Label = null
 var display_name: String = ""
 var hp_ratio: float = 1.0
 var is_male: bool = false
+var subtitle: String = ""
+var name_color: Color = Color(0.82, 0.9, 1.0)
 var curr_motion = null
 var motion_queue: Array = []
 var forced_queue: Array = []
@@ -70,8 +72,15 @@ func _ensure_name_label() -> void:
 	add_child(_name_label)
 
 
-func set_display_name(nm: String) -> void:
+func set_display_name(nm: String, color: Color = Color(0.82, 0.9, 1.0)) -> void:
 	display_name = nm
+	name_color = color
+	_ensure_name_label()
+	_refresh_name_label()
+
+
+func set_subtitle(text: String) -> void:
+	subtitle = text
 	_ensure_name_label()
 	_refresh_name_label()
 
@@ -84,7 +93,12 @@ func set_health_ratio(r: float) -> void:
 func _refresh_name_label() -> void:
 	if _name_label == null:
 		return
-	_name_label.text = "%s\nHP %d%%" % [display_name, int(hp_ratio * 100.0)]
+	_name_label.add_theme_color_override("font_color", name_color)
+	var lines: Array = [display_name]
+	if not subtitle.is_empty():
+		lines.append(subtitle)
+	lines.append("HP %d%%" % int(hp_ratio * 100.0))
+	_name_label.text = "\n".join(lines)
 
 
 func set_walk_context(can_move: Callable, make_finder: Callable, max_step: int) -> void:

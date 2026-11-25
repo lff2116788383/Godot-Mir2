@@ -11,6 +11,9 @@ const GRID_Y := 32
 
 var _map: MapLoader.MapData = null
 var _map_cache: Dictionary = {}
+var _preload_queue: Array[int] = []
+var _preload_thread: Thread = null
+var _preload_map_id: int = 0
 var _player: PlayerActor = null
 var _human: HumanActor = null
 var _spawn := Vector2i.ZERO
@@ -256,6 +259,36 @@ func apply_server_scene(d: Dictionary) -> void:
 	if hud != null:
 		hud.visible = true
 	_update_hud()
+	_queue_neighbor_preloads(target_map_id)
+
+
+func _queue_neighbor_preloads(current_map_id: int) -> void:
+	_preload_queue.clear()
+	for sw in MapRecordRef.switches_of(current_map_id):
+		var nid := MapRecordRef.find_id_by_name(str(sw.get("endName", "")))
+		if nid > 0 and nid != current_map_id and not _map_cache.has(nid) and not _preload_queue.has(nid):
+			_preload_queue.append(nid)
+
+
+func _process_preload() -> void:
+	if _preload_thread != null and not _preload_thread.is_alive():
+		_preload_thread.wait_to_finish()
+		_preload_thread = null
+	if _preload_thread == null and not _preload_queue.is_empty():
+		var nid: int = _preload_queue.pop_front()
+		if _map_cache.has(nid):
+			return
+		_preload_map_id = nid
+		var path := MapRecordRef.path_for(nid)
+		_preload_thread = Thread.new()
+		_preload_thread.start(func():
+			var md = MapLoader.load_file(path)
+			call_deferred("_finish_preload", nid, md))
+
+
+func _finish_preload(mid: int, md) -> void:
+	if md != null:
+		_map_cache[mid] = md
 
 
 func _capture_world_frame(code: int, body: PackedByteArray, resp: int) -> void:
@@ -548,6 +581,7 @@ func _on_player_grid_changed(g: Vector2i) -> void:
 
 ## 相机每帧跟随主角，移动过程中平滑推进
 func _process(_dt: float) -> void:
+	_process_preload()
 	if login_flow != null and login_flow.in_login_flow():
 		return
 	if _player != null and cam != null:

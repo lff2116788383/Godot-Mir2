@@ -367,6 +367,11 @@ func handle_frame(code: int, body: PackedByteArray) -> bool:
 		return true
 	if code == MirClient.SM_PLAYERGUILD:
 		var pg := Parser.parse_player_guild(body)
+		if co_manager != null:
+			var puid := UidRef.get_player_uid(int(pg.get("dbid", 0)))
+			var gn := str(pg.get("guild_name", ""))
+			var gt := str(pg.get("title", ""))
+			co_manager.set_actor_subtitle(puid, ("[%s] %s" % [gn, gt]) if not gn.is_empty() else "")
 		_log("行会信息 %s / %s" % [str(pg.get("guild_name","")), str(pg.get("title",""))])
 		return true
 	if code == MirClient.SM_GUILDERROR:
@@ -480,9 +485,7 @@ func handle_frame(code: int, body: PackedByteArray) -> bool:
 		var tl := Parser.u64(body, 0)
 		var lead := Parser.u8(body, 8) != 0
 		if co_manager != null:
-			var node = co_manager.find_uid(tl)
-			if node != null and node.has_method("set_display_name"):
-				node.set_display_name(("队长 " if lead else "") + str(node.display_name))
+			co_manager.set_actor_subtitle(tl, "队长" if lead else "")
 		return true
 	if code == MirClient.SM_OFFLINE:
 		var off_uid := Parser.u64(body, 0)

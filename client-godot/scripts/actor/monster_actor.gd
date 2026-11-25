@@ -177,10 +177,14 @@ func _on_action_spawn(action) -> void:
 	if not PathFinderRef.dir_valid(d):
 		d = PathFinderRef.DIR_UP
 	curr_motion = MotionNodeRef.new()
-	curr_motion.type = MotionTypeRef.MOTION_MON_STAND
+	var spawn_motion := str(behavior.get("spawn_motion", "STAND"))
+	curr_motion.type = MotionTypeRef.MOTION_MON_SPAWN if spawn_motion == "SPAWN" else MotionTypeRef.MOTION_MON_STAND
 	curr_motion.direction = d
 	curr_motion.x = action.x
 	curr_motion.y = action.y
+	var spawn_magic := str(behavior.get("spawn_magic_name", ""))
+	if not spawn_magic.is_empty():
+		curr_motion.set_meta("spawn_magic_name", spawn_magic)
 	if logic != null and bool(behavior.get("has_stand_mode", false)):
 		logic.stand_mode = false
 	_set_grid(action.x, action.y)
@@ -240,6 +244,21 @@ func _spawn_attack_magic(magic_id: int, aim_grid: Vector2i, dir: int) -> void:
 	root.add_child(node)
 	node.setup(magic_id, entry, target_grid, clampi((dir - 1) * 2, 0, 15),
 		bool(entry.get("loop", false)), grid, null)
+
+
+func _spawn_fixed_magic(magic_name: String, at_grid: Vector2i, dir: int) -> void:
+	if magic_name.is_empty():
+		return
+	var mid := MagicDBRef.find_id_by_name(magic_name)
+	var entry := MagicDBRef.gfx_entry(mid)
+	if entry.is_empty():
+		return
+	var root := get_parent()
+	if root == null:
+		return
+	var node := MagicEffectRef.new()
+	root.add_child(node)
+	node.setup(mid, entry, at_grid, clampi((dir - 1) * 2, 0, 15), false, at_grid, null)
 
 
 func _spawn_death_effect() -> void:
@@ -443,6 +462,12 @@ func _advance_animation(dt: float) -> void:
 					_effect_fired[seq] = true
 					_spawn_attack_magic(int(curr_motion.get_meta("attack_magic_id", 0)),
 						curr_motion.get_meta("aim_grid"), curr_motion.direction)
+			if curr_motion.frame == 9 and curr_motion.has_meta("spawn_magic_name"):
+				var sseq: int = curr_motion.get_seq_id()
+				if not _effect_fired.has(sseq):
+					_effect_fired[sseq] = true
+					_spawn_fixed_magic(str(curr_motion.get_meta("spawn_magic_name")),
+						grid, curr_motion.direction)
 		else:
 			# 末帧：allowSwitchMotion=true 时切动作
 			_move_next_motion()

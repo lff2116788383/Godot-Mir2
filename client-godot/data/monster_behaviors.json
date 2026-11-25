@@ -26,7 +26,7 @@
    "is_default": true,
    "monster_name": "蚂蚁道士",
    "attack_magic_name": "蚂蚁道士_治疗",
-   "attack_magic_at_self": true
+   "attack_magic_at_self": false
   },
   "ClientBombSpider": {
    "class_name": "ClientBombSpider",
@@ -86,12 +86,14 @@
    "override_stand": false,
    "override_transf": false,
    "death_effect": false,
-   "attack_magic": false,
+   "attack_magic": true,
    "special_motions": [],
    "custom_frame_table": false,
    "attack_segments": 1,
    "is_default": true,
-   "monster_name": "洞蛆"
+   "monster_name": "洞蛆",
+   "attack_magic_name": "洞蛆_喷毒",
+   "attack_magic_at_self": true
   },
   "ClientDarkWarrior": {
    "class_name": "ClientDarkWarrior",
@@ -177,7 +179,7 @@
    "is_default": true,
    "monster_name": "爆毒蚂蚁",
    "attack_magic_name": "爆毒蚂蚁_喷毒",
-   "attack_magic_at_self": true
+   "attack_magic_at_self": false
   },
   "ClientGuard": {
    "class_name": "ClientGuard",
@@ -237,14 +239,15 @@
    "override_stand": false,
    "override_transf": false,
    "death_effect": false,
-   "attack_magic": true,
+   "attack_magic": false,
    "special_motions": [],
    "custom_frame_table": false,
    "attack_segments": 1,
    "is_default": true,
    "monster_name": "僧侣僵尸",
-   "attack_magic_name": "僧侣僵尸_地洞",
-   "attack_magic_at_self": true
+   "attack_magic_at_self": true,
+   "spawn_motion": "SPAWN",
+   "spawn_magic_name": "僧侣僵尸_地洞"
   },
   "ClientNumaWizard": {
    "class_name": "ClientNumaWizard",
@@ -298,7 +301,7 @@
    "is_default": true,
    "monster_name": "红衣法师",
    "attack_magic_name": "红衣法师_魔法",
-   "attack_magic_at_self": true,
+   "attack_magic_at_self": false,
    "death_magic_name": "红衣法师_死亡特效"
   },
   "ClientSandCactus": {
@@ -337,7 +340,7 @@
    "is_default": true,
    "monster_name": "沙漠风魔",
    "attack_magic_name": "沙漠风魔_扇风",
-   "attack_magic_at_self": true
+   "attack_magic_at_self": false
   },
   "ClientSandGhost": {
    "class_name": "ClientSandGhost",
@@ -370,7 +373,9 @@
    "attack_segments": 1,
    "is_default": true,
    "monster_name": "沙漠石人",
-   "death_magic_name": "沙漠石人_死亡特效"
+   "death_magic_name": "沙漠石人_死亡特效",
+   "spawn_motion": "SPAWN",
+   "spawn_magic_name": "沙漠石人_石坑"
   },
   "ClientShipwreckLord": {
    "class_name": "ClientShipwreckLord",

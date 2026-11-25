@@ -43,6 +43,15 @@ static func bgm_of(map_id: int) -> int:
 static func minimap_of(map_id: int) -> int:
         return int(find(map_id).get("miniMapID", -1))
 
+static func find_id_by_name(map_name: String) -> int:
+        if not _loaded:
+                load_data()
+        for k in _data.keys():
+                if str(_data[k].get("name", "")) == map_name:
+                        return int(k)
+        return 0
+
+
 static func switches_of(map_id: int) -> Array:
         var sw = find(map_id).get("switchList", {})
         return sw.get("_array", []) if sw is Dictionary else []

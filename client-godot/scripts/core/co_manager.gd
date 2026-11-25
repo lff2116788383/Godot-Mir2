@@ -346,10 +346,22 @@ func set_actor_wear(uid: int, wear: Dictionary, hair: int = 1, hair_color: int =
 	human.set_appearance(dress, hair, helmet, weapon, bool(node.get("is_male")), col)
 
 
-func set_actor_name(uid: int, nm: String, _color: int = 0) -> void:
+func set_actor_name(uid: int, nm: String, color: int = 0) -> void:
 	var node = find_uid(uid)
 	if node != null and node.has_method("set_display_name"):
-		node.set_display_name(nm)
+		var c := Color(0.82, 0.9, 1.0)
+		if color != 0:
+			c = Color8((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 255)
+		if node.has_method("set_subtitle"):
+			node.set_display_name(nm, c)
+		else:
+			node.set_display_name(nm)
+
+
+func set_actor_subtitle(uid: int, text: String) -> void:
+	var node = find_uid(uid)
+	if node != null and node.has_method("set_subtitle"):
+		node.set_subtitle(text)
 
 
 func set_actor_health(uid: int, hp: int, max_hp: int) -> void:
