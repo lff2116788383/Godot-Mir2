@@ -213,6 +213,18 @@ def parse_block(block):
         "attackWait": find_int(r'\.attackWait\s*=\s*(-?\d+)', block),
     }
 
+    # behaveMode：怪物行为模式（monsterrecord.hpp:37-39）
+    #
+    #	BM_DEFAULT 0 敌对玩家（默认）
+    #	BM_NEUTRAL 1 中立（被打才还手）
+    #	BM_GUARD   2 守卫（只打红名/打过自己的）
+    #
+    # inc 里写的是符号名而不是数字，要映射。
+    bm_raw = find_str(r'\.behaveMode\s*=\s*(\w+)', block, "")
+    BM_MAP = {"BM_DEFAULT": 0, "BM_NEUTRAL": 1, "BM_GUARD": 2}
+    rec["behaveMode"] = BM_MAP.get(bm_raw, 0)
+    rec["behaveModeName"] = bm_raw or "BM_DEFAULT"
+
     # acElem 是元素抗性（负值 = 弱点）
     elem_body = find_nested(r'\.acElem\s*\{', block)
     if elem_body:

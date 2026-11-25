@@ -185,8 +185,24 @@ func (m *MapState) pickTarget(uid uint64, e *Entity, rec MonsterRecord) uint64 {
 				if !InViewRange(rec, self, other.Point()) {
 					continue
 				}
-				// 守卫只打红名 —— 这里用 PKPoint 粗判
-				hostile := other.PKPoint >= 100 || rec.BehaveMode == BehaveDefault
+				// 判定「这个目标是否敌对」
+				//
+				// 三种模式（monsterrecord.hpp:37-39）：
+				//
+				//	BM_DEFAULT 对所有人敌对
+				//	BM_NEUTRAL 不主动（ShouldAggro 里直接 false）
+				//	BM_GUARD   只对「红名 / 打过我的」敌对
+				//
+				// ★ 守卫的判定必须查仇恨列表，不能只看红名：
+				//
+				//	原版 serverguard.cpp:85-95 checkFriend 里，
+				//	玩家是 offender（打过守卫）就 FT_ENEMY，
+				//	否则再看是否红名。只看红名的话，
+				//	普通人打了守卫一下，守卫还是不还手。
+				hostile := m.isHostileTo(rec, uid, other, otherUID)
+				if !hostile {
+					continue
+				}
 				if !ShouldAggro(rec, hostile, false) {
 					continue
 				}
@@ -462,4 +478,46 @@ func (m *MapState) findApproachGrid(uid uint64, target Point) (Point, bool) {
 		}
 	}
 	return best, found
+}
+
+// 行为模式常量（monsterrecord.hpp:37-39）。
+const (
+	BehaveModeDefault = 0
+	BehaveModeNeutral = 1
+	BehaveModeGuard   = 2
+)
+
+// PKPointRed 是红名阈值（原版 PKPOINT_REDNAME）。
+const PKPointRed = 100
+
+// isHostileTo 判断某种行为模式的怪是否该对某目标敌对。
+//
+// 对齐 monster.cpp:972 searchNearestTarget 与 serverguard.cpp:80 checkFriend：
+//
+//	BM_DEFAULT：对玩家一律敌对
+//	BM_NEUTRAL：不主动（返回 false，由 ShouldAggro 再兜一层）
+//	BM_GUARD：  offender（打过我）或红名才算敌对
+func (m *MapState) isHostileTo(rec MonsterRecord, selfUID uint64, target *Entity, targetUID uint64) bool {
+	switch rec.BehaveMode {
+	case BehaveModeNeutral:
+		return false
+	case BehaveModeGuard:
+		// 1. 打过我的（在仇恨列表里）
+		if m.selfOffendsTarget(selfUID, targetUID) {
+			return true
+		}
+		// 2. 红名
+		return target.PKPoint >= PKPointRed
+	default:
+		return true
+	}
+}
+
+// selfOffendsTarget 判断 targetUID 是否在 selfUID 的仇恨列表里。
+func (m *MapState) selfOffendsTarget(selfUID, targetUID uint64) bool {
+	e, ok := m.Entities[selfUID]
+	if !ok {
+		return false
+	}
+	return e.Offenders.IsOffender(targetUID)
 }

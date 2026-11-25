@@ -45,6 +45,17 @@ type MonsterDef struct {
 	WalkStep   int `json:"walkStep"`
 	AttackWait int `json:"attackWait"`
 
+	// BehaveMode 行为模式（monsterrecord.hpp:37-39）
+	//
+	//	0 BM_DEFAULT 敌对玩家（默认）
+	//	1 BM_NEUTRAL 中立（被打才还手）
+	//	2 BM_GUARD   守卫（只打红名/打过自己的）
+	//
+	// ★ 这个字段决定「守卫到底是不是守卫」。
+	//   不读它的话，比奇县城里 27 个「大刀卫士」会当普通怪追着玩家打。
+	BehaveMode     int    `json:"behaveMode"`
+	BehaveModeName string `json:"behaveModeName,omitempty"`
+
 	ACElem map[string]int  `json:"acElem,omitempty"`
 	Drops  [][]MonsterDrop `json:"dropItemList"`
 }
@@ -185,6 +196,7 @@ func (d MonsterDef) ToRecord() MonsterRecord {
 		WalkWait:   d.WalkWait,
 		WalkStep:   d.WalkStep,
 		AttackWait: d.AttackWait,
+		BehaveMode: d.BehaveMode,
 		DropItems:  groups,
 		Elem:       d.elementResist(),
 	}
