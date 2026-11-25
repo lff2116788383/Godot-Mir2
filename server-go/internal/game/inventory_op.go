@@ -84,17 +84,28 @@ func (h *InventoryHandler) playerOf(channelID uint64) (*Player, bool) {
 }
 
 // toSDItem 把内部 Item 转成协议层 SDItem。
+//
+// ★ 必须带 Duration：存储层是按 Duration[2] 落库的，
+//	转换时丢掉的话，装备每次「穿上/脱下/重登」都会恢复满持久 ——
+//	磨损系统等于不存在，而且不会有任何报错。
 func toSDItem(it Item) protocol.SDItem {
 	return protocol.SDItem{
-		ItemID: it.ItemID,
-		SeqID:  uint32(it.SeqID),
-		Count:  uint64(it.Count),
+		ItemID:   it.ItemID,
+		SeqID:    uint32(it.SeqID),
+		Count:    uint64(it.Count),
+		Duration: [2]uint64{uint64(it.Durability), uint64(it.MaxDurability)},
 	}
 }
 
 // fromSDItem 把协议层 SDItem 转成内部 Item。
 func fromSDItem(it protocol.SDItem) Item {
-	return Item{ItemID: it.ItemID, SeqID: uint64(it.SeqID), Count: uint32(it.Count)}
+	return Item{
+		ItemID:        it.ItemID,
+		SeqID:         uint64(it.SeqID),
+		Count:         uint32(it.Count),
+		Durability:    uint32(it.Duration[0]),
+		MaxDurability: uint32(it.Duration[1]),
+	}
 }
 
 // sendSM 用 cerealf 序列化并发送。

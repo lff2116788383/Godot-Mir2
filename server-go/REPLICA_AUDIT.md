@@ -988,3 +988,136 @@ GCC x86 位域从最低位开始 → `bit0 = hasRef`，`bit1..63 = refID`。
 | 好友 / 黑名单路由 | `storage` 已实现（`AddFriend`/`BlockPlayer`），路由未注册 |
 | 群聊创建 | `CM_CREATECHATGROUP` 未注册 |
 | 聊天记录查询 | `CM_QUERYCHATMESSAGE` 未注册（storage 有 `RetrieveLatest`） |
+
+### B5 第十一批：经济闭环（装备持久 / 修理 / 金币入账）（本轮）
+
+**目标：让金币有消耗出口，把经济系统从「只进不出」变成闭环。**
+
+#### 1. 装备持久完全没实现（本轮核心）
+
+之前 `Item` 结构只有 `ItemID/SeqID/Count` 三个字段 —— **没有持久度**。
+后果是双重的：
+
+| 后果 | 影响 |
+|---|---|
+| 装备永不磨损 | 金币没有消耗出口 → 通胀 → 商店/交易失去定价基准 |
+| 装备不会损坏 | 玩家没有任何理由去 NPC 那里修理 |
+
+`SDItem` 的持久语义有三个状态，**第三条最容易漏**（`sditem.hpp:205-212`）：
+
+```
+MaxDurability == 0                    物品没有持久概念（药品/材料）
+MaxDurability >  0 && Durability > 0  正常使用中
+MaxDurability >  0 && Durability == 0 **已损坏，不提供任何属性**
+```
+
+不判第三条的话，武器持久打光了照样能砍出满攻击 ——
+玩家就没有理由修理，经济系统的支出端直接断掉。
+
+**磨损触发（`player.cpp:1853` / `:2711`）**
+
+| 场景 | 概率 | 部位 |
+|---|---|---|
+| 攻击一次 | 1/200（`SYS_WEAPONDURALOSSODDS`） | 武器 |
+| 被击中一次 | 1/300（`SYS_ARMORDURALOSSODDS`） | 随机一件有持久的护甲 |
+
+护甲是**随机挑一件**而不是全磨：全磨会让被围殴的玩家 5 分钟一身全碎。
+
+**持久耗尽 = 永久销毁**
+
+原版注释写得很明确：
+
+```
+// durability has been exhausted, this loss destroys the item permanently
+// don't put it back into the inventory, it's gone
+```
+
+写成「留着但不能用」的话，玩家会以为还能修，背包里堆满尸体装备。
+
+**修理（`player.cpp:2990`）**
+
+| 类型 | 恢复 | 代价 |
+|---|---|---|
+| 普通修理 | 满持久 | **永久降低上限** `(max-curr)/10` |
+| 特殊修理 | 满持久 | 不损失上限，但要更多钱 |
+
+普通修理的余数按概率多损 1 点 —— 否则玩家可以频繁小修来回避上限损失。
+上限最低保留 1，不然后续永远无法再修。
+
+实测：持久 20/100 普通修理 → **92/92**（损失 8 点，`80/10=8`）。
+
+**修掉一个连带缺陷：装备转换丢了 Duration**
+
+`toSDItem` / `fromSDItem` 只搬运 `ItemID/SeqID/Count`，`Duration` 被静默丢弃。
+后果：装备每次「穿上/脱下/重登」都恢复满持久 ——
+磨损系统等于不存在，而且**不会有任何报错**。
+
+#### 2. 金币拾取进 Gold，不占背包
+
+之前金币作为一件「物品」落在地上，捡起来占背包格子 —— 打怪掉的金币**没法花**。
+
+原版逻辑（`inventorydb.cpp:116`）：
+
+```
+if(item.isGold()){ gold += item.count; }   // 不进 inventory
+else             { inventory.add(item); }
+```
+
+金币在物品表里是 5 条「金币（小/中/大/特/超）」记录，
+但它们不是可持有的物品，只是数值载体。
+
+★ 金币溢出改为**按上限截断**而不是原版的「整批拒绝」：
+拒绝会让「背包 100 枚金币 + 上限只剩 50 空间」时玩家一个都捡不到，
+截断至少能捡 50。
+
+**已知简化**：地面物品结构（`SDGridItemIDList`）只有 `itemID` 没有 `count`，
+所以大额金币掉落（原版可能给 `count=1600`）会被压成 1 枚。
+要修需要把 count 一路带到地面物品结构，留待后续。
+
+#### 3. 修掉一个重登数据丢失缺陷
+
+`WorldService.Enter` 只建了个空的 `Wear` map，**没有从库里加载背包/装备/腰带**。
+
+后果：重登后所有物品消失，而且不报错（客户端看到的就是空背包）。
+
+修法：`loadPlayerItems` 在算属性**之前**读回三样东西，且每件都带持久值。
+顺序很重要 —— `WorldEntity` 的 Stats 读 `p.Wear`，先算属性再加载装备
+会让玩家进图时是「裸装属性」，要等下次换装才恢复。
+
+**新增文件**
+
+| 文件 | 行数 | 内容 |
+|---|---|---|
+| `internal/game/durability.go` | 340 | 磨损 / 销毁 / 修理 / 金币入账 |
+| `internal/game/player.go` 补 | +25 | `Item.Durability` / `MaxDurability` / `Broken()` |
+| `internal/game/action.go` 补 | +60 | 磨损触发、金币分拣、初始持久 |
+| `internal/game/world_service.go` 补 | +55 | `loadPlayerItems` |
+
+**验证**
+
+| 测试 | 结果 |
+|---|---|
+| `TestWeaponLosesDurability` | 铁剑 10 → 9，推 `SM_WEARITEMDURATION` |
+| `TestItemDestroyedWhenDurabilityExhausted` | 持久 0 再触发 → 装备消失，推 `SM_EQUIPWEAR` |
+| `TestBrokenItemGivesNoStats` | DC.Max 完好 10 → **损坏 1**（不再提供属性） |
+| `TestRepairRestoresAndLowersMax` | 20/100 → **92/92**（损 8 上限） |
+| `TestSpecialRepairKeepsMax` | 20/100 → 100/100（上限不变） |
+| `TestGoldGoesToWalletNotInventory` | Gold=500，背包 0 格，推 `SM_GOLD` |
+| `TestGoldCappedAtMax` | 只剩 10 空间时只加 10 枚 |
+| 服务端实跑 | `player items loaded dbid=1 inventory=0 wear=0` |
+| 客户端 c9c8 | **15 项全过** |
+
+**测试写法**
+
+概率性断言需要「恒返回 0」的随机源。**不能用 `rand.New(rand.NewSource(0))`** ——
+Go 的 math/rand 即使种子固定，`Intn(n)` 也不保证第一次返回 0，
+测试会随机失败。`DurabilityHandler.Rand` 因此改成接口 `RandSource`。
+
+**本轮未做**
+
+| 项目 | 影响 |
+|---|---|
+| NPC 修理路由 | `RepairItem` 已实现，`uidRepairItem` 绑定还是空桩 |
+| 修理费用计算 | 原版按物品价格与损失持久算，现在没有扣钱 |
+| 金币面额换算 | 掉 `count=1600` 的金币只入账 1 枚 |
+| 持久落库的完整链路 | 穿戴/脱下路径的 `Duration` 已修，但 NPC 脚本改物品属性时未覆盖 |

@@ -395,14 +395,12 @@ func (h *npcHostAdapter) QueryItemDuration(playerUID uint64, itemID, seqID uint3
 	if it == nil {
 		return 0, 0, false
 	}
-	// Item 当前没有持久度字段（itemrecord 的 equip.duration 是「最大持久」），
-	// 返回 (最大, 最大) 表示满持久 —— 修理 NPC 会判「不用修」而跳过。
-	if h.Items != nil {
-		if rec, ok := h.Items.Get(itemID); ok && rec.Equip != nil {
-			return rec.Equip.Duration, rec.Equip.Duration, true
-		}
+	// 没有持久概念的物品（药品/材料）返回 false，
+	// 原版 queryItemDuration 对这类物品返回 nil。
+	if !it.HasDurability() {
+		return 0, 0, false
 	}
-	return 1, 1, true
+	return int(it.Durability), int(it.MaxDurability), true
 }
 
 func (h *npcHostAdapter) RemoveGold(playerUID uint64, amount uint64) bool {

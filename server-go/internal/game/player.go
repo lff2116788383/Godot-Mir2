@@ -86,6 +86,33 @@ type Item struct {
 	ItemID uint32
 	SeqID  uint64
 	Count  uint32
+
+	// Durability 当前持久（SDItem.duration[0]）
+	//
+	// ★ 三态语义，必须严格区分（sditem.hpp:205-212）：
+	//
+	//	MaxDurability == 0                  物品没有持久概念（药品/材料）
+	//	MaxDurability >  0 && Durability > 0  正常使用中
+	//	MaxDurability >  0 && Durability == 0 **已损坏，不提供任何属性**
+	//
+	// 第三条最容易漏：不加判断的话，损坏的武器照样能砍出满攻击。
+	Durability uint32
+	// MaxDurability 最大持久（SDItem.duration[1]）
+	//
+	// 这是**每件实例**的值，不是物品记录的值 ——
+	// 物品记录的 equip.duration 只是「新物品的初始最大持久」。
+	// 普通修理会永久降低这个上限（每次损失 (max-curr)/10）。
+	MaxDurability uint32
+}
+
+// Broken 判断物品是否已损坏（有持久概念但当前为 0）。
+func (i Item) Broken() bool {
+	return i.MaxDurability > 0 && i.Durability == 0
+}
+
+// HasDurability 判断物品是否有持久概念。
+func (i Item) HasDurability() bool {
+	return i.MaxDurability > 0
 }
 
 // PlayerManager 管理所有在线玩家。
@@ -266,6 +293,13 @@ func (p *Player) CombatStatsFor(items *ItemDB) world.CombatStats {
 
 	for _, it := range p.Wear {
 		if it == nil || items == nil {
+			continue
+		}
+		// ★ 已损坏的装备不提供任何属性（sditem.hpp:211）。
+		//
+		//	不判这一条的话，武器持久打光了照样能砍出满攻击 ——
+		//	玩家就没有任何理由去修理，整个经济系统的支出端断掉。
+		if it.Broken() {
 			continue
 		}
 		rec, ok := items.Get(it.ItemID)

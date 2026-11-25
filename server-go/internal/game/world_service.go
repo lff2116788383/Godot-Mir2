@@ -42,6 +42,13 @@ type WorldService struct {
 	Magics *MagicDB
 	// NPCs NPC 脚本管理器。进场时用它加载该地图的 NPC。
 	NPCs *NPCManager
+	// Durability 装备磨损/修理/金币入账（NPC 修理与拾取金币要用）。
+	Durability *DurabilityHandler
+	// ItemRepo 角色物品落库（进场时加载背包/装备/腰带）。
+	//
+	// ★ 之前没有这个字段，`Enter` 只建了个空 Wear map ——
+	//	重登后装备和背包全部消失，而且不报错（客户端看到的就是空背包）。
+	ItemRepo *storage.ItemRepository
 	// MapScripts 地图脚本管理器（刷怪/守卫/安全区）。
 	MapScripts *MapScriptManager
 	// Ticker 世界时钟驱动器。地图建好后要 Track 它，
@@ -304,6 +311,15 @@ func (s *WorldService) Enter(ctx context.Context, ch storage.Character, channelI
 		MagicKeys:     make(map[uint32]uint8),
 	}
 
+	// 加载背包 / 装备 / 腰带
+	//
+	// ★ 顺序必须在「算属性」之前：
+	//
+	//	WorldEntity 里的 Stats 是 CombatStatsFor 算的，那个函数读 p.Wear。
+	//	先算属性再加载装备，玩家进图时是「裸装属性」，
+	//	要等下次换装才恢复 —— 表现是「重登后攻击力变低了」。
+	s.loadPlayerItems(ctx, p)
+
 	// 进地图
 	events, err := s.Worlds.AddEntity(ctx, mapID, p.WorldEntity(mapUID, s.Items))
 	if err != nil {
@@ -522,4 +538,52 @@ func (s *WorldService) Leave(ctx context.Context, channelID uint64) {
 
 	s.Players.Remove(player.UID)
 	s.Logger.Info("player left world", "name", player.Name, "uid", common.GetUIDString(player.UID))
+}
+
+// loadPlayerItems 从库里读回角色的背包 / 装备 / 腰带。
+//
+// 每件物品都带持久值（SDItem.Duration[2]），
+// 损坏的装备（Duration[0]==0）加载后依然损坏 —— 不会「重登修复装备」。
+func (s *WorldService) loadPlayerItems(ctx context.Context, p *Player) {
+	if s.ItemRepo == nil || p == nil {
+		return
+	}
+
+	if items, err := s.ItemRepo.LoadInventory(ctx, p.DBID); err == nil {
+		p.Inventory = make([]Item, 0, len(items))
+		for _, it := range items {
+			p.Inventory = append(p.Inventory, fromSDItem(it))
+		}
+	} else if s.Logger != nil {
+		s.Logger.Warn("load inventory failed", "dbid", p.DBID, "error", err)
+	}
+
+	if wear, err := s.ItemRepo.LoadWear(ctx, p.DBID); err == nil {
+		for slot, it := range wear.List {
+			if it.ItemID == 0 {
+				continue
+			}
+			item := fromSDItem(it)
+			p.Wear[int(slot)] = &item
+		}
+	} else if s.Logger != nil {
+		s.Logger.Warn("load wear failed", "dbid", p.DBID, "error", err)
+	}
+
+	if belt, err := s.ItemRepo.LoadBelt(ctx, p.DBID); err == nil {
+		for slot, it := range belt.List {
+			if it.ItemID == 0 || slot < 0 || slot >= len(p.Belt) {
+				continue
+			}
+			item := fromSDItem(it)
+			p.Belt[slot] = &item
+		}
+	} else if s.Logger != nil {
+		s.Logger.Warn("load belt failed", "dbid", p.DBID, "error", err)
+	}
+
+	if s.Logger != nil {
+		s.Logger.Info("player items loaded", "dbid", p.DBID,
+			"inventory", len(p.Inventory), "wear", len(p.Wear))
+	}
 }

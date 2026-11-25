@@ -46,6 +46,11 @@ type ActionHandler struct {
 	//	打不到经验、看不到掉落 —— 而客户端完全不报错，
 	//	只是「打怪没反应」。这是最隐蔽的一类缺陷。
 	Kills *KillSettler
+	// Durability 装备磨损与金币入账。
+	//
+	// ★ 攻击时磨武器、被击时磨护甲，这两处必须接上：
+	//	装备永不磨损 → 金币没有消耗出口 → 经济系统不成立。
+	Durability *DurabilityHandler
 }
 
 // Broadcaster 把一条 SM 发给指定玩家。
@@ -234,6 +239,15 @@ func (h *ActionHandler) attackWorldEntity(ctx context.Context, p *Player, aimUID
 		h.broadcastMiss(ctx, p, aimUID)
 	}
 
+	// 武器磨损（player.cpp:1853，每次攻击 1/200 概率掉 1 点）
+	if h.Durability != nil {
+		h.Durability.DamageWeapon(ctx, p)
+		// 被打的一方护甲磨损（player.cpp:2711，每次被击 1/300）
+		if aimPlayer, exists := h.Players.Get(aimUID); exists {
+			h.Durability.DamageRandomArmor(ctx, aimPlayer)
+		}
+	}
+
 	// 打死则广播死亡 + 结算奖励
 	if result.Dead {
 		// ★ 顺序：先广播死亡，再结算掉落。
@@ -294,13 +308,70 @@ func (h *ActionHandler) handlePickUp(ctx context.Context, p *Player, action comm
 		return nil
 	}
 
-	// 进背包
+	// 分拣：金币直接入账，其余进背包
+	//
+	// ★ 金币不能进背包（inventorydb.cpp:116 / sditem.hpp:245 isGold）：
+	//
+	//	金币在物品表里是 5 条「金币（小/中/大/特/超）」记录，
+	//	但它们**不是可持有的物品**，只是一个数值载体。
+	//	进背包会占格子、能被丢弃/交易、能堆到几百格 ——
+	//	而玩家真正要的是右下角那个数字变大。
+	//
+	//	原版 dbGrantItemList 里：isGold() → gold += count，不进 inventory。
+	inventoryChanged := false
 	for _, itemID := range got {
-		p.Inventory = append(p.Inventory, Item{ItemID: itemID, SeqID: 1, Count: 1})
+		if h.isGoldItem(itemID) {
+			// 金币面额就是数量（「金币（小）」= 1 枚，count 由掉落配置给）
+			h.Durability.AddGold(ctx, p, h.goldCount(itemID))
+			continue
+		}
+		p.Inventory = append(p.Inventory, Item{
+			ItemID: itemID, SeqID: 1, Count: 1,
+			Durability: h.initialDurability(itemID),
+		})
+		inventoryChanged = true
 	}
 	// 回背包变更 + 地面物品变更
-	h.notifyInventory(ctx, p)
+	if inventoryChanged {
+		h.notifyInventory(ctx, p)
+	}
 	return nil
+}
+
+// isGoldItem 判断某 itemID 是不是金币（任一面额）。
+func (h *ActionHandler) isGoldItem(itemID uint32) bool {
+	if h.Durability == nil || h.Durability.Items == nil {
+		return false
+	}
+	rec, ok := h.Durability.Items.Get(itemID)
+	return ok && rec.IsGold()
+}
+
+// goldCount 返回某个金币面额代表多少枚金币。
+//
+// 原版没有「面额换算」—— 物品表里的「金币（小）」count 就是数量本身
+// （掉落配置里 `{item:"金币（小）", count:1600}` 表示掉 1600 枚）。
+// 这里取值 1，因为地面物品不带 count 信息（SDGridItemIDList 只有 itemID）。
+//
+// 【已知简化】大额金币掉落（原版可能给 count=1600）会被压成 1 枚。
+// 要修需要把 count 一路带到地面物品结构里，留待后续批次。
+func (h *ActionHandler) goldCount(itemID uint32) uint64 {
+	return 1
+}
+
+// initialDurability 返回新物品的初始持久（当前, 最大）。
+//
+// 取自物品记录的 equip.duration —— 那是「新物品的典型最大持久」。
+// 无持久概念的物品（药品/材料）返回 0,0。
+func (h *ActionHandler) initialDurability(itemID uint32) uint32 {
+	if h.Durability == nil || h.Durability.Items == nil {
+		return 0
+	}
+	rec, ok := h.Durability.Items.Get(itemID)
+	if !ok || rec.Equip == nil || rec.Equip.Duration <= 0 {
+		return 0
+	}
+	return uint32(rec.Equip.Duration)
 }
 
 // tryMove 向地图申请移动，成功后同步回 Player。

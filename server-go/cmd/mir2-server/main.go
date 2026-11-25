@@ -172,6 +172,18 @@ func main() {
 		Logger:    slog.Default(),
 	}
 	actionHandler.Kills = killSettler
+
+	// 装备磨损 / 修理 / 金币入账
+	durabilityHandler := &game.DurabilityHandler{
+		Items:     itemDB,
+		Worlds:    worlds,
+		Broadcast: broadcaster,
+		ItemRepo:  storage.NewItemRepository(store),
+		Golds:     storage.NewGoldRepository(store),
+	}
+	actionHandler.Durability = durabilityHandler
+	worldService.Durability = durabilityHandler
+	worldService.ItemRepo = storage.NewItemRepository(store)
 	spellHandler.Kills = killSettler
 	// ticker 早于 killSettler 创建（它要随地图就绪立刻启动），
 	// 这里回填 —— 守卫杀怪的结算走 ticker。
