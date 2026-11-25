@@ -24,7 +24,9 @@
    "custom_frame_table": false,
    "attack_segments": 1,
    "is_default": true,
-   "monster_name": "蚂蚁道士"
+   "monster_name": "蚂蚁道士",
+   "attack_magic_name": "蚂蚁道士_治疗",
+   "attack_magic_at_self": true
   },
   "ClientBombSpider": {
    "class_name": "ClientBombSpider",
@@ -34,13 +36,14 @@
    "override_spawn": false,
    "override_stand": false,
    "override_transf": false,
-   "death_effect": false,
+   "death_effect": true,
    "attack_magic": false,
    "special_motions": [],
    "custom_frame_table": true,
    "attack_segments": 1,
    "is_default": false,
-   "monster_name": "爆裂蜘蛛"
+   "monster_name": "爆裂蜘蛛",
+   "death_magic_name": "爆裂蜘蛛_死亡特效"
   },
   "ClientBugbatMaggot": {
    "class_name": "ClientBugbatMaggot",
@@ -104,7 +107,9 @@
    "custom_frame_table": false,
    "attack_segments": 1,
    "is_default": true,
-   "monster_name": "暗黑战士"
+   "monster_name": "暗黑战士",
+   "attack_magic_name": "暗黑战士_喷刺",
+   "attack_magic_at_self": false
   },
   "ClientDualAxeSkeleton": {
    "class_name": "ClientDualAxeSkeleton",
@@ -120,7 +125,9 @@
    "custom_frame_table": false,
    "attack_segments": 1,
    "is_default": true,
-   "monster_name": "掷斧骷髅"
+   "monster_name": "掷斧骷髅",
+   "attack_magic_name": "掷斧骷髅_掷斧",
+   "attack_magic_at_self": false
   },
   "ClientDung": {
    "class_name": "ClientDung",
@@ -163,12 +170,14 @@
    "override_stand": false,
    "override_transf": false,
    "death_effect": false,
-   "attack_magic": false,
+   "attack_magic": true,
    "special_motions": [],
    "custom_frame_table": false,
    "attack_segments": 1,
    "is_default": true,
-   "monster_name": "爆毒蚂蚁"
+   "monster_name": "爆毒蚂蚁",
+   "attack_magic_name": "爆毒蚂蚁_喷毒",
+   "attack_magic_at_self": true
   },
   "ClientGuard": {
    "class_name": "ClientGuard",
@@ -194,12 +203,14 @@
    "override_stand": false,
    "override_transf": false,
    "death_effect": false,
-   "attack_magic": false,
+   "attack_magic": true,
    "special_motions": [],
    "custom_frame_table": false,
    "attack_segments": 1,
    "is_default": true,
-   "monster_name": "雷电僵尸"
+   "monster_name": "雷电僵尸",
+   "attack_magic_name": "雷电僵尸_雷电",
+   "attack_magic_at_self": true
   },
   "ClientMinotaurGuardian": {
    "class_name": "ClientMinotaurGuardian",
@@ -226,12 +237,14 @@
    "override_stand": false,
    "override_transf": false,
    "death_effect": false,
-   "attack_magic": false,
+   "attack_magic": true,
    "special_motions": [],
    "custom_frame_table": false,
    "attack_segments": 1,
    "is_default": true,
-   "monster_name": "僧侣僵尸"
+   "monster_name": "僧侣僵尸",
+   "attack_magic_name": "僧侣僵尸_地洞",
+   "attack_magic_at_self": true
   },
   "ClientNumaWizard": {
    "class_name": "ClientNumaWizard",
@@ -250,7 +263,8 @@
    "attack_segments": 1,
    "is_default": false,
    "monster_name": "诺玛大法老",
-   "attack_magic_name": "诺玛法老_火球术"
+   "attack_magic_name": "诺玛法老_火球术",
+   "attack_magic_at_self": false
   },
   "ClientRebornZombie": {
    "class_name": "ClientRebornZombie",
@@ -276,13 +290,16 @@
    "override_spawn": false,
    "override_stand": false,
    "override_transf": false,
-   "death_effect": false,
+   "death_effect": true,
    "attack_magic": true,
    "special_motions": [],
    "custom_frame_table": false,
    "attack_segments": 1,
    "is_default": true,
-   "monster_name": "红衣法师"
+   "monster_name": "红衣法师",
+   "attack_magic_name": "红衣法师_魔法",
+   "attack_magic_at_self": true,
+   "death_magic_name": "红衣法师_死亡特效"
   },
   "ClientSandCactus": {
    "class_name": "ClientSandCactus",
@@ -301,7 +318,8 @@
    "attack_segments": 1,
    "is_default": false,
    "monster_name": "沙漠树魔",
-   "attack_magic_name": "沙漠树魔_喷刺"
+   "attack_magic_name": "沙漠树魔_喷刺",
+   "attack_magic_at_self": false
   },
   "ClientSandEvilFan": {
    "class_name": "ClientSandEvilFan",
@@ -317,7 +335,9 @@
    "custom_frame_table": false,
    "attack_segments": 1,
    "is_default": true,
-   "monster_name": "沙漠风魔"
+   "monster_name": "沙漠风魔",
+   "attack_magic_name": "沙漠风魔_扇风",
+   "attack_magic_at_self": true
   },
   "ClientSandGhost": {
    "class_name": "ClientSandGhost",
@@ -343,13 +363,14 @@
    "override_spawn": false,
    "override_stand": false,
    "override_transf": false,
-   "death_effect": false,
+   "death_effect": true,
    "attack_magic": false,
    "special_motions": [],
    "custom_frame_table": false,
    "attack_segments": 1,
    "is_default": true,
-   "monster_name": "沙漠石人"
+   "monster_name": "沙漠石人",
+   "death_magic_name": "沙漠石人_死亡特效"
   },
   "ClientShipwreckLord": {
    "class_name": "ClientShipwreckLord",
@@ -360,7 +381,7 @@
    "override_stand": false,
    "override_transf": false,
    "death_effect": false,
-   "attack_magic": false,
+   "attack_magic": true,
    "special_motions": [
     "MOTION_MON_SPELL0"
    ],
@@ -368,7 +389,8 @@
    "attack_segments": 1,
    "is_default": false,
    "monster_name": "霸王教主",
-   "attack_magic_name": "霸王教主_火刃"
+   "attack_magic_name": "霸王教主_火刃",
+   "attack_magic_at_self": false
   },
   "ClientTaoDog": {
    "class_name": "ClientTaoDog",
@@ -379,7 +401,7 @@
    "override_stand": true,
    "override_transf": true,
    "death_effect": false,
-   "attack_magic": false,
+   "attack_magic": true,
    "special_motions": [
     "MOTION_MON_SPECIAL"
    ],
@@ -387,7 +409,8 @@
    "attack_segments": 1,
    "is_default": false,
    "monster_name": "神兽",
-   "attack_magic_name": "神兽_喷火"
+   "attack_magic_name": "神兽_喷火",
+   "attack_magic_at_self": false
   },
   "ClientTaoSkeleton": {
    "class_name": "ClientTaoSkeleton",
@@ -446,12 +469,14 @@
    "override_stand": false,
    "override_transf": false,
    "death_effect": false,
-   "attack_magic": false,
+   "attack_magic": true,
    "special_motions": [],
    "custom_frame_table": false,
    "attack_segments": 1,
    "is_default": true,
-   "monster_name": "楔蛾"
+   "monster_name": "楔蛾",
+   "attack_magic_name": "楔蛾_喷毒",
+   "attack_magic_at_self": true
   },
   "ClientWoomaFlamingWarrior": {
    "class_name": "ClientWoomaFlamingWarrior",
@@ -499,7 +524,9 @@
    "custom_frame_table": false,
    "attack_segments": 1,
    "is_default": true,
-   "monster_name": "祖玛弓箭手"
+   "monster_name": "祖玛弓箭手",
+   "attack_magic_name": "祖玛弓箭手_射箭",
+   "attack_magic_at_self": false
   },
   "ClientZumaMonster": {
    "class_name": "ClientZumaMonster",
@@ -525,14 +552,16 @@
    "override_spawn": true,
    "override_stand": true,
    "override_transf": true,
-   "death_effect": false,
-   "attack_magic": false,
+   "death_effect": true,
+   "attack_magic": true,
    "special_motions": [],
    "custom_frame_table": true,
    "attack_segments": 1,
    "is_default": false,
    "monster_name": "祖玛教主",
-   "attack_magic_name": "祖玛教主_地狱火"
+   "attack_magic_name": "祖玛教主_地狱火",
+   "attack_magic_at_self": false,
+   "death_magic_name": "祖玛教主_石像碎片"
   }
  }
 }

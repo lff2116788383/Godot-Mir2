@@ -218,11 +218,35 @@ func _class_attack_magic_name() -> String:
 	return ""
 
 
-func _spawn_attack_magic(aim_grid: Vector2i, dir: int) -> void:
-	var magic_name := _class_attack_magic_name()
-	if magic_name.is_empty():
+func _attack_magic_id(action) -> int:
+	var runtime_magic := int(action.ext_magic_id)
+	if runtime_magic > 0:
+		return runtime_magic
+	var nm := str(behavior.get("attack_magic_name", ""))
+	return MagicDBRef.find_id_by_name(nm) if not nm.is_empty() else 0
+
+
+func _spawn_attack_magic(magic_id: int, aim_grid: Vector2i, dir: int) -> void:
+	if magic_id <= 0:
 		return
-	var mid := MagicDBRef.find_id_by_name(magic_name)
+	var entry := MagicDBRef.gfx_entry(magic_id)
+	if entry.is_empty():
+		return
+	var root := get_parent()
+	if root == null:
+		return
+	var target_grid := grid if bool(behavior.get("attack_magic_at_self", false)) else aim_grid
+	var node := MagicEffectRef.new()
+	root.add_child(node)
+	node.setup(magic_id, entry, target_grid, clampi((dir - 1) * 2, 0, 15),
+		bool(entry.get("loop", false)), grid, null)
+
+
+func _spawn_death_effect() -> void:
+	var nm := str(behavior.get("death_magic_name", ""))
+	if nm.is_empty():
+		return
+	var mid := MagicDBRef.find_id_by_name(nm)
 	var entry := MagicDBRef.gfx_entry(mid)
 	if entry.is_empty():
 		return
@@ -231,7 +255,7 @@ func _spawn_attack_magic(aim_grid: Vector2i, dir: int) -> void:
 		return
 	var node := MagicEffectRef.new()
 	root.add_child(node)
-	node.setup(mid, entry, aim_grid, clampi(dir * 2, 0, 15), bool(entry.get("loop", false)))
+	node.setup(mid, entry, grid, 0, false, grid, null)
 
 
 ## clientmonster.cpp:534 onActionAttack
@@ -257,6 +281,7 @@ func _on_action_attack(action) -> void:
 		mn.set_meta("aim_grid", Vector2i(action.aim_x, action.aim_y))
 		mn.set_meta("aim_uid", action.aim_uid)
 		mn.set_meta("attack_effect", bool(behavior.get("attack_magic", false)) and i == segments - 1)
+		mn.set_meta("attack_magic_id", _attack_magic_id(action))
 		motion_queue.append(mn)
 
 
@@ -312,6 +337,8 @@ func _on_action_die(action) -> void:
 	mn.y = de.y
 	forced_queue.append(mn)
 	dead = true
+	if bool(behavior.get("death_effect", false)):
+		_spawn_death_effect()
 
 
 ## clientmonster.cpp:492 onActionSpaceMove
@@ -414,7 +441,8 @@ func _advance_animation(dt: float) -> void:
 				var seq: int = curr_motion.get_seq_id()
 				if not _effect_fired.has(seq):
 					_effect_fired[seq] = true
-					_spawn_attack_magic(curr_motion.get_meta("aim_grid"), curr_motion.direction)
+					_spawn_attack_magic(int(curr_motion.get_meta("attack_magic_id", 0)),
+						curr_motion.get_meta("aim_grid"), curr_motion.direction)
 		else:
 			# 末帧：allowSwitchMotion=true 时切动作
 			_move_next_motion()

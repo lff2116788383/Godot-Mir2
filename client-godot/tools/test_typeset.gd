@@ -4,6 +4,7 @@ extends SceneTree
 
 const TokenScript := preload("res://scripts/ui/xml_token.gd")
 const TypesetScript := preload("res://scripts/ui/xml_typeset.gd")
+const BuilderScript := preload("res://scripts/ui/xml_typeset_builder.gd")
 
 var _pass := 0
 var _fail := 0
@@ -17,6 +18,7 @@ func _init() -> void:
 	_test_align()
 	_test_padding()
 	_test_height()
+	_test_emoji_token()
 	print("=== 结果: 通过 %d, 失败 %d ===" % [_pass, _fail])
 	quit(0 if _fail == 0 else 1)
 
@@ -174,3 +176,18 @@ func _test_height() -> void:
 	# token 的 y 应为 行基线 - h1
 	var t = ts.get_token(0, 0)
 	_ok(t.y == y0 - t.h1, "token y = startY - h1", "y=%d startY=%d h1=%d" % [t.y, y0, t.h1])
+
+
+func _test_emoji_token() -> void:
+	print("[6] Emoji token/fallback")
+	var b = BuilderScript.new()
+	b.setup(300, ThemeDB.fallback_font, 15, "")
+	var ts = b.build("<layout><par>hello<emoji id=\"0\"/></par></layout>", 0, 0)
+	var found := false
+	for li in range(ts.line_count()):
+		for ti in range(ts.line_token_count(li)):
+			var tk = ts.get_token(ti, li)
+			if tk != null and int(tk.kind) == TokenScript.KIND_EMOJI:
+				found = true
+				_ok(bool(tk.get_meta("fallback", false)), "emoji id=0 fallback token")
+	_ok(found, "XML emoji token kept")

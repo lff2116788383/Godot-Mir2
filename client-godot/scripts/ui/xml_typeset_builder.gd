@@ -127,7 +127,7 @@ func _build_utf8_tokens(leaf_idx: int, text: String, attrs: Dictionary) -> Array
 
 ## emoji token（对应 buildEmojiToken）
 func _build_emoji_token(leaf_idx: int, emoji_id: int, emoji_set: int) -> XmlToken:
-	if emoji_id <= 0:
+	if emoji_id < 0:
 		return null
 	var meta := _get_emoji_meta(emoji_id, emoji_set)
 	if meta.is_empty():
@@ -136,6 +136,8 @@ func _build_emoji_token(leaf_idx: int, emoji_id: int, emoji_set: int) -> XmlToke
 		tk.kind = TokenRef.KIND_EMOJI
 		tk.leaf = leaf_idx
 		tk.key = emoji_id
+		tk.set_meta("emoji_set", emoji_set)
+		tk.set_meta("fallback", true)
 		var sz := font_size
 		tk.set_size(sz, sz)
 		tk.set_heights(sz, 0)
@@ -145,6 +147,7 @@ func _build_emoji_token(leaf_idx: int, emoji_id: int, emoji_set: int) -> XmlToke
 	tk2.kind = TokenRef.KIND_EMOJI
 	tk2.leaf = leaf_idx
 	tk2.key = emoji_id
+	tk2.set_meta("emoji_set", emoji_set)
 	tk2.emoji_frame_count = int(meta.get("count", 1))
 	tk2.emoji_delay = int(meta.get("delay", 100))
 	tk2.set_size(int(meta.get("w", 0)), int(meta.get("h", 0)))
