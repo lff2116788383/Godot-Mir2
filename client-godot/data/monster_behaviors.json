@@ -249,7 +249,8 @@
    "custom_frame_table": true,
    "attack_segments": 1,
    "is_default": false,
-   "monster_name": "诺玛大法老"
+   "monster_name": "诺玛大法老",
+   "attack_magic_name": "诺玛法老_火球术"
   },
   "ClientRebornZombie": {
    "class_name": "ClientRebornZombie",
@@ -299,7 +300,8 @@
    "custom_frame_table": true,
    "attack_segments": 1,
    "is_default": false,
-   "monster_name": "沙漠树魔"
+   "monster_name": "沙漠树魔",
+   "attack_magic_name": "沙漠树魔_喷刺"
   },
   "ClientSandEvilFan": {
    "class_name": "ClientSandEvilFan",
@@ -365,7 +367,8 @@
    "custom_frame_table": true,
    "attack_segments": 1,
    "is_default": false,
-   "monster_name": "霸王教主"
+   "monster_name": "霸王教主",
+   "attack_magic_name": "霸王教主_火刃"
   },
   "ClientTaoDog": {
    "class_name": "ClientTaoDog",
@@ -383,7 +386,8 @@
    "custom_frame_table": true,
    "attack_segments": 1,
    "is_default": false,
-   "monster_name": "神兽"
+   "monster_name": "神兽",
+   "attack_magic_name": "神兽_喷火"
   },
   "ClientTaoSkeleton": {
    "class_name": "ClientTaoSkeleton",
@@ -527,7 +531,8 @@
    "custom_frame_table": true,
    "attack_segments": 1,
    "is_default": false,
-   "monster_name": "祖玛教主"
+   "monster_name": "祖玛教主",
+   "attack_magic_name": "祖玛教主_地狱火"
   }
  }
 }

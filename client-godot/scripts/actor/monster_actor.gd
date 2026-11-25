@@ -181,6 +181,8 @@ func _on_action_spawn(action) -> void:
 	curr_motion.direction = d
 	curr_motion.x = action.x
 	curr_motion.y = action.y
+	if logic != null and bool(behavior.get("has_stand_mode", false)):
+		logic.stand_mode = false
 	_set_grid(action.x, action.y)
 
 
@@ -203,6 +205,9 @@ func _attack_motion_type() -> int:
 
 
 func _class_attack_magic_name() -> String:
+	var configured := str(behavior.get("attack_magic_name", ""))
+	if not configured.is_empty():
+		return configured
 	var cls := str(logic.gfx_class) if logic != null else ""
 	match cls:
 		"ClientNumaWizard": return "诺玛法老_火球术"
@@ -240,15 +245,19 @@ func _on_action_attack(action) -> void:
 	var d: int = PathFinderRef.get_off_dir(action.x, action.y, action.aim_x, action.aim_y)
 	if not PathFinderRef.dir_valid(d):
 		d = end.z
-	var mn := MotionNodeRef.new()
-	mn.type = _attack_motion_type()
-	mn.direction = d
-	mn.x = action.x
-	mn.y = action.y
-	mn.set_meta("aim_grid", Vector2i(action.aim_x, action.aim_y))
-	mn.set_meta("aim_uid", action.aim_uid)
-	mn.set_meta("attack_effect", bool(behavior.get("attack_magic", false)))
-	motion_queue.append(mn)
+	if logic != null and bool(behavior.get("has_stand_mode", false)) and not logic.stand_mode:
+		_on_action_transf(action)
+	var segments: int = maxi(1, int(behavior.get("attack_segments", 1)))
+	for i in range(segments):
+		var mn := MotionNodeRef.new()
+		mn.type = _attack_motion_type()
+		mn.direction = d
+		mn.x = action.x
+		mn.y = action.y
+		mn.set_meta("aim_grid", Vector2i(action.aim_x, action.aim_y))
+		mn.set_meta("aim_uid", action.aim_uid)
+		mn.set_meta("attack_effect", bool(behavior.get("attack_magic", false)) and i == segments - 1)
+		motion_queue.append(mn)
 
 
 ## clientmonster.cpp:465 onActionStand
@@ -257,6 +266,11 @@ func _on_action_stand(action) -> void:
 	motion_queue = CreatureMovableRef.make_monster_walk_queue(
 		end.x, end.y, action.x, action.y, SysConstRef.SYS_MAXSPEED,
 		_can_move, _make_finder, 1)
+	if logic != null and bool(behavior.get("has_stand_mode", false)):
+		var want_stand := int(action.ext_stand_mode) != 0
+		if logic.stand_mode != want_stand:
+			logic.stand_mode = want_stand
+			_refresh_texture()
 	var mn := MotionNodeRef.new()
 	mn.type = MotionTypeRef.MOTION_MON_STAND
 	mn.direction = action.direction
@@ -328,7 +342,8 @@ func _on_action_transf(action) -> void:
 	# 只有 7 个类有趴站切换（TaoDog/ZumaTaurus/CannibalPlant 等），
 	# 其余类收到 TRANSF 时应忽略（原版基类抛 panic，这里温和处理）
 	if logic != null and bool(behavior.get("has_stand_mode", false)):
-		logic.stand_mode = not logic.stand_mode
+		var want := int(action.ext_stand_mode_req) != 0
+		logic.stand_mode = want
 	_refresh_texture()
 
 

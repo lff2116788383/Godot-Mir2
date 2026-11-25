@@ -180,7 +180,10 @@ func handle_frame(code: int, body: PackedByteArray) -> bool:
 	if code == MirClient.SM_CASTMAGIC:
 		var cm := Parser.parse_cast_magic(body)
 		if not cm.is_empty() and int(cm.get("map_uid", map_uid)) == map_uid:
-			_spawn_magic_effect(int(cm["magic"]), Vector2i(int(cm["aim_x"]), int(cm["aim_y"])), int(cm["direction"]))
+			_spawn_magic_cast(int(cm["magic"]), int(cm["uid"]),
+					Vector2i(int(cm["x"]), int(cm["y"])),
+					Vector2i(int(cm["aim_x"]), int(cm["aim_y"])),
+					int(cm["aim_uid"]), int(cm["direction"]))
 			if fx != null:
 				fx.on_magic_damage(int(cm["aim_x"]), int(cm["aim_y"]), 0)
 		return true
@@ -653,7 +656,7 @@ func _cast_magic_at(uid: int, tg: Vector2i, dir: int) -> void:
 	_send_action(action)
 	net.request_magic_damage(selected_magic_id, uid)
 	player.play_action_motion(MotionTypeRef.MOTION_SPELL0, dir)
-	_spawn_magic_effect(selected_magic_id, tg, dir)
+	_spawn_magic_cast(selected_magic_id, self_uid, player.grid, tg, uid, dir)
 
 
 func _target_pickup(g: Vector2i, item_id: int) -> void:
@@ -800,6 +803,14 @@ func _on_skill_click(_w, magic_name: String) -> void:
 
 func activate_inventory_item(item) -> void:
 	if item == null:
+		return
+	if ui != null and ui.direct_trade != null and ui.direct_trade.show and not ui.direct_trade.locked:
+		if ui.direct_trade.my_items.size() < 25:
+			ui.direct_trade.my_items.append(item)
+			ui.direct_trade.confirmed = false
+			if net != null:
+				net.update_direct_trade_offer(int(ui.direct_trade.peer_uid),
+					ui.direct_trade.my_gold(), false, ui.direct_trade.my_items)
 		return
 	if ui != null and ui.stall_board2 != null and ui.stall_board2.show:
 		if net != null:
@@ -966,6 +977,51 @@ func _on_guild_chat(_w, text: String) -> void:
 
 func _on_guild_notice(_w, text: String) -> void:
 	if net != null: net.set_guild_notice(text)
+
+
+func _spawn_magic_cast(magic_id: int, caster_uid: int, start_grid: Vector2i,
+		aim_grid: Vector2i, aim_uid: int, direction: int) -> void:
+	var entries := MagicDBRef.gfx_entries(magic_id)
+	if entries.is_empty():
+		_spawn_magic_effect(magic_id, aim_grid, direction)
+		return
+	var dir16 := direction
+	if dir16 >= 1 and dir16 <= 8:
+		dir16 = (dir16 - 1) * 2
+	var target_node = co_manager.find_uid(aim_uid) if co_manager != null and aim_uid != 0 else null
+	var has_start := false
+	for e in entries:
+		if str(e.get("stage", "")) == "启动":
+			has_start = true
+			break
+	for e in entries:
+		var stage := str(e.get("stage", ""))
+		if has_start and stage == "运行":
+			get_tree().create_timer(0.15).timeout.connect(func():
+				_spawn_magic_entry(magic_id, e, start_grid, aim_grid, dir16, target_node))
+		else:
+			_spawn_magic_entry(magic_id, e, start_grid, aim_grid, dir16, target_node)
+
+
+func _spawn_magic_entry(magic_id: int, e: Dictionary, start_grid: Vector2i,
+		aim_grid: Vector2i, dir16: int, target_node) -> void:
+	if e.is_empty():
+		return
+	var t := str(e.get("type", "固定"))
+	var base := start_grid
+	var follow = null
+	if t == "附着":
+		base = aim_grid
+		follow = target_node
+	elif t == "跟随":
+		base = start_grid
+		follow = target_node
+	elif t == "固定" and bool(e.get("onGround", false)):
+		base = aim_grid
+	var node := MagicEffectRef.new()
+	add_child(node)
+	node.setup(magic_id, e, base, dir16, bool(e.get("loop", false)),
+			start_grid if t == "跟随" else base, follow)
 
 
 func _spawn_magic_effect(magic_id: int, g: Vector2i, dir: int) -> void:

@@ -21,6 +21,7 @@ const ButtonRef := preload("res://scripts/ui/framework/ui_button.gd")
 const BuilderRef := preload("res://scripts/ui/xml_typeset_builder.gd")
 const LayoutRef := preload("res://scripts/ui/xml_layout.gd")
 const TokenRef := preload("res://scripts/ui/xml_token.gd")
+const EMOJI_FALLBACK := preload("res://data/emojidef.png")
 
 ## 边距（npcchatboard.hpp:12）
 const MARGIN := 35
@@ -57,13 +58,21 @@ func _init(p_name: String = "NpcChat") -> void:
 
 
 ## 设置排版器（由外部注入 canvas，用于字体度量）
+func _emoji_root() -> String:
+	var root := OS.get_environment("MIR2X_ASSETS")
+	if root.is_empty():
+		root = "E:/Desktop/game/mir2x_assets-main"
+	var p := root + "/texture/emoji"
+	return p if DirAccess.dir_exists_absolute(p) else ""
+
+
 func set_canvas(canvas) -> void:
 	_canvas = canvas
 	_builder = BuilderRef.new()
 	_builder.setup(w - MARGIN * 2,
 		canvas.default_font if canvas != null else null,
 		canvas.default_font_size if canvas != null else 15,
-		"")
+		_emoji_root())
 
 
 ## 显示一段 XML（对应 on_SM_NPCXMLLAYOUT）
@@ -127,8 +136,20 @@ func draw_self(canvas, my_roi) -> void:
 					var ch := char(int(tk.key))
 					t.draw_string_shadow(ch, tx, ty, text_color, Color(0, 0, 0, 0.9), 1, f, fs)
 				TokenRef.KIND_EMOJI:
-					# emoji 贴图：素材在 assets/emoji，这里画占位框（后续接 emoji_loader）
-					t.draw_rect_c(Color(0.5, 0.45, 0.25, 0.8), tx, ty, int(tk.w), int(tk.h), true)
+					var et: Texture2D = EMOJI_FALLBACK
+					if _builder != null:
+						var eid := int(tk.key)
+						var eset := int(tk.get_meta("emoji_set", 0))
+						var ecount: int = maxi(1, int(tk.emoji_frame_count))
+						var edelay: int = maxi(1, int(tk.emoji_delay))
+						var eframe: int = (Time.get_ticks_msec() / edelay) % ecount
+						var epath: String = _builder.emoji_frame_path(eid, eset, eframe)
+						if not epath.is_empty() and FileAccess.file_exists(epath):
+							var loaded = TexCache.get_texture(epath)
+							if loaded != null: et = loaded
+					if et != null:
+						t.tex_draw_region(et, Rect2(0, 0, et.get_width(), et.get_height()),
+							tx, ty, int(tk.w), int(tk.h))
 				TokenRef.KIND_IMAGE:
 					t.draw_rect_c(Color(0.3, 0.35, 0.5, 0.8), tx, ty, int(tk.w), int(tk.h), true)
 
