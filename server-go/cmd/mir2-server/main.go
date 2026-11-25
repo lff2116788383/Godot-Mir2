@@ -296,9 +296,33 @@ func main() {
 		Golds:     storage.NewGoldRepository(store),
 	}
 
+	// 拍卖行 / 邮件 / 好友
+	auctionHandler := &game.AuctionHandler{
+		Players:   players,
+		Broadcast: broadcaster,
+		Logger:    slog.Default(),
+		Repo:      storage.NewAuctionRepository(store),
+		Items:     itemDB,
+		Golds:     storage.NewGoldRepository(store),
+	}
+	deliveryHandler := &game.DeliveryHandler{
+		Players:   players,
+		Broadcast: broadcaster,
+		Logger:    slog.Default(),
+		Repo:      storage.NewDeliveryRepository(store),
+		Items:     itemDB,
+	}
+	friendHandler := &game.FriendHandler{
+		Players:   players,
+		Broadcast: broadcaster,
+		Logger:    slog.Default(),
+		Repo:      storage.NewChatRepository(store),
+	}
+
 	if err := game.RegisterAllRoutes(dispatcher, loginHandler, actionHandler,
 		inventoryHandler, spellHandler, deathHandler, shopHandler, npcHandler, chatHandler,
-		teamManager, securedHandler, tradeManager, guildHandler, stallHandler); err != nil {
+		teamManager, securedHandler, tradeManager, guildHandler, stallHandler,
+		auctionHandler, deliveryHandler, friendHandler); err != nil {
 		slog.Error("register routes", "error", err)
 		os.Exit(1)
 	}

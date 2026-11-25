@@ -73,7 +73,8 @@ func RegisterAllRoutes(dispatcher *transport.Dispatcher, handler *Handler,
 	npcs *NPCHandler, chats *ChatHandler,
 	teams *TeamManager, secured *SecuredHandler,
 	trades *DirectTradeManager,
-	guilds *GuildHandler, stalls *StallHandler) error {
+	guilds *GuildHandler, stalls *StallHandler,
+	auctions *AuctionHandler, deliveries *DeliveryHandler, friends *FriendHandler) error {
 	if err := RegisterBootstrapRoutes(dispatcher, handler); err != nil {
 		return err
 	}
@@ -110,5 +111,14 @@ func RegisterAllRoutes(dispatcher *transport.Dispatcher, handler *Handler,
 	if err := RegisterGuildRoutes(dispatcher, guilds); err != nil {
 		return err
 	}
-	return RegisterStallRoutes(dispatcher, stalls)
+	if err := RegisterStallRoutes(dispatcher, stalls); err != nil {
+		return err
+	}
+	if err := RegisterAuctionRoutes(dispatcher, auctions); err != nil {
+		return err
+	}
+	if err := RegisterDeliveryRoutes(dispatcher, deliveries); err != nil {
+		return err
+	}
+	return RegisterFriendRoutes(dispatcher, friends)
 }

@@ -722,3 +722,103 @@ func RegisterStallRoutes(dispatcher *transport.Dispatcher, stalls *StallHandler)
 	}
 	return nil
 }
+
+// RegisterAuctionRoutes 注册拍卖行消息。
+func RegisterAuctionRoutes(dispatcher *transport.Dispatcher, auctions *AuctionHandler) error {
+	if auctions == nil {
+		return nil
+	}
+	routes := []struct {
+		id protocol.CMType
+		fn transport.HandlerFunc
+	}{
+		{protocol.CM_QUERYAUCTIONITEMLIST, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMQueryAuctionItemList
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return auctions.QueryList(ctx, s.ID(), req.Category)
+		}},
+		{protocol.CM_REGISTERAUCTIONITEM, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRegisterAuctionItem
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return auctions.Register(ctx, s.ID(), req)
+		}},
+		{protocol.CM_BUYAUCTIONITEM, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMBuyAuctionItem
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return auctions.Buy(ctx, s.ID(), req.AuctionID)
+		}},
+		{protocol.CM_UNREGISTERAUCTIONITEM, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMUnregisterAuctionItem
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return auctions.Unregister(ctx, s.ID(), req.AuctionID)
+		}},
+	}
+	for _, r := range routes {
+		if err := dispatcher.Register(r.id, r.fn); err != nil {
+			return fmt.Errorf("register %v: %w", r.id, err)
+		}
+	}
+	return nil
+}
+
+// RegisterDeliveryRoutes 注册邮件/寄送消息。
+func RegisterDeliveryRoutes(dispatcher *transport.Dispatcher, deliveries *DeliveryHandler) error {
+	if deliveries == nil {
+		return nil
+	}
+	return dispatcher.Register(protocol.CM_CLAIMDELIVERY,
+		func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMClaimDelivery
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return deliveries.Claim(ctx, s.ID(), trimCString([]byte(req.Record.String())))
+		})
+}
+
+// RegisterFriendRoutes 注册好友/黑名单消息。
+func RegisterFriendRoutes(dispatcher *transport.Dispatcher, friends *FriendHandler) error {
+	if friends == nil {
+		return nil
+	}
+	routes := []struct {
+		id protocol.CMType
+		fn transport.HandlerFunc
+	}{
+		{protocol.CM_ADDFRIEND, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMAddFriend
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return friends.Add(ctx, s.ID(), protocol.SDChatPeerID{Data: req.CPID})
+		}},
+		{protocol.CM_ACCEPTADDFRIEND, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMAcceptAddFriend
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return friends.Accept(ctx, s.ID(), protocol.SDChatPeerID{Data: req.CPID})
+		}},
+		{protocol.CM_REJECTADDFRIEND, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRejectAddFriend
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return friends.Reject(ctx, s.ID(), protocol.SDChatPeerID{Data: req.CPID})
+		}},
+	}
+	for _, r := range routes {
+		if err := dispatcher.Register(r.id, r.fn); err != nil {
+			return fmt.Errorf("register %v: %w", r.id, err)
+		}
+	}
+	return nil
+}
