@@ -68,8 +68,11 @@ func (h *QuestHost) SetQuestFields(ctx context.Context, questName string,
 
 // PostQuestDesp 推任务描述（_RSVD_NAME_setQuestDesp）。
 //
-// 客户端在「任务」面板里显示这些文字。
-func (h *QuestHost) PostQuestDesp(ctx context.Context, playerUID uint64, descList []string) error {
+// ★ 原版签名带 fsm：一条描述对应「某任务某个状态机」。
+//	客户端按 Name+FSM 覆盖显示，缺了它们任务面板分不清
+//	主线描述和子状态机描述，而且同名任务会互相覆盖。
+func (h *QuestHost) PostQuestDesp(ctx context.Context, questName string, playerUID uint64,
+	fsm string, hasDesp bool, desp string) error {
 	if h.Broadcast == nil {
 		return nil
 	}
@@ -77,21 +80,11 @@ func (h *QuestHost) PostQuestDesp(ctx context.Context, playerUID uint64, descLis
 	if !ok || p.ChannelID == 0 {
 		return nil
 	}
-	// ★ SDQuestDespUpdate 是「一条描述」而不是「一个列表」：
-	//
-	//	Name / FSM / HasDesp / Desp —— 每次只更新某任务某个 fsm 的一段描述。
-	//	原版也是一条一条推（客户端按 Name+FSM 覆盖）。
-	//
-	//	之前以为是数组，写成了 Desp: descList，编译期就报错。
-	text := ""
-	if len(descList) > 0 {
-		text = descList[len(descList)-1]
-	}
 	payload, err := protocol.CerealSerialize(protocol.SDQuestDespUpdate{
-		Name:    "",
-		FSM:     "",
-		HasDesp: text != "",
-		Desp:    text,
+		Name:    questName,
+		FSM:     fsm,
+		HasDesp: hasDesp,
+		Desp:    desp,
 	})
 	if err != nil {
 		return err
@@ -162,6 +155,11 @@ type QuestService struct {
 	Host    *QuestHost
 	Repo    *storage.QuestRepository
 	Logger  *slog.Logger
+	// Scripts2 地图脚本管理器（格子触发器要落到地图 Lua 状态）
+	//
+	// ★ 名字带 2 是为了不和上面的 Scripts（任务管理器）混淆：
+	//	两者都是「脚本管理器」，但一个是 quest/*.lua，一个是 map/*.lua。
+	Scripts2 *MapScriptManager
 }
 
 // NewQuestService 创建任务服务并加载全部任务。
@@ -271,7 +269,11 @@ func (s *QuestService) Close() {
 //
 //	任何一步提前，任务脚本顶层的 getNPCharUID 就会返回 nil，
 //	任务无法挂到 NPC 上 —— 玩家点 NPC 看不到任务入口。
-func (s *QuestService) ActivateAfterWorldLoaded(npcManager *NPCManager) {
+//
+// ★ scripts 是地图脚本管理器：任务的格子触发器要落到真实的
+//	地图 Lua 状态里（servermap.lua 的 addQuestGridTrigger）。
+//	传 nil 时格子触发器会报错而不是假装成功。
+func (s *QuestService) ActivateAfterWorldLoaded(npcManager *NPCManager, scripts *MapScriptManager) {
 	if s == nil || s.Scripts == nil {
 		return
 	}
@@ -287,7 +289,7 @@ func (s *QuestService) ActivateAfterWorldLoaded(npcManager *NPCManager) {
 	//	Go 侧地图是懒加载的，但「回答某个 NPC 在哪张图/UID 多少」
 	//	只需要名字表 + NPC 定义，不需要地图数据文件加载。
 	//	所以这里注册全部 603 张图的 actor。
-	s.registerAllMapRPC(npcManager)
+	s.registerAllMapRPC(npcManager, scripts)
 
 	activated, failed := s.Scripts.ActivateLazy()
 	if s.Logger != nil {

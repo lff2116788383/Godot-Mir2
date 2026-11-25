@@ -253,6 +253,42 @@ const (
 	SysDone = "_RSVD_NAME_DONE__06562813788"
 	// SysQuestFSM 主状态机名（sysconst.hpp:203 SYS_QSTFSM）
 	SysQuestFSM = "_RSVD_NAME_QST_FSM_4194347313"
+
+	// SysLuaNil 代表「能写进表但 nil 写不进去」的空值（sysconst.hpp:178）
+	//
+	// ★ 必须用字符串而不是 nil：
+	//	quest.lua:394 `{fld_context = (next(committed) == nil) and SYS_LUANIL or committed}`
+	//	—— 若 SYS_LUANIL 是 nil，这个键会直接从表里消失，
+	//	于是「清空 fld_context」变成一个什么都不写的空表。
+	//	Go 侧数据库层收到它时转成 SQL NULL。
+	SysLuaNil = "_RSVD_NAME_LUA_NIL_31840276915"
+	// SysAbort 中止状态（sysconst.hpp:175）
+	SysAbort = "_RSVD_NAME_ABORT_72061294738"
+
+	// 执行结果码（sysconst.hpp:182-185）
+	//
+	// ★★ 这些是**字符串**，不是数字 ★★
+	//
+	//	serverluacoroutinerunner.lua:181
+	//	    if _RSVD_NAME_callFuncCoop('sendNotify', ...) ~= SYS_EXECDONE then
+	//	:304
+	//	    if resType == SYS_EXECDONE then ... elseif resType == SYS_EXECBADUID ...
+	//
+	//	之前注入成数字 0/1/2，`resType == SYS_EXECDONE` 恒不成立 →
+	//	uidRemoteCall 的每次返回值都被判成「未知错误」→ fatalPrintf。
+	//	而 SYS_EXECCLOSE 用于「目标线程已关闭」，缺了它
+	//	waitNotify 的超时分支也拿不到正确语义。
+	SysExecDone   = "_RSVD_NAME_EXEC_DONE___1952748411"
+	SysExecClose  = "_RSVD_NAME_EXEC_CLOSE__8553768451"
+	SysExecBadUID = "_RSVD_NAME_EXEC_BADUID_7259708252"
+	SysExecError  = "_RSVD_NAME_EXEC_ERROR__3069184527"
+
+	// SysCoop 协作函数名后缀（sysconst.hpp:201）
+	//
+	// ★ callFuncCoop 用 `string.format('_RSVD_NAME_%s%s', funcName, SYS_COOP)`
+	//	拼出真正的 C 函数名。SYS_COOP 缺失就是拼出
+	//	"_RSVD_NAME_remoteCallnil" → "attempt to call a nil value"。
+	SysCoop = "_RSVD_NAME_COOP_293173013"
 )
 
 // MaxNPCDistance 是玩家与 NPC 的最大交互格距（sysconst.hpp:128）。
@@ -285,27 +321,44 @@ func DefaultConsts() map[string]lua.LValue {
 		"SYS_DONE":   lua.LString(SysDone),
 
 		// 任务触发器类型（sysconst.hpp:18-40 SYS_ON_*）
-		"SYS_ON_BEGIN":    lua.LNumber(0),
-		"SYS_ON_GAINEXP":  lua.LNumber(0),
-		"SYS_ON_GAINITEM": lua.LNumber(1),
-		"SYS_ON_GAINGOLD": lua.LNumber(2),
-		"SYS_ON_ONLINE":   lua.LNumber(3),
-		"SYS_ON_OFFLINE":  lua.LNumber(4),
-		"SYS_ON_DIE":      lua.LNumber(5),
-		"SYS_ON_REVIVE":   lua.LNumber(6),
-		"SYS_ON_LEVELUP":  lua.LNumber(7),
-		"SYS_ON_KILL":     lua.LNumber(8),
-		"SYS_ON_TEAMUP":   lua.LNumber(9),
-		"SYS_ON_TEAMDOWN": lua.LNumber(10),
-		"SYS_ON_APPEAR":   lua.LNumber(11),
+		"SYS_ON_BEGIN":     lua.LNumber(0),
+		"SYS_ON_GAINEXP":   lua.LNumber(0),
+		"SYS_ON_GAINITEM":  lua.LNumber(1),
+		"SYS_ON_GAINGOLD":  lua.LNumber(2),
+		"SYS_ON_ONLINE":    lua.LNumber(3),
+		"SYS_ON_OFFLINE":   lua.LNumber(4),
+		"SYS_ON_DIE":       lua.LNumber(5),
+		"SYS_ON_REVIVE":    lua.LNumber(6),
+		"SYS_ON_LEVELUP":   lua.LNumber(7),
+		"SYS_ON_KILL":      lua.LNumber(8),
+		"SYS_ON_TEAMUP":    lua.LNumber(9),
+		"SYS_ON_TEAMDOWN":  lua.LNumber(10),
+		"SYS_ON_APPEAR":    lua.LNumber(11),
 		"SYS_ON_DISAPPEAR": lua.LNumber(12),
-		"SYS_ON_END":      lua.LNumber(13),
+		"SYS_ON_END":       lua.LNumber(13),
 
-		// 执行结果码（luaf / coop 返回值）
-		"SYS_EXECDONE":   lua.LNumber(0),
-		"SYS_EXECERROR":  lua.LNumber(1),
-		"SYS_EXECBADUID": lua.LNumber(2),
-		"SYS_POSINF":     lua.LNumber(1 << 30),
+		// 特殊值（sysconst.hpp:174-181）
+		//
+		// ★ 全部是字符串，不是数字/正无穷。
+		//	SYS_LUANIL 必须是字符串：它要在表里占一个位（nil 会删键）。
+		"SYS_LUANIL": lua.LString(SysLuaNil),
+		"SYS_ABORT":  lua.LString(SysAbort),
+		// SYS_POSINF / SYS_NEGINF 原版也是字符串哨兵。
+		//
+		// ★ 但 pause(SYS_POSINF) 的语义是「永久等待」——
+		//	serverluacoroutinerunner.lua:71 里
+		//	    if msec == SYS_POSINF then while true do coroutine.yield() end end
+		//	所以这里是字符串比较，不参与算术。断言走 assertType(msec,'integer')
+		//	之前就已经 return 了。
+		"SYS_POSINF": lua.LString("_RSVD_NAME_POS_INF_63583688"),
+		"SYS_NEGINF": lua.LString("_RSVD_NAME_NEG_INF_55461872"),
+
+		// 执行结果码（sysconst.hpp:182-185）
+		"SYS_EXECDONE":   lua.LString(SysExecDone),
+		"SYS_EXECCLOSE":  lua.LString(SysExecClose),
+		"SYS_EXECBADUID": lua.LString(SysExecBadUID),
+		"SYS_EXECERROR":  lua.LString(SysExecError),
+		"SYS_COOP":       lua.LString(SysCoop),
 		// 日志级别（server.hpp LOGTYPE_*）
 		"LOGTYPE_INFO":    lua.LNumber(0),
 		"LOGTYPE_WARNING": lua.LNumber(1),

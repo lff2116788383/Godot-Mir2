@@ -11,6 +11,9 @@ import (
 	"github.com/lff2116788383/godot-mir2/server-go/internal/protocol"
 )
 
+// debugRPC 打开后打印每次远程调用（排查用）。
+var debugRPC = false
+
 // ==================== 跨 Lua 状态 RPC 总线 ====================
 //
 // 【依据】server/src/serverluacoroutinerunner.cpp:217-260 `_RSVD_NAME_remoteCall`
@@ -299,11 +302,14 @@ func (b *RPCBridge) Install(L *lua.LState) {
 		// ★ Lua 传来的是短 ID，必须还原成真实 UID
 		short := l.CheckInt64(1)
 		targetUID := b.bus.Real(short)
+		code := l.CheckString(top)
+		if debugRPC {
+			fmt.Printf("[RPC] uidRemoteCall short=%d → real=%d code=%.60q\n", short, targetUID, code)
+		}
 		if targetUID == 0 {
 			l.RaiseError("uidRemoteCall: invalid target %d", short)
 			return 0
 		}
-		code := l.CheckString(top)
 
 		args := make([]protocol.LuaVar, 0, top-2)
 		for i := 2; i < top; i++ {
@@ -345,3 +351,6 @@ func (b *RPCBridge) Install(L *lua.LState) {
 		return 1
 	}))
 }
+
+// SetDebugRPC 打开/关闭远程调用日志（诊断用）。
+func SetDebugRPC(on bool) { debugRPC = on }

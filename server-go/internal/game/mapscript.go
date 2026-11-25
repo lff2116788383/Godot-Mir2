@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"sync"
 
 	"github.com/lff2116788383/godot-mir2/server-go/internal/common"
@@ -33,6 +34,8 @@ import (
 type MapScriptManager struct {
 	mu    sync.RWMutex
 	byMap map[uint32]*mapScriptEntry
+	// switchByMap 地图 -> (格 -> 换图目的地)，来自 maprecord.inc 的 switchList
+	switchByMap map[uint32]map[[2]int]script.MapSwitch
 
 	FrameworkDir string
 	ScriptRoot   string
@@ -51,6 +54,7 @@ type mapScriptEntry struct {
 func NewMapScriptManager(monsters *world.MonsterDB, logger *slog.Logger) *MapScriptManager {
 	return &MapScriptManager{
 		byMap:        make(map[uint32]*mapScriptEntry),
+		switchByMap:  make(map[uint32]map[[2]int]script.MapSwitch),
 		FrameworkDir: script.ResolveFrameworkDir(),
 		ScriptRoot:   script.ResolveScriptRoot(),
 		Monsters:     monsters,
@@ -58,24 +62,78 @@ func NewMapScriptManager(monsters *world.MonsterDB, logger *slog.Logger) *MapScr
 	}
 }
 
+// LoadMapSwitches 从 maprecord.inc 装入全部地图的换图配置。
+//
+// ★ 这是「走到门口进下一张图」的数据源，也是格子触发器
+//
+//	`uidGridMapSwitch`（放行）能找到目的地的唯一途径。
+//
+//	不装它的后果：
+//	  hasGridSwitchDest 恒 false → 门口失去自动换图
+//	  uidGridMapSwitch   恒失败 → 困魔咒/群体治愈术的门永远打不开
+//
+// ★ 必须在加载地图脚本**之前**调用。
+func (m *MapScriptManager) LoadMapSwitches(incPath string, nameToID map[string]uint32) (int, error) {
+	raw, err := os.ReadFile(incPath)
+	if err != nil {
+		return 0, err
+	}
+	byMap := script.ParseMapRecordSwitches(string(raw), nameToID)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	total := 0
+	for mapID, list := range byMap {
+		idx := make(map[[2]int]script.MapSwitch, len(list))
+		for _, sw := range list {
+			w, h := sw.W, sw.H
+			if w <= 0 {
+				w = 1
+			}
+			if h <= 0 {
+				h = 1
+			}
+			for dx := 0; dx < w; dx++ {
+				for dy := 0; dy < h; dy++ {
+					idx[[2]int{sw.X + dx, sw.Y + dy}] = sw
+				}
+			}
+		}
+		m.switchByMap[mapID] = idx
+		total += len(list)
+	}
+	return total, nil
+}
+
+// SwitchGridIndex 返回某图的「格 -> 换图目的地」索引。
+func (m *MapScriptManager) SwitchGridIndex(mapID uint32) map[[2]int]script.MapSwitch {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.switchByMap[mapID]
+}
+
 // LoadMap 加载一张地图的脚本。
 func (m *MapScriptManager) LoadMap(ctx context.Context, mapID uint32, mapName string,
 	worlds *world.World, players *PlayerManager) (*script.MapScript, error) {
 
 	host := &mapScriptHost{
-		mapID:    mapID,
-		mapName:  mapName,
-		Worlds:   worlds,
-		Players:  players,
-		Monsters: m.Monsters,
-		Logger:   m.Logger,
-		ctx:      ctx,
+		mapID:      mapID,
+		mapName:    mapName,
+		Worlds:     worlds,
+		Players:    players,
+		Monsters:   m.Monsters,
+		Logger:     m.Logger,
+		ctx:        ctx,
+		switchGrid: m.SwitchGridIndex(mapID),
 	}
 
 	// 记录表（脚本里 getItemID / getMonsterID 要用）
 	itemTbl := m.itemNameTable(players)
 	monsterTbl := script.NewNameTable(m.Monsters.NameTable())
-	mapTbl := script.NewNameTable(nil)
+	// ★ 地图名表必须是完整的一张（603 张图）：
+	//	uidMapSwitch 要按名字换到**别的图**，
+	//	只装本图的名字就查不到目标。
+	mapTbl := script.MapNamesTable()
 
 	commonBindings := script.CommonBindings(itemTbl, monsterTbl, mapTbl,
 		func(level int, msg string) {
@@ -135,6 +193,28 @@ func (m *MapScriptManager) Close() {
 	m.byMap = make(map[uint32]*mapScriptEntry)
 }
 
+// Entry 返回某张地图的脚本条目（没有返回 nil）。
+//
+// ★ 给 MapRPC 用：任务的格子触发器要落到这张图真实的 Lua 状态里。
+func (m *MapScriptManager) Entry(mapID uint32) *mapScriptEntry {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.byMap[mapID]
+}
+
+// FireGridTrigger 在某张图的某格上触发格子触发器。
+//
+// 返回 true 表示「该格有触发器且已运行」—— 调用方应当**不要**再
+// 自动把玩家传到下一张图（原版 dispatchGridSwitch 的语义：
+// 有触发器的格子由脚本决定去留）。
+func (m *MapScriptManager) FireGridTrigger(mapID uint32, playerShortUID int64, x, y int) bool {
+	e := m.Entry(mapID)
+	if e == nil || e.Script == nil {
+		return false
+	}
+	return e.Script.FireGridTrigger(playerShortUID, x, y)
+}
+
 // itemNameTable 构造物品名字表。
 func (m *MapScriptManager) itemNameTable(players *PlayerManager) *script.NameTable {
 	// 物品表挂在 WorldService 上，这里通过 playerManager 拿不到，
@@ -164,6 +244,11 @@ type mapScriptHost struct {
 	spawnedMonsters int
 	// nextMonsterSeq 刷怪序号（保证 UID 唯一）
 	nextMonsterSeq uint32
+	// switchGrid 格 -> 换图目的地（hasGridSwitchDest / uidGridMapSwitch 用）
+	//
+	// ★ 从 maprecord.inc 的 switchList 建一次索引：
+	//	玩家每走一步都要问「这格是不是门口」，必须 O(1)。
+	switchGrid map[[2]int]script.MapSwitch
 }
 
 func (h *mapScriptHost) MapID() uint32   { return h.mapID }
@@ -307,6 +392,38 @@ func (h *mapScriptHost) Alive(uid uint64) bool {
 		return false
 	}
 	return e.HP > 0
+}
+
+// GridSwitchDest 查询某格配置的换图目的地。
+//
+// ★ 数据来自 maprecord.inc 的 switchList（由 MapScriptManager 装入）。
+//	按格子索引查：玩家每走一步都要问，遍历列表是 O(条目数)。
+func (h *mapScriptHost) GridSwitchDest(x, y int) (uint32, int, int, bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	sw, ok := h.switchGrid[[2]int{x, y}]
+	if !ok {
+		return 0, 0, 0, false
+	}
+	return sw.EndMapID, sw.EndX, sw.EndY, true
+}
+
+// SwitchPlayer 把玩家搬到目标地图坐标（uidGridMapSwitch / uidMapSwitch）。
+//
+// ★ 直接复用世界层的 Teleport：
+//	它负责「旧图 AOI 移除 → 新图 AOI 加入 → 推地图/快照给客户端」，
+//	脚本层做不了这些。
+func (h *mapScriptHost) SwitchPlayer(playerUID uint64, mapID uint32, x, y int) bool {
+	if h.Worlds == nil {
+		return false
+	}
+	_, _, err := h.Worlds.Teleport(context.Background(), mapID, playerUID, x, y)
+	if err != nil {
+		h.Log(1, fmt.Sprintf("switch player %d to map %d (%d,%d) failed: %v",
+			playerUID, mapID, x, y, err))
+		return false
+	}
+	return true
 }
 
 func (h *mapScriptHost) Log(level int, msg string) {

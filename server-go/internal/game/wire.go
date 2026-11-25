@@ -30,13 +30,41 @@ func RegisterActionRoutes(dispatcher *transport.Dispatcher, handler *ActionHandl
 	if handler == nil {
 		return nil
 	}
-	return dispatcher.Register(protocol.CM_ACTION, func(ctx context.Context, session *transport.Session, packet protocol.Packet) error {
-		var req protocol.CMAction
-		if err := decode(packet, &req); err != nil {
-			return err
+	routes := []struct {
+		id      protocol.CMType
+		handler transport.HandlerFunc
+	}{
+		{protocol.CM_ACTION, func(ctx context.Context, session *transport.Session, packet protocol.Packet) error {
+			var req protocol.CMAction
+			if err := decode(packet, &req); err != nil {
+				return err
+			}
+			return handler.CMAction(ctx, session.ID(), req)
+		}},
+		// ★ CM_PICKUP 必须是独立路由，不能并进 CM_ACTION 的 pickup 分支。
+		//
+		//	原版 player.cpp:1013 单列 _support_cm(CM_PICKUP)，
+		//	playernet.cpp:215 有独立的 net_CM_PICKUP：
+		//	  1. 校验 cmPU.mapUID == mapUID()  ← 防跨图拾取
+		//	  2. 校验 (x,y) == (X(),Y())      ← 防远程拾取
+		//	  3. m_pickUpLock 节流            ← 防狂发包刷物品
+		//	  4. 失败回 SM_PICKUPERROR
+		//
+		//	CM_ACTION 里拿不到 mapUID，第 1 条校验无从做起。
+		{protocol.CM_PICKUP, func(ctx context.Context, session *transport.Session, packet protocol.Packet) error {
+			var req protocol.CMPickUp
+			if err := decode(packet, &req); err != nil {
+				return err
+			}
+			return handler.CMPickUp(ctx, session.ID(), req)
+		}},
+	}
+	for _, route := range routes {
+		if err := dispatcher.Register(route.id, route.handler); err != nil {
+			return fmt.Errorf("register %v: %w", route.id, err)
 		}
-		return handler.CMAction(ctx, session.ID(), req)
-	})
+	}
+	return nil
 }
 
 // RegisterInventoryRoutes 注册背包/装备消息。

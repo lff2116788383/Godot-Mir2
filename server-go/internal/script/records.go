@@ -61,6 +61,77 @@ func nameTableFromJSONMap(records map[string]struct {
 
 var mapRecordNameRe = regexp.MustCompile(`\.name\s*=\s*u8"([^"]*)"`)
 
+// mapSwitchRe 匹配 switchList 里的一条：
+//
+//	{.x = 333, .y = 776, .w = 1, .h = 1, .endName = u8"边境城市_01", .endX = 564, .endY = 69}
+var mapSwitchRe = regexp.MustCompile(
+	`\{\s*\.x\s*=\s*(-?\d+)\s*,\s*\.y\s*=\s*(-?\d+)\s*,\s*\.w\s*=\s*(\d+)\s*,\s*\.h\s*=\s*(\d+)\s*,\s*\.endName\s*=\s*u8"([^"]*)"(?:\s*,\s*\.endX\s*=\s*(-?\d+)\s*,\s*\.endY\s*=\s*(-?\d+))?`)
+
+// MapSwitch 是一条换图配置：踩到 (X,Y) 这片 (W,H) 区域就传到 EndMap 的 (EndX,EndY)。
+//
+// ★ 这是地图 record 的 switchList 项，与控制台「走门口进下一张图」是同一份数据。
+//	缺了它，玩家站在比奇县门口永远传不过去。
+type MapSwitch struct {
+	X, Y, W, H int
+	EndMap     string
+	EndMapID   uint32
+	EndX, EndY int
+}
+
+// ParseMapRecordSwitches 从 maprecord.inc 提取「mapID -> 该图的换图列表」。
+//
+// ★ 与 ParseMapRecordInc 共用同一套顶层分块：
+//	switchList 是记录内的嵌套表，必须只在本块内匹配，
+//	否则会把邻图的 endName 也算进来。
+//
+// ★ endMapID 需要名字→ID 反查，由调用方用已有的名字表解析，
+//	这里先把 EndMap 名字填好、EndMapID 留 0。
+func ParseMapRecordSwitches(text string, nameToID map[string]uint32) map[uint32][]MapSwitch {
+	out := make(map[uint32][]MapSwitch)
+	blocks := topLevelBlocks(text)
+	for idx, block := range blocks {
+		m := mapRecordNameRe.FindStringSubmatch(block)
+		if m == nil {
+			continue
+		}
+		matches := mapSwitchRe.FindAllStringSubmatch(block, -1)
+		if len(matches) == 0 {
+			continue
+		}
+		list := make([]MapSwitch, 0, len(matches))
+		for _, sm := range matches {
+			sw := MapSwitch{
+				X:      atoiDef(sm[1], 0),
+				Y:      atoiDef(sm[2], 0),
+				W:      atoiDef(sm[3], 1),
+				H:      atoiDef(sm[4], 1),
+				EndMap: sm[5],
+			}
+			if sm[6] != "" {
+				sw.EndX = atoiDef(sm[6], 0)
+			}
+			if sm[7] != "" {
+				sw.EndY = atoiDef(sm[7], 0)
+			}
+			if id, ok := nameToID[sw.EndMap]; ok {
+				sw.EndMapID = id
+			}
+			list = append(list, sw)
+		}
+		out[uint32(idx)] = list
+	}
+	return out
+}
+
+// atoiDef 解析十进制整数，失败返回 def。
+func atoiDef(s string, def int) int {
+	v, err := strconv.Atoi(s)
+	if err != nil {
+		return def
+	}
+	return v
+}
+
 // ParseMapRecordInc 从 maprecord.inc 提取「ID -> 地图名」。
 //
 // ★ 必须按顶层块切分，不能用「找所有 .name」：

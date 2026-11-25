@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"sync"
 
 	lua "github.com/yuin/gopher-lua"
 )
@@ -29,7 +30,8 @@ import (
 
 // MapScriptHost 是地图脚本需要的宿主能力。
 //
-// 与 NPCHost 分开：地图脚本不接触任何玩家，只操作地图本身。
+// 与 NPCHost 分开：地图脚本不接触任何玩家——除了换图，
+// 换图必须由宿主真正把玩家挪过去（脚本只表达意图）。
 type MapScriptHost interface {
 	// MapID 当前地图 ID
 	MapID() uint32
@@ -57,6 +59,21 @@ type MapScriptHost interface {
 	AddSafeZone(x, y, radius int)
 	// Alive 判断 UID 是否还活着（uidAlive）
 	Alive(uid uint64) bool
+
+	// GridSwitchDest 查询某格配置的换图目的地（hasGridSwitchDest 用）。
+	//
+	// ★ 数据来源是 maprecord.inc 的 switchList：
+	//	控制台里「走到门口自动进下一张图」就是靠这张表。
+	//	返回 false 表示这格不是门口。
+	GridSwitchDest(x, y int) (endMapID uint32, endX, endY int, ok bool)
+
+	// SwitchPlayer 把玩家传到指定地图坐标（uidGridMapSwitch / uidMapSwitch）。
+	//
+	// ★ 脚本只表达「应该传走」，真正搬运由宿主做：
+	//	换图要处理「离开旧图 AOI → 进入新图 AOI → 推地图信息给客户端」，
+	//	那是世界层的职责，脚本层拿不到这些。
+	SwitchPlayer(playerUID uint64, mapID uint32, x, y int) bool
+
 	// Log 写日志
 	Log(level int, msg string)
 }
@@ -97,6 +114,19 @@ type MapScript struct {
 	started bool
 	// finished main 协程是否已跑完
 	finished bool
+
+	// gridTriggers 格子触发器表（servermap.lua 用）
+	//
+	// ★ 一张地图一个：触发器是「属于这张图」的，
+	//	不同图上的同坐标格互不影响。
+	gridTriggers *gridTriggerStore
+
+	// threads 地图 Lua 状态的线程运行器（runMapThread 用）
+	threads *threadRunner
+	// safeZones 安全区表（servermap.lua 的 addSafeZone 用）
+	safeZones *safeZoneStore
+	// runtimeMu 保护 LState（RPC 与 Tick 可能并发进来）
+	runtimeMu sync.Mutex
 }
 
 // LoadMapScript 加载一张地图的脚本。
@@ -137,6 +167,37 @@ func LoadMapScript(opts Options, mapName string, host MapScriptHost) (*MapScript
 		rt.Close()
 		return nil, err
 	}
+
+	// ★★ 加载原版 servermap.lua ★★
+	//
+	//	它定义 addGridTrigger / addQuestGridTrigger /
+	//	_RSVD_NAME_runGridTrigger / addSafeZone 等地图侧 API。
+	//	任务通过 uidRemoteCall 到地图 actor 执行
+	//	`addQuestGridTrigger(questName, rectList, handler)`
+	//	—— 那个函数就在这里定义。
+	//
+	//	不加载它的后果：那 2 个用格子触发器的任务能加载成功，
+	//	但玩家走到该被挡住的门口时**什么都不发生**（直接穿过去）。
+	//
+	// ★★ 顺序极其重要 ★★
+	//
+	//	servermap.lua **重新定义**了 addSafeZone（第 411 行），
+	//	新实现会调 _RSVD_NAME_allocateSafeZoneId。
+	//	所以必须**先装全部 C 绑定，再加载它**：
+	//	反过来会在第一个地图脚本的第一行就崩在 servermap.lua:415。
+	s.installFlattenHelpers()
+	s.installSafeZones()
+	s.installGridTriggers()
+	gridPath := fmt.Sprintf("%s/servermap.lua", opts.FrameworkDir)
+	if fileExists(gridPath) {
+		if err := rt.patchAndRun(gridPath); err != nil {
+			rt.Close()
+			return nil, fmt.Errorf("load servermap.lua: %w", err)
+		}
+	}
+
+	// 地图脚本的线程原语（runThread / pause 的 C 层）
+	s.installMapThreadPrimitives()
 
 	// 选脚本：<地图名>.lua 优先，否则 default.lua
 	path := fmt.Sprintf("%s/map/%s.lua", opts.ScriptRoot, mapName)
@@ -279,17 +340,81 @@ func (s *MapScript) bindings() map[string]lua.LGFunction {
 		//
 		// pause 不在 Go 里绑定，见 installPause 的说明。
 
-		// ---- 占位（触发器/换图，后续批次）----
-		"_RSVD_NAME_allocateGridTriggerId": func(l *lua.LState) int { l.Push(lua.LNumber(0)); return 1 },
-		"_RSVD_NAME_removeGridTriggerId":   func(l *lua.LState) int { return 0 },
-		"hasGridSwitchDest":                func(l *lua.LState) int { l.Push(lua.LFalse); return 1 },
-		"uidGridMapSwitch":                 func(l *lua.LState) int { l.Push(lua.LFalse); return 1 },
-		"uidMapSwitch":                     func(l *lua.LState) int { l.Push(lua.LFalse); return 1 },
-		"isSafeGrid": func(l *lua.LState) int {
-			l.Push(lua.LFalse)
+		// ---- 换图（格子触发器的放行动作）----
+		//
+		// ★ 安全区与格子触发器**不在这里**装：
+		//	它们在 installSafeZones / installGridTriggers 里单独装，
+		//	且必须在加载 servermap.lua **之前**完成。
+		//	早期这里有一批空桩（allocateGridTriggerId 恒返回 0、
+		//	isSafeGrid 恒 false），会把真实现覆盖掉 ——
+		//	表现是「触发器分配到了 ID，但格子查不到」。
+
+		// hasGridSwitchDest(x, y)：这格配了换图目的地吗
+		//
+		// ★ servermap.lua 的 addGridTrigger 注释说得很清楚：
+		//	「a grid with any trigger stops auto-switching and the script decides instead」
+		//	—— 有触发器的格子要停掉自动换图，由脚本显式调
+		//	uidGridMapSwitch 放行。所以这个查询是那条路径的前提。
+		"hasGridSwitchDest": func(l *lua.LState) int {
+			_, _, _, ok := s.Host.GridSwitchDest(l.CheckInt(1), l.CheckInt(2))
+			l.Push(lua.LBool(ok))
+			return 1
+		},
+
+		// uidGridMapSwitch(uid, x, y)：把玩家送到这格配置的目的地
+		"uidGridMapSwitch": func(l *lua.LState) int {
+			shortUID := l.CheckInt64(1)
+			x := l.CheckInt(2)
+			y := l.CheckInt(3)
+			mapID, endX, endY, ok := s.Host.GridSwitchDest(x, y)
+			if !ok || mapID == 0 {
+				l.Push(lua.LFalse)
+				return 1
+			}
+			l.Push(lua.LBool(s.Host.SwitchPlayer(s.realUID(shortUID), mapID, endX, endY)))
+			return 1
+		},
+
+		// uidMapSwitch(uid, mapName, x, y)：按名字换图（脚本显式指定目的地）
+		"uidMapSwitch": func(l *lua.LState) int {
+			shortUID := l.CheckInt64(1)
+			mapName := l.CheckString(2)
+			x := l.CheckInt(3)
+			y := l.CheckInt(4)
+			mapID, ok := s.mapIDOf(mapName)
+			if !ok || mapID == 0 {
+				l.Push(lua.LFalse)
+				return 1
+			}
+			l.Push(lua.LBool(s.Host.SwitchPlayer(s.realUID(shortUID), mapID, x, y)))
 			return 1
 		},
 	}
+}
+
+// mapIDOf 按地图名查 ID。
+//
+// ★ 用包级 questMapNames（与任务共用同一份 603 张图的名字表）：
+//	地图脚本与任务脚本必须看到同一套 ID，否则网格坐标对不上。
+func (s *MapScript) mapIDOf(name string) (uint32, bool) {
+	if questMapNames == nil {
+		return 0, false
+	}
+	return questMapNames.IDOf(name)
+}
+
+// realUID 把 Lua 的短 ID 还原成真实 UID。
+//
+// ★ 地图侧的 uidGridMapSwitch/uidMapSwitch 收到的 uid 也是短 ID：
+//	脚本从 getUID() 或事件参数里拿的都是 Lua 可见值。
+func (s *MapScript) realUID(short int64) uint64 {
+	if activeBus == nil {
+		return uint64(short)
+	}
+	if real := activeBus.Real(short); real != 0 {
+		return real
+	}
+	return uint64(short)
 }
 
 // luaCountGLoc 对应 servermap.cpp:141 countGLoc([x,y,w,h])。
@@ -521,6 +646,151 @@ func luaToString(v lua.LValue) string {
 func fileExists(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && !info.IsDir()
+}
+
+// installMapThreadPrimitives 装地图 Lua 状态的线程原语。
+//
+// ★ 为什么地图也要一套：
+//
+//	servermap.lua 的 runMapThread(func) 直接调 runThread(key, func)
+//	（该文件第 8 行），而 runThread 是 serverluacoroutinerunner.lua 定义的。
+//	地图脚本里 `uidRemoteCall` 的异步回包也是靠线程 resume 完成的。
+//
+//	不做这一步，runMapThread 就是 nil —— 任何用到它的脚本路径
+//	（格子触发器的 retire 通知、换图协程）都会直接崩。
+func (s *MapScript) installMapThreadPrimitives() {
+	if s.threads == nil {
+		s.threads = newThreadRunner(s.Runtime.L, 1, func(format string, args ...any) {
+			s.Host.Log(1, fmt.Sprintf(format, args...))
+		})
+	}
+	t := s.threads
+	L := s.Runtime.L
+
+	L.SetGlobal("_RSVD_NAME_runThread", L.NewFunction(func(l *lua.LState) int {
+		key := int64(l.CheckInt64(1))
+		fn := l.CheckFunction(2)
+		_, seqID, err := t.spawn(key, fn)
+		if err != nil {
+			l.RaiseError("runThread: %v", err)
+			return 0
+		}
+		l.Push(lua.LNumber(seqID))
+		l.Push(lua.LFalse)
+		return 2
+	}))
+	L.SetGlobal("_RSVD_NAME_closeThread", L.NewFunction(func(l *lua.LState) int {
+		key := int64(l.CheckInt64(1))
+		seqID := int64(l.OptInt64(2, 0))
+		found, selfClose := t.closeThread(key, seqID)
+		l.Push(lua.LBool(found))
+		l.Push(lua.LBool(selfClose))
+		return 2
+	}))
+	L.SetGlobal("_RSVD_NAME_closeThreadThenRun", L.NewFunction(func(l *lua.LState) int {
+		if err := t.closeThreadThenRun(int64(l.CheckInt64(1)), l.CheckFunction(2)); err != nil {
+			l.RaiseError("%v", err)
+		}
+		return 0
+	}))
+	L.SetGlobal("_RSVD_NAME_closeRequested", L.NewFunction(func(l *lua.LState) int {
+		r := t.current()
+		l.Push(lua.LBool(r != nil && r.closeRequested && !r.closing))
+		return 1
+	}))
+	L.SetGlobal("_RSVD_NAME_yieldToClose", L.NewFunction(func(l *lua.LState) int {
+		if r := t.current(); r != nil {
+			t.mu.Lock()
+			r.closeRequested = true
+			t.mu.Unlock()
+		}
+		return l.Yield()
+	}))
+	L.SetGlobal("_RSVD_NAME_checkThreadDepth", L.NewFunction(func(l *lua.LState) int {
+		t.mu.Lock()
+		depth := t.depth
+		t.mu.Unlock()
+		if depth >= maxThreadDepth {
+			l.RaiseError("%d threads on the C stack", depth)
+		}
+		return 0
+	}))
+	L.SetGlobal("_RSVD_NAME_selfCloseError", L.NewFunction(func(l *lua.LState) int {
+		if t.current() == nil {
+			l.Push(lua.LString("outside any thread"))
+			return 1
+		}
+		l.Push(lua.LNil)
+		return 1
+	}))
+	L.SetGlobal("getThreadKey", L.NewFunction(func(l *lua.LState) int {
+		l.Push(lua.LNumber(t.CurrentKey()))
+		return 1
+	}))
+	L.SetGlobal("getThreadSeqID", L.NewFunction(func(l *lua.LState) int {
+		l.Push(lua.LNumber(t.CurrentSeqID()))
+		return 1
+	}))
+	L.SetGlobal("getKeyPair", L.NewFunction(func(l *lua.LState) int {
+		l.Push(lua.LNumber(t.CurrentKey()))
+		l.Push(lua.LNumber(t.CurrentSeqID()))
+		return 2
+	}))
+	L.SetGlobal("getThreadAddress", L.NewFunction(func(l *lua.LState) int {
+		tbl := l.NewTable()
+		tbl.Append(lua.LNumber(0))
+		tbl.Append(lua.LNumber(t.CurrentKey()))
+		tbl.Append(lua.LNumber(t.CurrentSeqID()))
+		l.Push(tbl)
+		return 1
+	}))
+	L.SetGlobal("_RSVD_NAME_pauseYielding", L.NewFunction(func(l *lua.LState) int {
+		if err := t.pause(int64(l.CheckInt64(1))); err != nil {
+			l.RaiseError("%v", err)
+		}
+		return l.Yield()
+	}))
+	L.SetGlobal("_RSVD_NAME_pickNotify", L.NewFunction(func(l *lua.LState) int {
+		tbl := l.NewTable()
+		for _, v := range t.pickNotify(l.OptInt(1, 0)) {
+			tbl.Append(v)
+		}
+		l.Push(tbl)
+		return 1
+	}))
+	L.SetGlobal("_RSVD_NAME_waitNotify", L.NewFunction(func(l *lua.LState) int {
+		if vals, got := t.waitNotify(int64(l.OptInt64(1, 0))); got {
+			for _, v := range vals {
+				l.Push(v)
+			}
+			return len(vals)
+		}
+		l.Push(lua.LNil)
+		return 1
+	}))
+	L.SetGlobal("clearNotify", L.NewFunction(func(l *lua.LState) int {
+		t.clearNotify()
+		return 0
+	}))
+
+	// ★ 加载原版协程运行器的 Lua 层（runThread / pause / uidRemoteCall 的封装）
+	runnerPath := fmt.Sprintf("%s/serverluacoroutinerunner.lua", s.frameworkDirOf())
+	if fileExists(runnerPath) {
+		if err := s.Runtime.patchAndRun(runnerPath); err != nil {
+			s.Host.Log(1, fmt.Sprintf("load serverluacoroutinerunner.lua: %v", err))
+		}
+	}
+}
+
+// frameworkDirOf 返回框架目录（installMapThreadPrimitives 要拼路径）。
+//
+// ★ 用 Runtime 上记录的值，不再往 MapScript 加一个字段：
+//	框架目录在 LoadMapScript 时已经通过 Options 传进来了。
+func (s *MapScript) frameworkDirOf() string {
+	if s.Runtime == nil {
+		return ""
+	}
+	return s.Runtime.frameworkDir
 }
 
 // installPause 在 Lua 里定义 pause(msec)。

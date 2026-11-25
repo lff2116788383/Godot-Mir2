@@ -167,6 +167,10 @@ type NPCScript struct {
 
 	// runtimeMu 保护 LState（同一时刻只允许一个 goroutine 执行）
 	runtimeMu sync.Mutex
+	// noteMu 保护 questNames
+	noteMu sync.Mutex
+	// questNames 已知在本 NPC 上装过 handler 的任务名（诊断用）
+	questNames map[string]struct{}
 }
 
 // LoadNPC 加载一个 NPC 脚本。
@@ -716,18 +720,46 @@ func (s *NPCScript) ExecRemote(code string, args []protocol.LuaVar) RPCResult {
 	patched, _ := patchIntDiv(code)
 	patched, _ = patchToBeClosed(patched)
 
-	fn, err := s.Runtime.L.LoadString(patched)
+	// ★ 注入记录钩子：远程代码里的 setQuestHandler / setUIDQuestHandler
+	//	调用会被记录下来，这样 Go 侧能回答「这个 NPC 装了哪些任务」，
+	//	不必去读 npchar.lua 的 local 表。
+	//
+	//	做法：把这两个全局函数包一层，转发给原函数并登记任务名。
+	L := s.Runtime.L
+	base := L.GetTop()
+	if err := L.DoString(`
+		local function __wrap(name)
+			local orig = _G[name]
+			if type(orig) ~= 'function' then return end
+			_G[name] = function(quest, ...)
+				__npc_note_handler(quest)
+				return orig(quest, ...)
+			end
+		end
+		__wrap('setQuestHandler')
+		__wrap('setUIDQuestHandler')
+	`); err != nil {
+		return RPCResult{Err: &RPCError{Message: err.Error()}}
+	}
+	// 把 Go 的回调塞进去（每 NPC 一个闭包，闭包里已经绑好 s）
+	L.SetGlobal("__npc_note_handler", L.NewFunction(func(l *lua.LState) int {
+		if q, ok := l.Get(1).(lua.LString); ok {
+			s.noteQuestHandlerFor(string(q))
+		}
+		return 0
+	}))
+
+	fn, err := L.LoadString(patched)
 	if err != nil {
 		return RPCResult{Err: &RPCError{Message: err.Error()}}
 	}
 
 	luaArgs := make([]lua.LValue, 0, len(args))
 	for _, arg := range args {
-		luaArgs = append(luaArgs, luaVarToLua(s.Runtime.L, arg))
+		luaArgs = append(luaArgs, luaVarToLua(L, arg))
 	}
 
-	base := s.Runtime.L.GetTop()
-	if err := s.Runtime.L.CallByParam(lua.P{
+	if err := L.CallByParam(lua.P{
 		Fn:      fn,
 		NRet:    lua.MultRet,
 		Protect: true,
@@ -735,11 +767,111 @@ func (s *NPCScript) ExecRemote(code string, args []protocol.LuaVar) RPCResult {
 		return RPCResult{Err: &RPCError{Message: err.Error()}}
 	}
 
-	n := s.Runtime.L.GetTop() - base
+	n := L.GetTop() - base
 	values := make([]protocol.LuaVar, 0, n)
 	for i := base + 1; i <= base+n; i++ {
-		values = append(values, luaToLuaVar(s.Runtime.L.Get(i)))
+		values = append(values, luaToLuaVar(L.Get(i)))
 	}
-	s.Runtime.L.SetTop(base)
+	L.SetTop(base)
 	return RPCResult{Values: values}
+}
+
+// QuestNamesWithHandlers 返回这个 NPC 上装了 handler 的任务名列表。
+//
+// ★ 诊断用途：验证「任务是否真的挂到 NPC 上了」。
+//
+// ★★ 必须走 npchar.lua 的公开查询函数，不能直接读表 ★★
+//
+//	_RSVD_NAME_EPQST_eventHandlers / _RSVD_NAME_EPUID_eventHandlers
+//	在 npchar.lua 里是 **local 变量**（第 60 / 119 行）。
+//	用 Lua 全局名去读永远拿到 nil —— 第一版诊断这么写，
+//	得到「160 个 NPC 一个 handler 都没装」的结论，
+//	而实际链路是通的。这种误判比功能缺失更浪费时间。
+//
+//	正确做法：调 npchar.lua 导出的 hasQuestHandler / hasUIDQuestHandler，
+//	或者直接用「问某个任务名有没有 handler」的方式探测。
+//
+//	这里改成：把 npchar.lua 里「已注册的任务名」通过一个注入的
+//	遍历钩子在 NPC 载入时就收集起来（见 noteQuestHandlerFor）。
+func (s *NPCScript) QuestNamesWithHandlers() []string {
+	if s.Runtime == nil || s.Runtime.L == nil {
+		return nil
+	}
+	s.runtimeMu.Lock()
+	defer s.runtimeMu.Unlock()
+
+	s.noteMu.Lock()
+	names := make([]string, 0, len(s.questNames))
+	for name := range s.questNames {
+		names = append(names, name)
+	}
+	s.noteMu.Unlock()
+	return names
+}
+
+// noteQuestHandlerFor 记录「本 NPC 上装过某个任务的 handler」。
+//
+// ★ 由 npchar.lua 的 setQuestHandler / setUIDQuestHandler 调用
+//	（见 quest.NoteHandlers 注入的钩子），这样 Go 侧不需要
+//	反向解析 Lua 的 local 表。
+func (s *NPCScript) noteQuestHandlerFor(quest string) {
+	if quest == "" {
+		return
+	}
+	s.noteMu.Lock()
+	if s.questNames == nil {
+		s.questNames = make(map[string]struct{}, 4)
+	}
+	s.questNames[quest] = struct{}{}
+	s.noteMu.Unlock()
+}
+
+// HasQuestHandler 直接问 NPC「某个任务的某个事件有没有 handler」。
+//
+// 走 npchar.lua 的 hasQuestHandler（公开 API），语义最可靠。
+func (s *NPCScript) HasQuestHandler(quest, event string) bool {
+	if s.Runtime == nil || s.Runtime.L == nil {
+		return false
+	}
+	s.runtimeMu.Lock()
+	defer s.runtimeMu.Unlock()
+	L := s.Runtime.L
+	fn, err := L.LoadString(
+		"local q, e = ... " +
+			"if not hasQuestHandler then return false end " +
+			"return hasQuestHandler(q, e)")
+	if err != nil {
+		return false
+	}
+	if err := L.CallByParam(lua.P{Fn: fn, NRet: 1, Protect: true},
+		lua.LString(quest), lua.LString(event)); err != nil {
+		return false
+	}
+	v, ok := L.Get(-1).(lua.LBool)
+	L.Pop(1)
+	return ok && bool(v)
+}
+
+// HasUIDQuestHandler 问 NPC「某玩家某任务的某事件有没有 handler」。
+func (s *NPCScript) HasUIDQuestHandler(playerShortUID int64, quest, event string) bool {
+	if s.Runtime == nil || s.Runtime.L == nil {
+		return false
+	}
+	s.runtimeMu.Lock()
+	defer s.runtimeMu.Unlock()
+	L := s.Runtime.L
+	fn, err := L.LoadString(
+		"local uid, q, e = ... " +
+			"if not hasUIDQuestHandler then return false end " +
+			"return hasUIDQuestHandler(uid, q, e)")
+	if err != nil {
+		return false
+	}
+	if err := L.CallByParam(lua.P{Fn: fn, NRet: 1, Protect: true},
+		lua.LNumber(playerShortUID), lua.LString(quest), lua.LString(event)); err != nil {
+		return false
+	}
+	v, ok := L.Get(-1).(lua.LBool)
+	L.Pop(1)
+	return ok && bool(v)
 }

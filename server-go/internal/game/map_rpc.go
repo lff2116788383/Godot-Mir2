@@ -43,8 +43,8 @@ type MapRPC struct {
 	NPCs *NPCManager
 	// Bus RPC 总线（要把真实 UID 转成短 ID 才能给 Lua）
 	Bus *script.RPCBus
-	// gridSeq 格子触发器句柄分配
-	gridSeq int64
+	// Scripts 地图脚本管理器（格子触发器要落到真正的地图 Lua 状态里）
+	Scripts *MapScriptManager
 }
 
 // ExecRemote 实现在地图 actor 里执行远程代码串。
@@ -52,27 +52,29 @@ type MapRPC struct {
 // ★ 支持的操作（对应 servermapop.cpp 的 map 侧绑定）：
 //
 //	getNPCharUID(npcName)   → 按名字找本图 NPC 的 UID
+//	addQuestGridTrigger(...) → 把格子触发器注册到这张图
 //
-//	其余代码串原样执行但只暴露上面这一个函数，
-//	因为地图 actor 在 Go 侧不是一个完整的 Lua 状态，
-//	没必要为了兼容未实现的路径去伪造一整套地图 Lua 环境。
+//	其余代码串原样执行但只暴露上述函数，
+//	因为地图 actor 在 Go 侧不是一个完整的 Lua 状态。
 func (m *MapRPC) ExecRemote(code string, args []protocol.LuaVar) script.RPCResult {
 	// ★ 模式一：格子触发器注册（quest.lua:1696 的代码串）
 	//
 	//	任务通过 setupMapGridTrigger 把「玩家踩到某格触发任务」
-	//	注册到地图上。原版地图 actor 执行 addQuestGridTrigger。
+	//	注册到地图上，原版由地图 actor 执行 addQuestGridTrigger。
 	//
-	//	Go 侧当前没有格子触发器机制，这里**返回递增句柄表示登记成功**，
-	//	让任务能继续加载。真正「踩到格子触发任务」仍未实现（已记审计）。
+	// ★★ 这里必须真的执行，不能返回假句柄 ★★
 	//
-	//	★ 不返回整数会让整个任务脚本 fatal —— 这是当前唯一的选择：
-	//	  要么假装成功（任务可玩，但该触发器不生效），
-	//	  要么任务根本加载不了（更糟）。
+	//	之前返回一个递增整数「假装注册成功」，任务照常加载，
+	//	但玩家走到那个该被挡住的门口时**什么都不发生** ——
+	//	直接穿过去。这种静默失效比报错更难发现。
+	//
+	//	现在转发到地图 Lua 状态里的 servermap.lua：
+	//	  addQuestGridTrigger(questName, rectList, handler)
+	//	→ _RSVD_NAME_allocateGridTriggerId 分配真 ID
+	//	→ _RSVD_NAME_gridTriggers[id] = record
+	//	之后 FireGridTrigger 才能查到并运行它。
 	if strings.Contains(code, "addQuestGridTrigger") {
-		m.gridSeq++
-		return script.RPCResult{Values: []protocol.LuaVar{
-			protocol.NewLuaIntegerVar(int64(m.gridSeq)),
-		}}
+		return m.execGridTrigger(code, args)
 	}
 
 	// 模式二：按名字找 NPC（quest.lua:126 getNPCharUID）
@@ -109,6 +111,38 @@ func (m *MapRPC) ExecRemote(code string, args []protocol.LuaVar) script.RPCResul
 		short = uint64(m.Bus.Short(uid))
 	}
 	return script.RPCResult{Values: []protocol.LuaVar{protocol.NewLuaIntegerVar(int64(short))}}
+}
+
+// execGridTrigger 把任务的格子触发器注册到本图的地图脚本状态里。
+//
+// 参数形状（quest.lua:1691 拼出来的）：
+//
+//	uidRemoteCall(mapUID, questName, rectList, config.code, args...)
+//	→ 执行 [[ local questName, rectList, code = ... return addQuestGridTrigger(questName, rectList, load(code)(select(4, ...))) ]]
+//
+// 也就是说 args = [questName, rectList, code, ...load(argstr)()]。
+func (m *MapRPC) execGridTrigger(code string, args []protocol.LuaVar) script.RPCResult {
+	if m.Scripts == nil {
+		return script.RPCResult{Err: &script.RPCError{
+			Message: "map RPC: no map script manager (grid trigger unavailable)"}}
+	}
+	entry := m.Scripts.Entry(m.MapID)
+	if entry == nil || entry.Script == nil {
+		return script.RPCResult{Err: &script.RPCError{
+			Message: fmt.Sprintf("map RPC: map %d has no script state", m.MapID)}}
+	}
+
+	// ★ 直接在真正的地图 Lua 状态里执行原版代码串
+	//
+	//	这样 addQuestGridTrigger 就是 servermap.lua 里的那个函数，
+	//	拿到的 ID 是真 ID，record 里存的 handler 也是真的闭包。
+	//	不做「解析参数 + 手工重建 record」—— 那等于把 servermap.lua
+	//	的逻辑在 Go 里重写一遍，一有差异就是静默错。
+	res := entry.Script.ExecRemote(code, args)
+	if res.Err != nil {
+		return res
+	}
+	return res
 }
 
 // String 便于日志。
@@ -180,10 +214,14 @@ func (s *QuestService) registerWorldRPC(npcManager *NPCManager) {
 //	Go 侧地图数据（.bin）是懒加载的，但「按地图名+NPC名找 UID」
 //	只需要 NPC 脚本目录的索引，不需要地图数据。
 //	所以这一步是纯内存操作，603 张图也无压力。
-func (s *QuestService) registerAllMapRPC(npcManager *NPCManager) {
+//
+// ★ scripts 可以为 nil（测试里常见）：那样格子触发器走「报错」而不是假装成功，
+//	调用方能看见「地图脚本没加载」而不是静默失效。
+func (s *QuestService) registerAllMapRPC(npcManager *NPCManager, scripts *MapScriptManager) {
 	if s == nil || s.Bus == nil || npcManager == nil {
 		return
 	}
+	s.Scripts2 = scripts
 
 	// 1. 全部地图注册空的 MapRPC（保证 uidRemoteCall 不报 target not found）
 	mapIDs := npcManager.AllMapIDs()
@@ -193,10 +231,11 @@ func (s *QuestService) registerAllMapRPC(npcManager *NPCManager) {
 			continue
 		}
 		s.Bus.Register(mapUID, &MapRPC{
-			MapID:  mapID,
-			MapUID: mapUID,
-			NPCs:   npcManager,
-			Bus:    s.Bus,
+			MapID:   mapID,
+			MapUID:  mapUID,
+			NPCs:    npcManager,
+			Bus:     s.Bus,
+			Scripts: scripts,
 		})
 	}
 

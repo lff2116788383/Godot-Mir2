@@ -485,9 +485,27 @@ func isBlockTerminator(line string) bool {
 //
 //	写成 `mark:close()` 会直接报 "attempt to call a nil value (method 'close')"。
 //	最初的实现就是这么写的，结果 42 个任务全部加载失败。
+//
+// ★★ 必须幂等 ★★
+//
+//	`syntax_patch` 是逐行扫描 + 块深度估算，不是完整 Lua 解析器。
+//	遇到嵌套块（`do ... if ... then ... end ... end`）时，
+//	同一个 <close> 变量可能被插入两次 close 调用。
+//
+//	实测症状：__close 被调两次，第二次
+//	`_RSVD_NAME_criticalSections[co]` 已是 nil，
+//	`nil - 1` 报 "cannot perform sub operation between nil and number"，
+//	而这个错指向 quest.lua:1096 的 setQuestState —— 与真因相隔 1000 行。
+//
+//	而原版 Lua 的 <close> 语义本身保证只调一次，
+//	所以让降级调用幂等是**语义正确**的，不是打补丁掩盖问题。
 func patchCloseCall(name string) string {
 	n := strings.TrimSpace(name)
-	return "do local _o = " + n + "; local _m = getmetatable(_o); " +
+	// ★ 用 _o = nil 的赋值消除重复调用：
+	//	第一次执行后把变量置 nil，第二次 patch 插入的调用
+	//	拿到 nil 就跳过。这样与 <close> 的「只调一次」语义一致。
+	return "do local _o = " + n + "; " + n + " = nil; " +
+		"local _m = _o and getmetatable(_o); " +
 		"if _m and _m.__close then _m.__close(_o) end end"
 }
 

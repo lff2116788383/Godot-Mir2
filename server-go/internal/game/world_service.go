@@ -198,7 +198,7 @@ func (s *WorldService) LoadMap(ctx context.Context, mapID uint32) error {
 	//	用 sync.Once 保证只做一次：后续进别的地图不再重复激活。
 	if s.Quests != nil && s.NPCs != nil {
 		s.questActivateOnce.Do(func() {
-			s.Quests.ActivateAfterWorldLoaded(s.NPCs)
+			s.Quests.ActivateAfterWorldLoaded(s.NPCs, s.MapScripts)
 		})
 	}
 	return nil

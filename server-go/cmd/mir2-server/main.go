@@ -300,7 +300,10 @@ func main() {
 	worldService.PreloadAllNPCs(context.Background())
 
 	// 注册全部地图 actor + 全部 NPC 到 RPC 总线，然后激活任务
-	questService.ActivateAfterWorldLoaded(npcManager)
+	//
+	// ★ 传 worldService.MapScripts：任务的格子触发器要落到
+	//	真实的地图 Lua 状态里（servermap.lua 的 addQuestGridTrigger）。
+	questService.ActivateAfterWorldLoaded(npcManager, worldService.MapScripts)
 	defer npcManager.Close()
 
 	npcHandler := &game.NPCHandler{

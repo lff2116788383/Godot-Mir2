@@ -301,6 +301,16 @@ func installCoroutineCompat(L *lua.LState) {
 	coTbl := L.GetGlobal("coroutine").(*lua.LTable)
 	orig := coTbl.RawGetString("running")
 
+	// ★ 主线程的稳定哨兵对象。
+	//
+	//	Lua 5.4 主线程的 coroutine.running() 返回主协程本身，
+	//	原版代码拿它当 table key（_RSVD_NAME_criticalSections[co]）。
+	//	gopher-lua 主线程返回 nil，当 key 直接报 "table index is nil"。
+	//
+	//	这里造一个 thread 对象当哨兵：它只在主线程返回，
+	//	同一个 LState 内始终是同一个对象，做 key 安全。
+	mainSentinel, _ := L.NewThread()
+
 	coTbl.RawSetString("running", L.NewFunction(func(l *lua.LState) int {
 		l.Push(orig)
 		if err := l.PCall(0, 2, nil); err != nil {
@@ -313,9 +323,17 @@ func installCoroutineCompat(L *lua.LState) {
 		ismain := l.Get(-1)
 		l.Pop(2)
 
-		// 归一成 5.2 形态
+		// ★ 归一成 5.4 形态：主线程返回 (mainThread, true)，**不是 nil**
+		//
+		//	Lua 5.4 的 coroutine.running() 在主线程返回主协程对象 + true。
+		//	原版 Lua 代码到处拿这个返回值当 table key 用：
+		//	  _RSVD_NAME_criticalSections[coroutine.running()] = ...
+		//	返回 nil 会直接 "table index is nil"。
+		//
+		//	所以主线程要返回一个稳定的哨兵对象（LState 本身即可），
+		//	只要它在整个进程内是同一个值，当 key 就没问题。
 		if co == lua.LNil || ismain == lua.LTrue {
-			l.Push(lua.LNil)
+			l.Push(mainSentinel)
 			l.Push(lua.LTrue)
 			return 2
 		}

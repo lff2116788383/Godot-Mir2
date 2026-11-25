@@ -59,6 +59,19 @@ import (
 //	没有并发问题。
 var questMapNames *NameTable
 
+// SetMapNames 设置全局地图名表（启动期调用一次）。
+//
+// ★ 任务与地图脚本共用这同一份表：
+//
+//	任务要靠它解析 getNPCharUID(baseMap) 的地图名，
+//	地图脚本要靠它把 uidMapSwitch('道馆_1', ...) 的名字翻成 ID。
+//	两份表不一致就会出现「任务能找到 NPC、但地图换图找错图」这种
+//	极难定位的问题。
+func SetMapNames(t *NameTable) { questMapNames = t }
+
+// MapNamesTable 返回全局地图名表（地图脚本构造 Options 时用）。
+func MapNamesTable() *NameTable { return questMapNames }
+
 // activeBus 当前生效的 RPC 总线（loadBaseMap 等绑定要用）。
 //
 // ★ 用包级变量而不是 q.bridge：
@@ -79,12 +92,12 @@ type QuestState struct {
 	// rt 该任务专属的 Lua 运行时
 	rt *Runtime
 
-	// threads 线程表：key -> *lua.LState（可 resume 的协程）
-	threads map[int64]*lua.LState
-	// threadSeq 线程序号（原版 getThreadSeqID）
-	threadSeq map[int64]int
-	// closeRequested 被要求关闭的线程
-	closeRequested map[int64]bool
+	// threads2 线程运行器（原版 ServerLuaCoroutineRunner）
+	//
+	// ★ 替代早期的 threads/threadSeq 两个 map：
+	//	那两个是「按 key 存一个协程」，无法表达
+	//	「同一 key 下多个 seqID 并存」（状态切换的必要条件）。
+	threads2 *threadRunner
 
 	// mainKey 主线程 key（原版 getMainScriptThreadKey）
 	mainKey int64
@@ -96,12 +109,18 @@ type QuestState struct {
 	// ★ 这是 B 方案的核心：每个任务是一个独立可寻址的 actor，
 	//	NPC 与玩家通过这个 UID 用 uidRemoteCall 找它。
 	UID uint64
+	// shortUID 给 Lua 看的短 ID（见 shortid.go）
+	shortUID int64
 	// bridge RPC 桥（让别人能远程调本任务，也让本任务能调别人）
 	bridge *RPCBridge
+	// deps 宿主能力（日志等）
+	deps QuestDeps
 	// luaMu 保护 LState：同一时刻只允许一个 goroutine 执行
 	luaMu sync.Mutex
 	// gridTriggerSeq 格子触发器句柄分配
 	gridTriggerSeq int64
+	// threadKeySeq rollKey() 的计数器（原版 m_threadKey）
+	threadKeySeq int64
 
 	mu sync.Mutex
 }
@@ -115,7 +134,15 @@ type QuestDeps interface {
 	// SetQuestFields 批量写（对应 _RSVD_NAME_dbSetQuestFields）
 	SetQuestFields(ctx context.Context, questName string, dbid uint32, fields map[string]*protocol.LuaVar, replace bool) error
 	// PostQuestDesp 推任务描述（对应 _RSVD_NAME_setQuestDesp）
-	PostQuestDesp(ctx context.Context, playerUID uint64, descList []string) error
+	//
+	// ★ 原版签名带 fsm：一条描述对应「某任务某个状态机」，
+	//	客户端按 Name+FSM 覆盖显示。丢掉 fsm 会让任务面板无法区分
+	//	主线和子状态机的描述文字。
+	//
+	// ★ questName 由调用方显式给出（就是本任务的 Name），
+	//	不要让宿主去猜「当前是哪个任务」—— 42 个任务并发运行时猜不出来。
+	PostQuestDesp(ctx context.Context, questName string, playerUID uint64,
+		fsm string, hasDesp bool, desp string) error
 	// FindNPCharUID 按地图名+NPC名找 NPC UID（对应 getNPCharUID）
 	FindNPCharUID(mapName, npcName string) (uint64, bool)
 	// Log 写日志
@@ -142,10 +169,9 @@ func LoadQuest(opts Options, name, scriptPath string, deps QuestDeps,
 		Name:           name,
 		ScriptPath:     scriptPath,
 		mapNames:       questMapNames,
-		threads:        make(map[int64]*lua.LState),
-		threadSeq:      make(map[int64]int),
-		closeRequested: make(map[int64]bool),
 		mainKey:        1,
+		threadKeySeq:   2, // 原版 m_threadKey 初始为 mainThreadKey+1
+		deps:           deps,
 	}
 
 	rt, err := NewRuntime(opts)
@@ -159,8 +185,23 @@ func LoadQuest(opts Options, name, scriptPath string, deps QuestDeps,
 		rt.L.SetGlobal(binding, rt.L.NewFunction(fn))
 	}
 
-	// 装协程原语（runThread / pause / 通知）
+	// ★★ 先装 C 层原语，再加载原版协程运行器 ★★
+	//
+	//	原版分两层：
+	//	  serverluacoroutinerunner.cpp  → C 函数 _RSVD_NAME_runThread 等
+	//	  serverluacoroutinerunner.lua  → Lua 封装 runThread / pause / uidRemoteCall
+	//	quest.lua 调的是**后者**（Lua 层）。
+	//
+	//	之前只装了 C 层、没加载 Lua 层，于是 quest.lua:21 的
+	//	`runThread(key, func)` 直接报 "attempt to call a non-function object"，
+	//	任务状态机一步都跑不起来 —— 这才是「42 个任务激活成功但不可玩」的真因。
 	q.installCoroutinePrimitives()
+
+	runnerPath := filepath.Join(opts.FrameworkDir, "serverluacoroutinerunner.lua")
+	if err := rt.patchAndRun(runnerPath); err != nil {
+		rt.Close()
+		return nil, fmt.Errorf("load serverluacoroutinerunner.lua: %w", err)
+	}
 
 	// 加载 quest.lua 框架（原版 server/src/quest.lua 零翻译复用）
 	frameworkPath := filepath.Join(opts.FrameworkDir, "quest.lua")
@@ -174,6 +215,7 @@ func LoadQuest(opts Options, name, scriptPath string, deps QuestDeps,
 	//	晚一步装就会用到之前的降级版本（返回假值）。
 	if bus != nil && questID != 0 {
 		q.UID = common.GetQuestUID(questID)
+		q.shortUID = bus.Short(q.UID)
 		q.bridge = NewRPCBridge(bus, q.UID, rt, q.mapNames)
 		activeBus = bus
 		q.bridge.Install(rt.L)
@@ -189,6 +231,31 @@ func LoadQuest(opts Options, name, scriptPath string, deps QuestDeps,
 	return q, nil
 }
 
+// realUID 把 Lua 传来的短 ID 还原成真实 UID。
+//
+// ★ 所有「Lua 递进来的 UID」都必须过这一层：
+//	Lua 侧只认识 1..N 的小整数（见 shortid.go），
+//	直接当 64 位 UID 用会指向完全错误的对象。
+func (q *QuestState) realUID(short int64) uint64 {
+	if activeBus == nil {
+		return 0
+	}
+	return activeBus.Real(short)
+}
+
+// dbidOf 把短 ID 还原成真实 UID，再解出玩家 dbid。
+//
+// ★ 任务表的主键是 fld_dbid（外键指向 tbl_char），
+//	写错会直接撞 FOREIGN KEY constraint failed，
+//	而这个报错只会说「约束失败」，不会指向「UID 没转换」。
+func (q *QuestState) dbidOf(short int64) (uint32, error) {
+	uid := q.realUID(short)
+	if uid == 0 {
+		return 0, fmt.Errorf("quest %s: unknown short uid %d", q.Name, short)
+	}
+	return common.GetPlayerDBID(uid)
+}
+
 // bindings 返回任务专属的 C 函数绑定（quest.cpp 的 9 个）。
 func (q *QuestState) bindings(deps QuestDeps) map[string]lua.LGFunction {
 	return map[string]lua.LGFunction{
@@ -202,37 +269,94 @@ func (q *QuestState) bindings(deps QuestDeps) map[string]lua.LGFunction {
 			l.Push(lua.LNumber(q.mainKey))
 			return 1
 		},
+		// rollKey() -> 单调递增的线程 key
+		//
+		// ★ 原版 quest.cpp:28：`return getQuest()->m_threadKey++;`
+		//
+		//	每个任务一个独立计数器，永不复用。
+		//	quest.lua 的 _RSVD_NAME_spawnQuestState 用它当
+		//	_RSVD_NAME_questStateRunners[uid][fsm] 的 key ——
+		//	不绑定会返回 nil，导致 setQuestState 直接抛
+		//	"cannot perform sub operation between nil and number"。
+		"rollKey": func(l *lua.LState) int {
+			q.mu.Lock()
+			k := q.threadKeySeq
+			q.threadKeySeq++
+			q.mu.Unlock()
+			l.Push(lua.LNumber(k))
+			return 1
+		},
 		// getQuestScriptHash() -> 脚本哈希
 		"getQuestScriptHash": func(l *lua.LState) int {
 			l.Push(lua.LNumber(q.Hash))
 			return 1
 		},
-		// _RSVD_NAME_setQuestDesp(uid, descList)
+		// _RSVD_NAME_setQuestDesp(uid, despTable, fsm, desp)
+		//
+		// ★ 原版签名是 **4 个参数**（quest.cpp:45）：
+		//
+		//	uid       玩家 UID
+		//	despTable 完整的 fld_desp 表（可直接为 nil 表示清空）
+		//	fsm       状态机名
+		//	desp      本次要推给客户端的那一段文字（可为 nil）
+		//
+		//	之前实现成「uid + 一个字符串数组」，既丢了 fsm，
+		//	也把 despTable 当成列表读 —— 客户端收到的描述永远是
+		//	任务名/FSM 都为空的一条，任务面板里什么都显示不出来。
 		"_RSVD_NAME_setQuestDesp": func(l *lua.LState) int {
-			uid := uint64(l.CheckInt64(1))
-			tbl := l.CheckTable(2)
-			var descs []string
-			tbl.ForEach(func(_, v lua.LValue) {
-				if s, ok := v.(lua.LString); ok {
-					descs = append(descs, string(s))
+			shortUID := l.CheckInt64(1)
+			despTable := l.Get(2)
+			fsm := l.OptString(3, SysQuestFSM)
+			despVal := l.Get(4)
+
+			if deps == nil {
+				return 0
+			}
+			playerUID := q.realUID(shortUID)
+			dbid, derr := common.GetPlayerDBID(playerUID)
+			if derr != nil {
+				deps.Log(1, fmt.Sprintf("setQuestDesp: %v", derr))
+				return 0
+			}
+
+			// fld_desp 整体写入（nil 表示清空该字段）
+			var fldValue *protocol.LuaVar
+			if despTable != lua.LNil {
+				if _, ok := despTable.(*lua.LTable); ok {
+					lv := luaToLuaVar(despTable)
+					fldValue = &lv
 				}
-			})
-			if deps != nil {
-				if err := deps.PostQuestDesp(context.Background(), uid, descs); err != nil {
-					deps.Log(1, fmt.Sprintf("post quest desp failed: %v", err))
-				}
+			}
+			if err := deps.SetQuestField(context.Background(), q.Name, dbid, "fld_desp", fldValue); err != nil {
+				deps.Log(1, fmt.Sprintf("setQuestDesp write fld_desp: %v", err))
+			}
+
+			// 推给客户端的一条描述
+			hasDesp := false
+			text := ""
+			if s, ok := despVal.(lua.LString); ok {
+				hasDesp = true
+				text = string(s)
+			}
+			if err := deps.PostQuestDesp(context.Background(), q.Name, playerUID, fsm, hasDesp, text); err != nil {
+				deps.Log(1, fmt.Sprintf("post quest desp failed: %v", err))
 			}
 			return 0
 		},
 		// dbGetQuestField(uid, field) -> value|nil
 		"dbGetQuestField": func(l *lua.LState) int {
-			uid := uint64(l.CheckInt64(1))
+			shortUID := l.CheckInt64(1)
 			field := l.CheckString(2)
 			if deps == nil {
 				l.Push(lua.LNil)
 				return 1
 			}
-			value, found, err := deps.LoadQuestField(context.Background(), q.Name, uint32(uid), field)
+			dbid, derr := q.dbidOf(shortUID)
+			if derr != nil {
+				l.Push(lua.LNil)
+				return 1
+			}
+			value, found, err := deps.LoadQuestField(context.Background(), q.Name, dbid, field)
 			if err != nil || !found {
 				l.Push(lua.LNil)
 				return 1
@@ -242,24 +366,34 @@ func (q *QuestState) bindings(deps QuestDeps) map[string]lua.LGFunction {
 		},
 		// dbSetQuestField(uid, field, value)
 		"dbSetQuestField": func(l *lua.LState) int {
-			uid := uint64(l.CheckInt64(1))
+			shortUID := l.CheckInt64(1)
 			field := l.CheckString(2)
 			value := l.Get(3)
 			if deps == nil {
 				return 0
 			}
+			dbid, derr := q.dbidOf(shortUID)
+			if derr != nil {
+				deps.Log(1, fmt.Sprintf("dbSetQuestField: %v", derr))
+				return 0
+			}
 			lv := luaToLuaVar(value)
-			if err := deps.SetQuestField(context.Background(), q.Name, uint32(uid), field, &lv); err != nil {
+			if err := deps.SetQuestField(context.Background(), q.Name, dbid, field, &lv); err != nil {
 				deps.Log(1, fmt.Sprintf("set quest field %s failed: %v", field, err))
 			}
 			return 0
 		},
 		// _RSVD_NAME_dbSetQuestFields(uid, fieldTable, replace)
 		"_RSVD_NAME_dbSetQuestFields": func(l *lua.LState) int {
-			uid := uint64(l.CheckInt64(1))
+			shortUID := l.CheckInt64(1)
 			tbl := l.CheckTable(2)
 			replace := l.OptBool(3, false)
 			if deps == nil {
+				return 0
+			}
+			dbid, derr := q.dbidOf(shortUID)
+			if derr != nil {
+				deps.Log(1, fmt.Sprintf("dbSetQuestFields: %v", derr))
 				return 0
 			}
 			fields := make(map[string]*protocol.LuaVar)
@@ -268,15 +402,26 @@ func (q *QuestState) bindings(deps QuestDeps) map[string]lua.LGFunction {
 				if !ok {
 					return
 				}
+				// ★ SYS_LUANIL 表示「写 SQL NULL」（原版用它代表 nil，
+				//	因为 nil 作表值会直接删掉这个键）
+				if s, isStr := v.(lua.LString); isStr && string(s) == SysLuaNil {
+					fields[string(name)] = nil
+					return
+				}
 				lv := luaToLuaVar(v)
 				fields[string(name)] = &lv
 			})
-			if err := deps.SetQuestFields(context.Background(), q.Name, uint32(uid), fields, replace); err != nil {
+			if err := deps.SetQuestFields(context.Background(), q.Name, dbid, fields, replace); err != nil {
 				deps.Log(1, fmt.Sprintf("set quest fields failed: %v", err))
 			}
 			return 0
 		},
 		// getNPCharUID(mapName, npcName) -> uid|nil
+		//
+		// ★ 必须返回**短 ID**：NPC UID 是 64 位值，
+		//	直接 push 给 Lua 会掉精度（差 1），
+		//	后续 uidRemoteCall 会去找一个不存在的 actor，
+		//	报 "target not found" —— 完全看不出是精度问题。
 		"getNPCharUID": func(l *lua.LState) int {
 			mapName := l.CheckString(1)
 			npcName := l.CheckString(2)
@@ -285,11 +430,15 @@ func (q *QuestState) bindings(deps QuestDeps) map[string]lua.LGFunction {
 				return 1
 			}
 			uid, found := deps.FindNPCharUID(mapName, npcName)
-			if !found {
+			if !found || uid == 0 {
 				l.Push(lua.LNil)
 				return 1
 			}
-			l.Push(lua.LNumber(uid))
+			if activeBus == nil {
+				l.Push(lua.LNil)
+				return 1
+			}
+			l.Push(lua.LNumber(activeBus.Short(uid)))
 			return 1
 		},
 		// _RSVD_NAME_modifyQuestTriggerType(...) 触发类型修改
@@ -315,70 +464,207 @@ func (q *QuestState) bindings(deps QuestDeps) map[string]lua.LGFunction {
 func (q *QuestState) installCoroutinePrimitives() {
 	L := q.rt.L
 
-	// ---- 线程管理（Go 侧实现）----
+	// ★ 线程运行器必须在所有绑定之前建好：
+	//	下面的绑定全部要读 t.current()，晚一步就是空指针。
+	if q.threads2 == nil {
+		q.threads2 = newThreadRunner(L, q.mainKey, func(format string, args ...any) {
+			if q.deps != nil {
+				q.deps.Log(1, fmt.Sprintf(format, args...))
+			}
+		})
+	}
+	t := q.threads2
+
+	// ---- 线程管理（C 层，语义严格对齐 serverluacoroutinerunner.cpp）----
+
+	// _RSVD_NAME_runThread(key, func) -> (newSeqID, closed)
+	//
+	// ★★ 返回值顺序是 (seqID, closed)，不是 (closed, seqID) ★★
+	//
+	//	serverluacoroutinerunner.lua:129
+	//	    local seqID, closed = _RSVD_NAME_runThread(key, func)
+	//	    if closed then _RSVD_NAME_yieldToClose() end
+	//	    return key, seqID
+	//
+	//	顺序写反的后果：closed 拿到一个数字（真值），Lua 侧立刻
+	//	yieldToClose —— 新线程刚起来就被判「要求关闭」并终止，
+	//	任务状态函数体一行都没跑，日志里没有任何错误。
 	L.SetGlobal("_RSVD_NAME_runThread", L.NewFunction(func(l *lua.LState) int {
 		key := int64(l.CheckInt64(1))
 		fn := l.CheckFunction(2)
 
-		// 创建独立协程
-		co, _ := l.NewThread()
-		co.SetGlobal("_RSVD_NAME_currentThreadKey", lua.LNumber(key))
-
-		q.mu.Lock()
-		q.threads[key] = co
-		q.threadSeq[key]++
-		seq := q.threadSeq[key]
-		q.mu.Unlock()
-
-		// 首次 resume：跑到第一个 yield 或结束
-		st, err, values := co.Resume(l, fn)
+		_, seqID, err := t.spawn(key, fn)
 		if err != nil {
-			l.Push(lua.LFalse)
-			l.Push(lua.LNumber(seq))
-			l.Push(lua.LString(err.Error()))
-			return 3
+			// 原版把错误往上抛（让调用方的状态函数失败）。
+			// 这里也抛：静默吞掉会让「状态函数没跑」变成最难查的问题。
+			l.RaiseError("runThread: %v", err)
+			return 0
 		}
-		if st == lua.ResumeOK {
-			// 同步跑完了
-			_ = values
-			l.Push(lua.LFalse)
-			l.Push(lua.LNumber(seq))
-			return 2
-		}
-		// 让出了（在 pause 里等着）
-		l.Push(lua.LFalse)
-		l.Push(lua.LNumber(seq))
+		l.Push(lua.LNumber(seqID))
+		l.Push(lua.LFalse) // closed
 		return 2
 	}))
 
-	// ---- 线程标识（setQuestFSMTable 里要用 getThreadKey）----
-	L.SetGlobal("getThreadKey", L.NewFunction(func(l *lua.LState) int {
-		key := L.GetGlobal("_RSVD_NAME_currentThreadKey")
-		if key == lua.LNil {
-			// 主线程：返回 mainKey
-			l.Push(lua.LNumber(q.mainKey))
+	// _RSVD_NAME_closeThread(key, seqID) -> (found, selfClose)
+	L.SetGlobal("_RSVD_NAME_closeThread", L.NewFunction(func(l *lua.LState) int {
+		key := int64(l.CheckInt64(1))
+		seqID := int64(l.OptInt64(2, 0))
+		found, selfClose := t.closeThread(key, seqID)
+		l.Push(lua.LBool(found))
+		l.Push(lua.LBool(selfClose))
+		return 2
+	}))
+
+	// _RSVD_NAME_closeThreadThenRun(key, func)
+	//
+	// ★ 这是 setQuestState 做状态切换的关键原语：
+	//	调用线程在 yield 处结束，然后启动 func。
+	//	之前做成空桩（什么都不做），导致**状态切换完全失效** ——
+	//	任务接受后永远停在第一个状态。
+	L.SetGlobal("_RSVD_NAME_closeThreadThenRun", L.NewFunction(func(l *lua.LState) int {
+		key := int64(l.CheckInt64(1))
+		fn := l.CheckFunction(2)
+		if err := t.closeThreadThenRun(key, fn); err != nil {
+			l.RaiseError("%v", err)
+			return 0
+		}
+		return 0
+	}))
+
+	// _RSVD_NAME_closeRequested(what) -> bool
+	L.SetGlobal("_RSVD_NAME_closeRequested", L.NewFunction(func(l *lua.LState) int {
+		r := t.current()
+		requested := r != nil && r.closeRequested && !r.closing
+		l.Push(lua.LBool(requested))
+		return 1
+	}))
+
+	// _RSVD_NAME_yieldToClose()
+	//
+	// ★ 语义：结束当前线程，永不返回。
+	//	Lua 侧调用点是 `_RSVD_NAME_yieldToClose()` 之后紧跟 error(...)，
+	//	所以这里必须真的 yield（让 resumeRunner 把它判死）。
+	L.SetGlobal("_RSVD_NAME_yieldToClose", L.NewFunction(func(l *lua.LState) int {
+		// 标记要求关闭，然后 yield。resumeRunner 看到 closeRequested
+		// 就不再 resume 这个线程 —— 等价于原版的 lua_closethread。
+		if r := t.current(); r != nil {
+			t.mu.Lock()
+			r.closeRequested = true
+			t.mu.Unlock()
+		}
+		return l.Yield()
+	}))
+
+	// _RSVD_NAME_checkThreadDepth()
+	L.SetGlobal("_RSVD_NAME_checkThreadDepth", L.NewFunction(func(l *lua.LState) int {
+		t.mu.Lock()
+		depth := t.depth
+		t.mu.Unlock()
+		if depth >= maxThreadDepth {
+			l.RaiseError("%d threads run on top of each other on the C stack, can't start one more", depth)
+		}
+		return 0
+	}))
+
+	// _RSVD_NAME_selfCloseError() -> string|nil
+	//
+	// ★ 原版检查「当前线程能不能在这里结束自己」：
+	//	在别人创建的协程里 → 不能；在不可 yield 的地方 → 不能。
+	//	Go 侧线程永远是专门建的协程，所以只要能找到当前线程就能结束。
+	L.SetGlobal("_RSVD_NAME_selfCloseError", L.NewFunction(func(l *lua.LState) int {
+		if t.current() == nil {
+			l.Push(lua.LString("outside any thread"))
 			return 1
 		}
-		l.Push(key)
+		l.Push(lua.LNil)
+		return 1
+	}))
+
+	// ---- 线程标识 ----
+	//
+	// ★★ 这些必须读 Go 侧的当前 runner，不能读 Lua 全局变量 ★★
+	//
+	//	沙箱把全局环境换成了按协程隔离的代理表：
+	//	GetGlobal 读的是主状态的 Env 表，而协程里写全局是写进
+	//	它自己的 sandbox。两边天然不通 —— 之前用
+	//	`co.SetGlobal("_RSVD_NAME_currentThreadKey", ...)` 传 key，
+	//	协程里读到的永远是 nil，getThreadKey() 恒返回 mainKey。
+	L.SetGlobal("getThreadKey", L.NewFunction(func(l *lua.LState) int {
+		l.Push(lua.LNumber(t.CurrentKey()))
 		return 1
 	}))
 	L.SetGlobal("getThreadSeqID", L.NewFunction(func(l *lua.LState) int {
-		l.Push(lua.LNumber(0))
+		l.Push(lua.LNumber(t.CurrentSeqID()))
 		return 1
 	}))
 	L.SetGlobal("getKeyPair", L.NewFunction(func(l *lua.LState) int {
-		key := L.GetGlobal("_RSVD_NAME_currentThreadKey")
-		l.Push(key)
-		l.Push(lua.LNumber(0))
+		l.Push(lua.LNumber(t.CurrentKey()))
+		l.Push(lua.LNumber(t.CurrentSeqID()))
 		return 2
 	}))
 	L.SetGlobal("getThreadAddress", L.NewFunction(func(l *lua.LState) int {
-		l.Push(l.NewTable())
+		tbl := l.NewTable()
+		// 原版 {uid, key, seqID}；uid 由任务自己的 actor UID 填
+		tbl.Append(lua.LNumber(q.shortUID))
+		tbl.Append(lua.LNumber(t.CurrentKey()))
+		tbl.Append(lua.LNumber(t.CurrentSeqID()))
+		l.Push(tbl)
 		return 1
 	}))
 	L.SetGlobal("getUID", L.NewFunction(func(l *lua.LState) int {
-		l.Push(lua.LNumber(0))
+		l.Push(lua.LNumber(q.shortUID))
 		return 1
+	}))
+
+	// ---- pause（yielding 绑定）----
+	//
+	// ★★ 这是之前完全缺失的绑定 ★★
+	//
+	//	serverluacoroutinerunner.lua:70 的 pause() 直接调
+	//	_RSVD_NAME_pauseYielding(msec)，没绑就是
+	//	"attempt to call a nil value (global '_RSVD_NAME_pauseYielding')"。
+	//	13 个任务用到 pause（试炼计时），全都会在这一步崩。
+	//
+	//	实现：起计时器 → 从 Go 函数 yield（return -1）→ 到点 resume。
+	L.SetGlobal("_RSVD_NAME_pauseYielding", L.NewFunction(func(l *lua.LState) int {
+		msec := int64(l.CheckInt64(1))
+		if err := t.pause(msec); err != nil {
+			l.RaiseError("%v", err)
+			return 0
+		}
+		// ★ gopher-lua 的 yield 协议：Go 函数返回 -1 表示「让出」
+		//
+		//	callGFunction 里 `if gfnret < 0 { switchToParentThread(...) }`。
+		//	暂停结束后计时器 resume，协程从这里之后继续。
+		return l.Yield()
+	}))
+
+	// ---- 通知 ----
+	L.SetGlobal("_RSVD_NAME_pickNotify", L.NewFunction(func(l *lua.LState) int {
+		maxCount := l.OptInt(1, 0)
+		vals := t.pickNotify(maxCount)
+		tbl := l.NewTable()
+		for _, v := range vals {
+			tbl.Append(v)
+		}
+		l.Push(tbl)
+		return 1
+	}))
+	L.SetGlobal("_RSVD_NAME_waitNotify", L.NewFunction(func(l *lua.LState) int {
+		timeout := int64(l.OptInt64(1, 0))
+		if vals, got := t.waitNotify(timeout); got {
+			for _, v := range vals {
+				l.Push(v)
+			}
+			return len(vals)
+		}
+		// 没有通知：进入等待，让 Lua 层 coroutine.yield() 挂起
+		l.Push(lua.LNil)
+		return 1
+	}))
+	L.SetGlobal("clearNotify", L.NewFunction(func(l *lua.LState) int {
+		t.clearNotify()
+		return 0
 	}))
 
 	// ---- uidRemoteCall 由 RPCBridge.Install 提供（见 rpc.go）----
@@ -477,68 +763,10 @@ func (q *QuestState) installCoroutinePrimitives() {
 	}))
 	L.SetGlobal("deleteGridTrigger", L.NewFunction(func(l *lua.LState) int { return 0 }))
 
-	L.SetGlobal("_RSVD_NAME_closeThread", L.NewFunction(func(l *lua.LState) int {
-		key := int64(l.CheckInt64(1))
-		q.mu.Lock()
-		_, found := q.threads[key]
-		delete(q.threads, key)
-		delete(q.threadSeq, key)
-		q.mu.Unlock()
-		l.Push(lua.LBool(found))
-		l.Push(lua.LFalse) // selfClose
-		return 2
-	}))
-
-	L.SetGlobal("_RSVD_NAME_closeThreadThenRun", L.NewFunction(func(l *lua.LState) int {
-		key := int64(l.CheckInt64(1))
-		fn := l.CheckFunction(2)
-		q.mu.Lock()
-		delete(q.threads, key)
-		q.mu.Unlock()
-		_ = fn
-		return 0
-	}))
-
-	L.SetGlobal("_RSVD_NAME_closeRequested", L.NewFunction(func(l *lua.LState) int {
-		l.Push(lua.LFalse)
-		return 1
-	}))
-	L.SetGlobal("_RSVD_NAME_yieldToClose", L.NewFunction(func(l *lua.LState) int {
-		return 0
-	}))
-	L.SetGlobal("_RSVD_NAME_checkThreadDepth", L.NewFunction(func(l *lua.LState) int {
-		l.Push(lua.LNumber(0))
-		return 1
-	}))
-	L.SetGlobal("_RSVD_NAME_selfCloseError", L.NewFunction(func(l *lua.LState) int {
-		l.Push(lua.LNil)
-		return 1
-	}))
-	L.SetGlobal("_RSVD_NAME_callFuncCoop", L.NewFunction(func(l *lua.LState) int {
-		// 协作调用（远程/通知）：当前直接返回 SYS_EXECDONE
-		l.Push(lua.LNumber(0)) // SYS_EXECDONE
-		return 1
-	}))
-
-	// ---- 通知（跨任务/跨 actor）----
-	//
-	// ★ 降级为「同步不入队」：waitNotify 立即返回 nil。
-	//
-	//	正常的任务流程里通知用于「等另一个任务/怪物回话」，
-	//	当前没有跨 actor 队列，退化成「等到就等到、等不到就超时」。
-	//	不这么做的话任务会永久卡在 waitNotify 上（比降级更糟）。
-	for _, name := range []string{"_RSVD_NAME_postNotify", "_RSVD_NAME_sendNotify"} {
-		L.SetGlobal(name, L.NewFunction(func(l *lua.LState) int { return 0 }))
-	}
-	L.SetGlobal("_RSVD_NAME_pickNotify", L.NewFunction(func(l *lua.LState) int {
-		l.Push(lua.LNil)
-		return 1
-	}))
-	L.SetGlobal("_RSVD_NAME_waitNotify", L.NewFunction(func(l *lua.LState) int {
-		l.Push(lua.LNil)
-		return 1
-	}))
-	L.SetGlobal("clearNotify", L.NewFunction(func(l *lua.LState) int { return 0 }))
+	// ★ 注意：线程管理 / 通知 / callFuncCoop 全部在上面装好了。
+	//	这里**不能再有**重复的 SetGlobal —— 后写的会覆盖先写的，
+	//	而旧的那批全是空桩（closeThreadThenRun 什么都不做、
+	//	waitNotify 恒返回 nil），会把刚修好的实现全部砸掉。
 
 	// ---- 杂项 ----
 	L.SetGlobal("launchTime", L.NewFunction(func(l *lua.LState) int {
@@ -610,33 +838,21 @@ func (q *QuestState) Activate(ctx context.Context) error {
 // ResumeThread 恢复一个等待中的线程（由计时器/事件触发）。
 //
 // 这是 pause() 之后「继续跑」的唯一入口。
-func (q *QuestState) ResumeThread(key int64, args ...lua.LValue) error {
-	q.mu.Lock()
-	co, ok := q.threads[key]
-	q.mu.Unlock()
-	if !ok {
-		return fmt.Errorf("quest %s: thread %d not found", q.Name, key)
+func (q *QuestState) ResumeThread(key int64, seqID int64) error {
+	if q.threads2 == nil {
+		return fmt.Errorf("quest %s: thread runner not installed", q.Name)
 	}
-
-	// ★ gopher-lua 的 Resume 必须带一个 fn（首次调用用 nil 表示「继续已有协程」）
-	st, err, _ := co.Resume(nil, nil)
-	if err != nil {
-		return fmt.Errorf("resume quest thread %d: %w", key, err)
-	}
-	if st == lua.ResumeOK {
-		q.mu.Lock()
-		delete(q.threads, key)
-		delete(q.threadSeq, key)
-		q.mu.Unlock()
-	}
-	return nil
+	q.luaMu.Lock()
+	defer q.luaMu.Unlock()
+	return q.threads2.resume(key, seqID)
 }
 
 // PendingThreads 返回当前还在等待的线程数（诊断用）。
 func (q *QuestState) PendingThreads() int {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-	return len(q.threads)
+	if q.threads2 == nil {
+		return 0
+	}
+	return q.threads2.pending()
 }
 
 // Close 释放任务运行时。

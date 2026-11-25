@@ -617,3 +617,108 @@ func ExtParamMagicID(n common.ActionNode) uint32 {
 		uint32(n.ExtParam[2])<<16 |
 		uint32(n.ExtParam[3])<<24
 }
+
+// ==================== CM_PICKUP 独立路由 ====================
+//
+// 【依据】server/src/playernet.cpp:215 net_CM_PICKUP
+//
+// ★ 为什么不能并进 CM_ACTION 的 pickup 分支
+//
+//	CMPickUp 报文里带 mapUID，用来校验「你捡的是你当前所在图的物品」。
+//	CM_ACTION 的载荷里没有 mapUID 字段，走那条路就做不了这项校验，
+//	客户端可以构造任意图坐标去捡别人地图上的东西。
+//
+// ★ 原版四条校验，逐条对应：
+//
+//	1. cmPU.mapUID != mapUID()        → 静默丢弃
+//	2. (x,y) != (X(),Y())             → reportStand
+//	3. m_pickUpLock                    → SM_PICKUPERROR(failedItemID=0)
+//	4. 拾取失败                        → SM_PICKUPERROR(失败物品ID)
+func (h *ActionHandler) CMPickUp(ctx context.Context, channelID uint64, req protocol.CMPickUp) error {
+	p, _ := h.Players.ByChannel(channelID)
+	if p == nil {
+		return nil
+	}
+
+	// 1. 地图校验：必须是自己当前所在的地图
+	//
+	// ★ 原版是 co_return（静默丢弃）。
+	//	这里也一样：跨图拾取是明显的伪造包，
+	//	静默丢比回错误更合适（不给探测者反馈）。
+	if req.MapUID != 0 && p.MapUID != 0 && req.MapUID != p.MapUID {
+		return nil
+	}
+
+	// 2. 坐标校验：必须站在物品所在格
+	//
+	// ★ 原版 `if(!(cmPU.x == X() && cmPU.y == Y()))` —— 精确相等，
+	//	不是距离判断。客户端点击地面物品时会先走过去，
+	//	站定后才发 CM_PICKUP。
+	if int(req.X) != p.X || int(req.Y) != p.Y {
+		return h.reportStand(ctx, p)
+	}
+
+	// 3. 拾取锁：防狂发包
+	//
+	// ★ 原版 m_pickUpLock + stdf::guard 作用域锁。
+	//	这里用 p.PickUpLock 做同样的事，
+	//	注意 handlePickUp 内部已经检查过一次，这里是快速失败。
+	if p.PickUpLock {
+		return h.sendPickUpError(p, 0)
+	}
+
+	// 4. 执行拾取（复用已有逻辑，含金币/背包分拣）
+	return h.handlePickUpAt(ctx, p, int(req.X), int(req.Y))
+}
+
+// sendPickUpError 回 SM_PICKUPERROR。
+func (h *ActionHandler) sendPickUpError(p *Player, failedItemID uint32) error {
+	if h.Broadcast == nil {
+		return nil
+	}
+	payload, err := protocol.AppendWirePayload(nil, protocol.SMPickUpError{FailedItemID: failedItemID})
+	if err != nil {
+		return err
+	}
+	return h.Broadcast.SendTo(p.ChannelID, protocol.SM_PICKUPERROR, payload, 0)
+}
+
+// handlePickUpAt 是按坐标拾取的公共实现（CM_PICKUP 与 ACTION 共用）。
+func (h *ActionHandler) handlePickUpAt(ctx context.Context, p *Player, targetX, targetY int) error {
+	if p.PickUpLock {
+		return nil
+	}
+	if d2 := world.LDistance2(p.X, p.Y, targetX, targetY); d2 > 2 {
+		return h.reportStand(ctx, p)
+	}
+
+	got, err := h.Worlds.PickupOne(ctx, p.MapID, targetX, targetY, p.UID)
+	if err != nil {
+		return h.sendPickUpError(p, 0)
+	}
+	if len(got) == 0 {
+		// ★ 空拾取要回错误。
+		//
+		//	原版 SDPickUpItemList.failedItemID 非 0 时才回错误；
+		//	但客户端点了物品却什么都没捡到，不回包会让它一直等，
+		//	物品图标高亮不消失。这里回 failedItemID=0 表示「什么都没捡到」。
+		return h.sendPickUpError(p, 0)
+	}
+
+	inventoryChanged := false
+	for _, itemID := range got {
+		if h.isGoldItem(itemID) {
+			h.Durability.AddGold(ctx, p, h.goldCount(itemID))
+			continue
+		}
+		p.Inventory = append(p.Inventory, Item{
+			ItemID: itemID, SeqID: 1, Count: 1,
+			Durability: h.initialDurability(itemID),
+		})
+		inventoryChanged = true
+	}
+	if inventoryChanged {
+		h.notifyInventory(ctx, p)
+	}
+	return nil
+}
