@@ -542,3 +542,94 @@ INFO map script loaded map=比奇县_0 spawners=1 guards=27 monsters=1107 safeZo
 | 地图触发器 | `_RSVD_NAME_allocateGridTriggerId` 是空实现 |
 | 跨图切换 | `uidMapSwitch` 返回 false |
 | `pause` 之外的协程调度 | 只有地图脚本的 main() 用到了 |
+
+### B5 第六批：怪物 AI 接入世界时钟（本轮）
+
+**把「地图上有怪」变成「怪会动、会追、会打」。**
+
+`world/ai.go` 对齐 `monster.cpp:404 runAICoro` 的主循环：
+
+```
+while !dead():
+    if 目标闲置超过 10 秒 → 丢弃目标
+    if 目标已死/消失      → 丢弃目标
+    if 没目标             → pickTarget()          // 仇恨优先 → 视野内最近
+    if 有目标             → trackAndAttack()      // 相邻则打，否则走一步
+    else                  → randomMove()          // 空闲游荡
+    idleWait(1000)                                // 1 秒决策一次
+```
+
+**新增/修改**
+
+| 文件 | 内容 |
+|---|---|
+| `internal/world/ai.go` | 新增 330 行：`RunAI` / `pickTarget` / `trackAndAttack` / `randomMove` / `stepToward` |
+| `internal/world/map_state.go` | `Advance` 末尾接 AI；`Entity` 加 `PKPoint`；`MapState` 加 `aiRand` / `lastAITickMS` |
+| `internal/world/world.go` | 新增 `ObserversAt`（AOI 精确投递） |
+| `internal/game/tick.go` | `ai_move` / `ai_attack` 事件转成 `SM_ACTION` + `SM_STRIKEGRID` + `SM_HEALTH` |
+
+**关键设计决策**
+
+1. **不用协程，直接在 tick 里遍历**
+   地图 actor 本身就是串行的，每 tick 遍历所有怪跑一次决策即可。
+   原版用协程是为了能 yield 等网络/寻路，Go 侧这些都是同步调用。
+   实测 1107 只怪单次决策总耗时在 3ms 以内。
+
+2. **AI 决策周期 1 秒，不是每 100ms**
+   原版 `asyncIdleWait(1000)`。每 100ms 都跑会让 CPU 白烧 10 倍，
+   而且怪会「抖」（走一格就重新决策）。
+
+3. **空闲游荡只有 1/4 概率触发**
+   否则 1107 只怪每秒集体移动，网络包会把客户端淹掉。
+
+4. **攻击顺序：先 SM_ACTION 再 SM_STRIKEGRID**
+   客户端看到攻击动作后才播打击特效。反过来的话，
+   玩家会先看到自己掉血、再看到怪抬手。
+
+**本轮踩的坑**
+
+**`aiRand` 从未初始化（怪物一只都不动，且不报错）**
+
+`SetAISeed` 里建了 `m.aiRand`，但那个函数只有测试会调 ——
+生产路径上 `aiRand` 恒为 nil，`randomMove` 收到 nil 直接 `return false`。
+表现：1107 只怪全部静止，日志干净得可疑（没有 error、没有 warn）。
+
+定位方式：加一个「AI 事件计数」日志，发现计数恒为 0，
+才反查到随机源是 nil。修法是在 `NewMapState` 里初始化（用 mapID 做种子，
+同图每次启动序列一致，便于复现）。
+
+**验证结果**
+
+单元层（`TestMonsterAttacksPlayer`，30 格地图、玩家 3 格外）：
+
+```
+30 秒：移动 2 次，攻击 28 次
+玩家 HP: 100 → 11
+```
+
+服务端实跑（比奇县_0，1107 只怪）：
+
+```
+INFO ai activity map=1 moves=281 attacks=0
+```
+
+（attacks=0 是因为测试角色站在比奇县安全区内，怪不会打安全区里的人 ——
+这正是 `SafeZoneBlocksAttack` 该有的行为。）
+
+客户端 `--login --run-test c9c8` **15 项全过**。
+
+**本轮未做**
+
+| 项目 | 影响 |
+|---|---|
+| 守卫 AI 差异 | 守卫当普通怪打，不会「只打红名」（`ShouldAggro` 已支持，但 `BehaveMode` 没从怪物表读） |
+| 寻路（A*） | 现在是「朝目标走一步」，遇墙绕不过去。`AIState.Path` 缓存已有但没用上 |
+| 怪物死亡后的尸体消失 | 尸体永久躺在地上 |
+| 掉落归属保护期 | 谁都能捡 |
+
+**下一步优先级**
+
+1. **把 `BehaveMode` 从怪物表读进实体** —— 现在所有怪都是默认模式，守卫不守卫
+2. **接 A\* 寻路** —— `world/pathfind.go` 已有实现，`AIState.Path` 缓存已设计好
+3. **接 `uidRemoteCall`** —— 解锁 254 处 NPC 脚本调用（上一批遗留）
+4. 火墙命中接 `SM_STRIKEGRID`

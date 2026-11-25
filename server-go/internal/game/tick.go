@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lff2116788383/godot-mir2/server-go/internal/common"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/protocol"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/world"
 )
@@ -56,8 +57,9 @@ type MapTicker struct {
 	// now 时钟源（测试可注入，避免依赖真实时间）
 	now func() int64
 
-	mu      sync.Mutex
-	mapIDs  []uint32
+	mu     sync.Mutex
+	mapIDs []uint32
+
 	running bool
 	stopCh  chan struct{}
 	doneCh  chan struct{}
@@ -200,6 +202,10 @@ func (t *MapTicker) dispatch(mapID uint32, events []world.TickEvent) {
 			t.logGroundExpired(mapID, ev)
 		case "buff_expired":
 			t.broadcastBuffOff(mapID, ev)
+		case "ai_move":
+			t.broadcastAIMove(mapID, ev)
+		case "ai_attack":
+			t.broadcastAIAttack(mapID, ev)
 		default:
 			// 刷新/火墙由后续批次接
 		}
@@ -235,4 +241,166 @@ func (t *MapTicker) broadcastBuffOff(mapID uint32, ev world.TickEvent) {
 		}
 		_ = t.Broadcast.SendTo(p.ChannelID, protocol.SM_BUFF, payload, 0)
 	}
+}
+
+// broadcastAIMove 广播怪物移动（SM_ACTION + ACTION_MOVE）。
+//
+// ★ 怪物移动必须走 SM_ACTION，不能只改服务端坐标：
+//
+//	客户端是靠 SM_ACTION 驱动角色动画的。只改坐标不发包，
+//	地图上的怪会「瞬移」或者根本不动（客户端不知道它走过了）。
+func (t *MapTicker) broadcastAIMove(mapID uint32, ev world.TickEvent) {
+	entity, ok, err := t.Worlds.Entity(context.Background(), mapID, ev.UID)
+	if err != nil || !ok {
+		return
+	}
+	// 服务端已经把位置改好了，这里只需要通知
+	payload, err2 := protocol.AppendWirePayload(nil, protocol.SMAction{
+		UID:    ev.UID,
+		MapUID: t.mapUID(mapID),
+		Action: common.ActionNode{
+			Type:      common.ActionMove,
+			Direction: uint8(entity.Direction),
+			X:         int16(entity.X),
+			Y:         int16(entity.Y),
+			AimX:      int16(entity.X),
+			AimY:      int16(entity.Y),
+		},
+	})
+	if err2 != nil {
+		return
+	}
+	t.sendToMapObservers(mapID, ev.X, ev.Y, protocol.SM_ACTION, payload)
+}
+
+// broadcastAIAttack 广播怪物攻击（SM_ACTION + ACTION_ATTACK，命中则加 SM_STRIKE）。
+//
+// 顺序照原版：先动作、再伤害。
+//
+//	客户端看到攻击动作后才播打击特效；
+//	反过来的话，玩家会先看到自己掉血、再看到怪抬手。
+func (t *MapTicker) broadcastAIAttack(mapID uint32, ev world.TickEvent) {
+	attacker, ok, err := t.Worlds.Entity(context.Background(), mapID, ev.UID)
+	if err != nil || !ok {
+		return
+	}
+
+	// 1. 攻击动作
+	payload, err2 := protocol.AppendWirePayload(nil, protocol.SMAction{
+		UID:    ev.UID,
+		MapUID: t.mapUID(mapID),
+		Action: common.ActionNode{
+			Type:      common.ActionAttack,
+			Direction: uint8(attacker.Direction),
+			X:         int16(attacker.X),
+			Y:         int16(attacker.Y),
+			AimX:      int16(ev.X),
+			AimY:      int16(ev.Y),
+		},
+	})
+	if err2 == nil {
+		t.sendToMapObservers(mapID, attacker.X, attacker.Y, protocol.SM_ACTION, payload)
+	}
+
+	// 2. 伤害（未命中不发 STRIKE，但要发 MISS）
+	targetUID := parseUint64(ev.Monster)
+	if targetUID == 0 {
+		return
+	}
+	if ev.Amount > 0 {
+		target, found, terr := t.Worlds.Entity(context.Background(), mapID, targetUID)
+		if terr == nil && found {
+			strike, serr := protocol.AppendWirePayload(nil, protocol.SMStrikeGrid{
+				X: uint32(target.X), Y: uint32(target.Y),
+			})
+			if serr == nil {
+				t.broadcastMap(mapID, protocol.SM_STRIKEGRID, strike)
+			}
+		}
+	}
+
+	// 3. 玩家被怪打，要同步血量到客户端
+	if p, exists := t.Players.Get(targetUID); exists {
+		t.syncPlayerHealth(mapID, p)
+	}
+}
+
+// sendToMapObservers 只发给能看到这一格的玩家（AOI 精确投递）。
+func (t *MapTicker) sendToMapObservers(mapID uint32, x, y int, id protocol.SMType, payload []byte) {
+	if t.Broadcast == nil {
+		return
+	}
+	observers, err := t.Worlds.ObserversAt(context.Background(), mapID, x, y)
+	if err != nil {
+		return
+	}
+	for _, uid := range observers {
+		if p, ok := t.Players.Get(uid); ok && p.ChannelID != 0 {
+			_ = t.Broadcast.SendTo(p.ChannelID, id, payload, 0)
+		}
+	}
+}
+
+// broadcastMap 发给地图上所有玩家（用于全局可见的事件）。
+//
+// ★ 为什么怪物攻击的 STRIKE 走这个而不是 AOI 精确投递：
+//
+//	打击特效在原版里是「谁在视野内谁看到」，但我们的 ObserversAt
+//	返回的是「观察这一格的实体」，怪物与玩家不共格，容易漏发。
+//	怪攻击的频率是每秒级（attackWait >= 1000），全图广播的量可控。
+func (t *MapTicker) broadcastMap(mapID uint32, id protocol.SMType, payload []byte) {
+	if t.Broadcast == nil {
+		return
+	}
+	for _, p := range t.Players.Snapshot() {
+		if p.MapID != mapID || p.ChannelID == 0 {
+			continue
+		}
+		_ = t.Broadcast.SendTo(p.ChannelID, id, payload, 0)
+	}
+}
+
+// syncPlayerHealth 把服务端血量推给玩家（被怪打后调用）。
+func (t *MapTicker) syncPlayerHealth(mapID uint32, p *Player) {
+	entity, ok, err := t.Worlds.Entity(context.Background(), mapID, p.UID)
+	if err != nil || !ok {
+		return
+	}
+	p.SyncFromWorld(entity)
+	if t.Broadcast == nil || p.ChannelID == 0 {
+		return
+	}
+	payload, err2 := protocol.CerealSerialize(protocol.SDHealth{
+		UID: p.UID, HP: p.HP, MP: p.MP, MaxHP: p.MaxHP, MaxMP: p.MaxMP,
+	})
+	if err2 != nil {
+		return
+	}
+	_ = t.Broadcast.SendTo(p.ChannelID, protocol.SM_HEALTH, payload, 0)
+}
+
+// parseUint64 解析十进制无符号整数（失败返回 0）。
+func parseUint64(s string) uint64 {
+	if s == "" {
+		return 0
+	}
+	var v uint64
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c < '0' || c > '9' {
+			return 0
+		}
+		v = v*10 + uint64(c-'0')
+	}
+	return v
+}
+
+// mapUID 取地图的 UID（从任意在线玩家那里拿，同图一致）。
+func (t *MapTicker) mapUID(mapID uint32) uint64 {
+	for _, p := range t.Players.Snapshot() {
+		if p.MapID == mapID {
+			return p.MapUID
+		}
+	}
+	return 0
 }

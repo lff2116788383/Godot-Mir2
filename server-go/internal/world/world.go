@@ -540,3 +540,24 @@ func (w *World) CountWalkable(ctx context.Context, mapID uint32, x, y, width, he
 	n, _ := value.(int)
 	return n
 }
+
+// ObserversAt 返回能观察某格的实体 UID 列表（AOI 精确投递用）。
+//
+// 与 VisibleEntities 的区别：那个是「某个实体能看到什么」，
+// 这个是「哪些实体能看到这一格」，用于动作广播。
+func (w *World) ObserversAt(ctx context.Context, mapID uint32, x, y int) ([]uint64, error) {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		cell, cerr := state.cell(x, y)
+		if cerr != nil {
+			return []uint64(nil), nil
+		}
+		out := make([]uint64, 0, len(cell.Observers))
+		out = append(out, cell.Observers...)
+		return out, nil
+	}))
+	if err != nil {
+		return nil, err
+	}
+	uids, _ := value.([]uint64)
+	return uids, nil
+}

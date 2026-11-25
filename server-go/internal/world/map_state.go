@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"errors"
 	"math/rand"
+	"strconv"
 )
 
 var (
@@ -65,6 +66,9 @@ type Entity struct {
 	// 受击/攻击用的属性（由怪物/玩家记录填充）
 	Stats CombatStats
 
+	// PKPoint PK 值（>=100 红名）。守卫只打红名，NPC 脚本也用它判红名。
+	PKPoint int32
+
 	// MonsterRec 怪物的静态配置（掉落表 / 经验 / AI 参数）。
 	//
 	// ★ 必须挂在实体上，不能靠「死亡时按名字反查表」：
@@ -116,6 +120,11 @@ type MapState struct {
 	// Zone 本图安全区（SDSafeZone 合并结果）
 	Zone SafeZone
 
+	// lastAITickMS 上次跑怪物 AI 的时刻（AI 决策周期 1 秒）
+	lastAITickMS int64
+	// aiRand AI 用的随机源（可注入固定种子）
+	aiRand *rand.Rand
+
 	// groundSeq 掉落批次计数器（servermap.hpp:m_groundSeq，从 1 开始）。
 	// 同批掉落共享一个批次号，过期时整批清除。
 	groundSeq uint64
@@ -131,6 +140,13 @@ func NewMapState(id uint32, data *MapData) (*MapState, error) {
 	return &MapState{
 		ID: id, Data: data.Clone(), Cells: make([]CellState, data.Width*data.Height),
 		Entities: make(map[uint64]*Entity),
+		// ★ aiRand 必须在这里初始化。
+		//
+		//	初版只在 SetAISeed 里建，而 SetAISeed 只有测试会调 ——
+		//	生产路径上 aiRand 恒为 nil，randomMove 收到 nil 直接返回 false，
+		//	于是「怪物一只都不动」而没有任何报错。
+		//	用 ID 做种子：同一张图每次启动的随机序列一致，便于复现问题。
+		aiRand: rand.New(rand.NewSource(int64(id) + 1)),
 	}, nil
 }
 
@@ -613,7 +629,30 @@ func (m *MapState) Advance(nowMS int64) []TickEvent {
 		events = append(events, TickEvent{Kind: "firewall_expire", X: p.X, Y: p.Y})
 	}
 
+	// 5. 怪物 AI（决策周期 1 秒，内部自己判时间）
+	//
+	// 放在最后：前面几步会把死亡实体标记出来，
+	// AI 选目标时才能正确跳过尸体（Dead() 读的就是 HP<=0）。
+	for _, act := range m.RunAI(m.aiRand) {
+		events = append(events, TickEvent{
+			Kind:    "ai_" + act.Kind,
+			UID:     act.UID,
+			X:       act.To.X,
+			Y:       act.To.Y,
+			Amount:  act.Damage,
+			Monster: targetUIDString(act.Target),
+		})
+	}
+
 	return events
+}
+
+// targetUIDString 把攻击目标 UID 塞进 TickEvent 的 Monster 字段（复用现有结构）。
+func targetUIDString(uid uint64) string {
+	if uid == 0 {
+		return ""
+	}
+	return strconv.FormatUint(uid, 10)
 }
 
 // AttackResult 是一次攻击的完整结果。
