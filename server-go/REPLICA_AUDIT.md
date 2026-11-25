@@ -351,3 +351,108 @@ player entered world name=测试角色 uid=PLY_1 map=1 at=(400,402)
 | P2 | 火墙命中接 SM_STRIKE | 已有 firewall 计算，缺消息落地 |
 | P3 | 复活点按 maprecord 配置 | 现在硬编码道馆_1 (405,120) |
 | P3 | 跨图切换（AM_SWITCHMAP） | 复活跨图、传送卷轴都要它 |
+
+### B5 第四批：Lua 运行时与 NPC 对话（本轮）
+
+**核心决策：Lua 全量复用，零翻译。**
+
+| 原版资源 | 处理方式 | 证据 |
+|---|---|---|
+| `common/src/luamodule.lua` | 逐字节复制为 `content/script/base.lua` | md5 `83c089fc…` 与原版一致 |
+| `server/src/npchar.lua` | 逐字节复制为 `content/script/npchar.lua` | md5 `58df728a…` 与原版一致 |
+| `server/script/npc/*.lua`（341 个） | **不复制**，`MIR2X_SCRIPT` 指向原版目录加载 | 约 10 万行，复制会漂移 |
+| `common/src/luamodule.cpp:22` 内嵌沙箱脚本 | 提取为 `content/script/sandbox.lua` | 含 `getTLSTable` / 协程独立 globals |
+
+**新增文件**
+
+| 文件 | 行数 | 内容 |
+|---|---|---|
+| `internal/script/runtime.go` | 250 | Lua 状态、package.path、库加载、常量注入 |
+| `internal/script/luacompat.go` | 290 | 5.2/5.3 兼容层（table.pack / math.type / utf8 / coroutine.running） |
+| `internal/script/syntax_patch.go` | 250 | Lua 5.3 `//` 整数除法降级（加载时改写，原文件不动） |
+| `internal/script/npc.go` | 470 | NPC 脚本加载 + 40 个 C 函数绑定 |
+| `internal/script/coroutine.go` | 160 | 协程执行器（对齐原版 spawn 语义） |
+| `internal/script/npcfile.go` | 200 | NPC 文件名解析（`<地图>.GLOC_x_y_d.<名>.LOOK_n.lua`） |
+| `internal/script/bindings.go` | 320 | 通用绑定（UID 类型 / 时间 / 记录表查名） |
+| `internal/script/records.go` | 160 | 记录表提取（JSON / inc 顶层块解析） |
+| `internal/game/npc_manager.go` | 480 | NPC 管理器 + 宿主适配（20 个 host 方法） |
+| `internal/game/npc_handler.go` | 150 | `CM_NPCEVENT` 处理（距离校验/错误码/协程调用） |
+| `internal/world/mapname.go` | 60 | 地图 ID <-> 名字（NPC 脚本文件名用名字） |
+| `tools/npccheck/main.go` | 200 | 加载验证工具（非测试，一眼看哪批能跑） |
+
+**本轮修掉的 5 个兼容性缺口**
+
+1. **缺 Package 库**。为「安全」只开了 base/table/string/math/coroutine，
+   结果 `package.path` 拼接第一行就报 `attempt to index a non-table object(nil)`，
+   所有脚本的 `require('include.dialog')` 全部失败。
+   修法：开 `lua.LoadLibName`（常量名不叫 PackageLibName）。
+
+2. **缺 `table.pack`**（Lua 5.2+）。`base.lua:29` 的 `assertType` 第一行就用它，
+   报 `attempt to call a non-function object`。补 polyfill，必须带 `n` 字段
+   （`#t` 遇中间 nil 会截断）。
+
+3. **`coroutine.running()` 语义差异**。Lua 5.1 主线程返回 `nil`，
+   5.2+ 返回 `(thread, true)`。原版沙箱靠第二个返回值判断是否主线程，
+   语义不对会让 TLS 退化成全局变量 —— **两个玩家同时点同一 NPC 时对话串号**。
+   包装成 5.2 形态。
+
+4. **`//` 整数除法是 Lua 5.3 语法**。gopher-lua 是 5.1，**编译期**报语法错误，
+   polyfill 救不了。影响面实测：3 文件 6 处（`dailyquest.lua:205,249`、
+   `比奇县_0.行政官员_1…:50,101,154`、`野蛮冲撞任务.lua:341`）。
+   处理：加载时改写源码为 `math.floor(a / b)`，原文件零修改。
+   **必须包 `math.floor`**，因为调用方都是 `string.format('%d', a // b)`，
+   `%d` 遇到浮点会报 "number has no integer representation"。
+
+5. **NPC 事件必须在协程里跑**。`npchar.lua:403` 的 `getTLSTable().uid = from`
+   在主线程调用会**主动 throw** —— 报错显示为
+   `attempt to call a non-function object`，看起来像函数没绑定。
+   修法：`L.NewThread()` + `L.Resume`，与原版 `m_luaRunner->spawn` 等价。
+
+**另修一个 UID 缺陷**：`buildNPCUID` 把坐标当 `peerIndex` 传入，
+但 `peerIndexBits=4`（0..15），坐标 396 直接越界 → 全部走兜底分支，
+日志里 `uid=ERR_xxx`，且所有 NPC 的 UID 撞在一起（AOI 互相覆盖）。
+改为 `id=lookID, peerIndex=0, seq=x*1024+y+1`。
+
+**验证结果**
+
+```
+$ go run ./tools/npccheck
+地图 86 张，NPC 共 340 个
+记录表：物品 1258 / 怪物 364 / 地图 603
+
+=== 非空脚本 161 个：成功 161 / 失败 0；空占位 179 个 ===
+```
+
+（179 个是原版 0 字节占位文件，地图上有 NPC 但没写对话。）
+
+服务端实跑：
+
+```
+INFO map names loaded count=603
+INFO npc loaded map=比奇县_0 count=25 skippedEmpty=26
+INFO map npc spawned map=比奇县_0 loaded=25 spawned=25
+INFO player entered world name=测试角色 map=1 at=(400,402)
+```
+
+客户端 `--login --run-test c9c8` **15 项全过**。
+
+`道馆_1.阿天_1` 的 `SYS_ENTER` 真实产出（原版脚本生成，Go 只做转发）：
+
+```xml
+<layout>
+<par>这里是沙巴克城<t color="red"></t>行会的领地。</par>
+<par>贫道是仓库管理员，需要的话，可以把东西暂时寄存在我这里。</par>
+<par></par>
+<par><event id="npc_goto_secure" single="1">寄存</event>物品</par>
+...
+</layout>
+```
+
+**本轮未做（诚实标注）**
+
+| 项目 | 影响 |
+|---|---|
+| `uidRemoteCall`（254 处调用） | 跨 NPC 联动不可用，会走 else 分支 |
+| 事件 ID 的 AES 加密 | 链路能通，但缺「防改包点未授权选项」 |
+| 仓库 / 交易 / 修理 | 对话框能弹，点确认无效果 |
+| `CM_NPCEVENT` 客户端侧 | 客户端还没发这条消息，只能服务端侧验证 |

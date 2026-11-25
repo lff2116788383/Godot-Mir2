@@ -120,6 +120,12 @@ func main() {
 	// 元素抗性解析器只在启动时绑一次（每帧重设会数据竞争）
 	game.BindElementResolver(magicDB)
 
+	// 地图名表：NPC 脚本文件名用的是地图名（道馆_1.阿天_1...），
+	// 服务端按 mapID 索引，两边要能互查。
+	mapNames := game.LoadMapNames("")
+	world.SetMapNames(mapNames)
+	slog.Info("map names loaded", "count", len(mapNames))
+
 	// 属性计算与施法都要读物品/魔法表，回填到 worldService
 	worldService.Items = itemDB
 	worldService.Magics = magicDB
@@ -171,8 +177,21 @@ func main() {
 		Chars:     storage.NewCharacterRepository(store),
 	}
 
+	// NPC：加载原版 Lua 脚本（每个 NPC 一个独立 Lua state）
+	npcManager := game.NewNPCManager(itemDB, magicDB, slog.Default())
+	defer npcManager.Close()
+
+	npcHandler := &game.NPCHandler{
+		Players:   players,
+		NPCs:      npcManager,
+		Worlds:    worldService,
+		Broadcast: broadcaster,
+		Logger:    slog.Default(),
+	}
+	worldService.NPCs = npcManager
+
 	if err := game.RegisterAllRoutes(dispatcher, loginHandler, actionHandler,
-		inventoryHandler, spellHandler, deathHandler, shopHandler); err != nil {
+		inventoryHandler, spellHandler, deathHandler, shopHandler, npcHandler); err != nil {
 		slog.Error("register routes", "error", err)
 		os.Exit(1)
 	}

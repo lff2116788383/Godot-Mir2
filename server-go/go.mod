@@ -4,6 +4,7 @@ go 1.27.4
 
 require (
 	github.com/klauspost/compress v1.20.5
+	github.com/yuin/gopher-lua v1.1.2
 	modernc.org/sqlite v1.63.0
 )
 

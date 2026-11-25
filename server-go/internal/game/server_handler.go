@@ -69,7 +69,8 @@ func RegisterBootstrapRoutes(dispatcher *transport.Dispatcher, handler *Handler)
 // 传 nil 就跳过对应路由。
 func RegisterAllRoutes(dispatcher *transport.Dispatcher, handler *Handler,
 	actions *ActionHandler, inventory *InventoryHandler,
-	spells *SpellHandler, deaths *DeathHandler, shops *ShopHandler) error {
+	spells *SpellHandler, deaths *DeathHandler, shops *ShopHandler,
+	npcs *NPCHandler) error {
 	if err := RegisterBootstrapRoutes(dispatcher, handler); err != nil {
 		return err
 	}
@@ -85,5 +86,8 @@ func RegisterAllRoutes(dispatcher *transport.Dispatcher, handler *Handler,
 	if err := RegisterDeathRoutes(dispatcher, deaths); err != nil {
 		return err
 	}
-	return RegisterShopRoutes(dispatcher, shops)
+	if err := RegisterShopRoutes(dispatcher, shops); err != nil {
+		return err
+	}
+	return RegisterNPCRoutes(dispatcher, npcs)
 }

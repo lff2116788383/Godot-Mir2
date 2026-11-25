@@ -309,3 +309,20 @@ func RegisterShopRoutes(dispatcher *transport.Dispatcher, handler *ShopHandler) 
 	}
 	return nil
 }
+
+// RegisterNPCRoutes 注册 NPC 对话消息。
+//
+// CM_NPCEVENT 是定长 410 字节的压缩消息，用 decode（wire 解码）处理。
+func RegisterNPCRoutes(dispatcher *transport.Dispatcher, handler *NPCHandler) error {
+	if handler == nil {
+		return nil
+	}
+	return dispatcher.Register(protocol.CM_NPCEVENT,
+		func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMNPCEvent
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return handler.HandleEvent(ctx, s.ID(), req)
+		})
+}

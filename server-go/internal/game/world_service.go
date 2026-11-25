@@ -40,6 +40,8 @@ type WorldService struct {
 	Items *ItemDB
 	// Magics 魔法表，用于施法校验与伤害结算。为 nil 时所有技能被拒。
 	Magics *MagicDB
+	// NPCs NPC 脚本管理器。进场时用它加载该地图的 NPC。
+	NPCs *NPCManager
 	// Ticker 世界时钟驱动器。地图建好后要 Track 它，
 	// 否则这张图的 NowMS 永远不动（技能冷却永远不结束）。
 	Ticker *MapTicker
@@ -132,6 +134,70 @@ func (s *WorldService) LoadMap(ctx context.Context, mapID uint32) error {
 	}
 	s.trackMap(mapID)
 	s.Logger.Info("map ready", "map", mapID, "size", fmt.Sprintf("%dx%d", data.Width, data.Height))
+
+	// 加载这张地图的 NPC（原版 servermap.cpp:1701 loadNPChar）
+	if err := s.loadMapNPCs(ctx, mapID); err != nil {
+		// NPC 加载失败不影响地图可用性，只记日志
+		s.Logger.Warn("load map npcs failed", "map", mapID, "error", err)
+	}
+	return nil
+}
+
+// loadMapNPCs 为本图加载 NPC 脚本并在世界层生成实体。
+//
+// ★ NPC 实体必须进世界层，否则：
+//
+//  1. 玩家看不到 NPC（AOI 不会下发不存在的东西）
+//  2. 客户端点不到（点击靠 SM_CORECORD 里的 UID）
+//  3. 距离校验无从谈起（要读 NPC 的坐标）
+//
+// 原版 NPC 是独立 Actor 走 AM_ADDCO 注册进来的，
+// 这里直接 AddEntity，语义等价（都在同一张图上、都参与 AOI）。
+func (s *WorldService) loadMapNPCs(ctx context.Context, mapID uint32) error {
+	if s.NPCs == nil {
+		return nil
+	}
+	mapName := world.MapNameOf(mapID)
+	if mapName == "" {
+		return nil
+	}
+
+	loaded, err := s.NPCs.LoadMap(ctx, mapID, mapName, func(npcUID uint64) *npcHostAdapter {
+		return &npcHostAdapter{
+			NPCUID:    npcUID,
+			MapID:     mapID,
+			Players:   s.Players,
+			Worlds:    s.Worlds,
+			Broadcast: s.Broadcast,
+			Items:     s.Items,
+			Logger:    s.Logger,
+		}
+	})
+	if err != nil {
+		return err
+	}
+
+	spawned := 0
+	for _, inst := range loaded {
+		entity := world.Entity{
+			UID:       inst.NPCUID,
+			Type:      world.EntityNPC,
+			Name:      inst.Def.Name,
+			X:         inst.Def.X,
+			Y:         inst.Def.Y,
+			Direction: world.Direction(inst.Def.GfxDir + 1), // gfxDir 0..7 -> DIR 1..8
+			HP:        1, MaxHP: 1,
+			// NPC 不参与战斗，属性留空；HP=1 是为了让 Dead() 的
+			// `HP <= 0` 判断不把 NPC 当成尸体
+			ViewRange: 0,
+		}
+		if _, err := s.Worlds.AddEntity(ctx, mapID, entity); err != nil {
+			s.Logger.Debug("spawn npc failed", "npc", inst.Def.Name, "error", err)
+			continue
+		}
+		spawned++
+	}
+	s.Logger.Info("map npc spawned", "map", mapName, "loaded", len(loaded), "spawned", spawned)
 	return nil
 }
 

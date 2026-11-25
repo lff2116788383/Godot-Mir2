@@ -119,7 +119,7 @@ func startE2EServer(t *testing.T) *e2eServer {
 
 	dispatcher := transport.NewDispatcher()
 	if err := RegisterAllRoutes(dispatcher, loginHandler, actions, inventory,
-		spells, deaths, shops); err != nil {
+		spells, deaths, shops, nil); err != nil {
 		cancel()
 		t.Fatalf("register routes: %v", err)
 	}

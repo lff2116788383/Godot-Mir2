@@ -1,0 +1,472 @@
+package script
+
+import (
+	"fmt"
+
+	lua "github.com/yuin/gopher-lua"
+)
+
+// ==================== NPC 脚本的 C 函数绑定 ====================
+//
+// 对应 server/src/npchar.cpp 的 bindFunction 列表。
+//
+// 分两类：
+//
+//	必需（NPC 对话跑得起来）：uidPostXML/uidQueryName/getNPCName/getNPCFullName…
+//	占位（会话/仓库/交易/修理）：先返回安全的默认值 + 日志，不让脚本崩
+//
+// ★ 占位为什么不直接不绑定：
+//
+//	Lua 里调一个 nil 会抛 "attempt to call a nil value"，整个事件处理中断，
+//	玩家点了 NPC 什么都收不到。绑定成「返回 nil 的空函数」，
+//	脚本会走进 else 分支继续往下跑，至少能看到对话。
+//	这些函数在 REPLICA_AUDIT 里逐条记为待实现。
+
+// NPCHost 是 NPC 运行时需要的宿主能力（由 game 包实现）。
+//
+// 抽成接口而不是直接依赖 game：script 包不该 import game
+// （game 要 import script），否则循环依赖。
+type NPCHost interface {
+	// PostXML 把一段 XML 布局发给玩家（SM_NPCXMLLAYOUT）
+	PostXML(playerUID uint64, eventPath string, xml string) error
+	// PostInvOpCost 发送背包操作费用（SM_INVOPCOST）
+	PostInvOpCost(playerUID uint64, invOp int, itemID, seqID uint32, cost uint32) error
+	// PostStartInvOp 发起一次背包操作（SM_STARTINVOP）
+	PostStartInvOp(playerUID uint64, invOp int, queryTag, commitTag string, typeList []string) error
+	// PostStartInput 让客户端弹出输入框（SM_STARTINPUT）
+	PostStartInput(playerUID uint64, title, commitTag string, security bool) error
+	// PostSell 让客户端弹出出售列表（SM_SELLITEMLIST）
+	PostSell(playerUID uint64, itemIDs []uint32, costList []InvOpCost) error
+
+	// QueryName 查询玩家名字
+	QueryName(playerUID uint64) (string, bool)
+	// QueryLevel 查询玩家等级
+	QueryLevel(playerUID uint64) (int, bool)
+	// QueryGold 查询玩家金币
+	QueryGold(playerUID uint64) (uint64, bool)
+	// QueryRedName 判断玩家是否红名
+	QueryRedName(playerUID uint64) bool
+	// QueryItemDuration 查询物品持久度
+	QueryItemDuration(playerUID uint64, itemID, seqID uint32) (cur, max int, ok bool)
+
+	// RemoveGold 扣金币
+	RemoveGold(playerUID uint64, amount uint64) bool
+	// GrantGold 给金币
+	GrantGold(playerUID uint64, amount uint64) bool
+
+	// SpaceMove 传送玩家
+	SpaceMove(playerUID uint64, mapID uint32, x, y int) error
+
+	// Log 写日志（对应 addLogString）
+	Log(level int, msg string)
+}
+
+// InvOpCost 是一条背包操作花费（SDCostItem）。
+type InvOpCost struct {
+	ItemID uint32
+	Count  uint64
+}
+
+// NPCScript 是一个已加载的 NPC 脚本实例。
+type NPCScript struct {
+	Runtime *Runtime
+
+	// NPCUID 这个 NPC 的 UID
+	NPCUID uint64
+	// Name NPC 名（文件名里的那一段）
+	Name string
+	// FullName 地图名.NPC名（getNPCFullName 的返回值）
+	FullName string
+	// MapName 地图名
+	MapName string
+	// ScriptPath 脚本文件路径
+	ScriptPath string
+
+	host NPCHost
+}
+
+// LoadNPC 加载一个 NPC 脚本。
+//
+// 步骤严格照原版 NPChar 构造 + LuaThreadRunner 构造：
+//
+//  1. 建 Lua 状态，注入 base.lua 与常量
+//  2. 绑定 NPC 专属函数（uidPostXML / getNPCName …）
+//  3. 加载 npchar.lua（事件分发核心）
+//  4. 加载具体 NPC 的地图脚本（它会调 setEventHandler）
+func LoadNPC(opts Options, npc NPCInfo, host NPCHost) (*NPCScript, error) {
+	// 把 NPC 相关绑定并进 Options.Bindings
+	bindings := make(map[string]lua.LGFunction, len(opts.Bindings)+40)
+	for k, v := range opts.Bindings {
+		bindings[k] = v
+	}
+
+	s := &NPCScript{
+		NPCUID:     npc.UID,
+		Name:       npc.Name,
+		FullName:   npc.MapName + "." + npc.Name,
+		MapName:    npc.MapName,
+		ScriptPath: npc.ScriptPath,
+		host:       host,
+	}
+	for name, fn := range s.bindings() {
+		bindings[name] = fn
+	}
+	opts.Bindings = bindings
+
+	rt, err := NewRuntime(opts)
+	if err != nil {
+		return nil, err
+	}
+	s.Runtime = rt
+
+	// 沙箱（getTLSTable / 协程独立 globals）必须在 npchar.lua 之前装好
+	if err := rt.InstallSandbox(); err != nil {
+		rt.Close()
+		return nil, err
+	}
+	if err := rt.LoadNPCFramework(); err != nil {
+		rt.Close()
+		return nil, err
+	}
+	if err := rt.LoadScript(npc.ScriptPath); err != nil {
+		rt.Close()
+		return nil, err
+	}
+	return s, nil
+}
+
+// NPCInfo 是加载 NPC 所需的静态信息。
+type NPCInfo struct {
+	UID        uint64
+	Name       string
+	MapName    string
+	ScriptPath string
+	// MapID / X / Y / LookID / GfxDir 来自文件名
+	MapID  uint32
+	X, Y   int
+	LookID uint32
+	GfxDir uint8
+}
+
+// HandleEvent 处理一次 NPC 事件（对应 on_AM_NPCEVENT 的核心）。
+//
+// ★ 必须在协程里跑，不能直接 CallGlobal：
+//
+//	npchar.lua:403 的 `getTLSTable().uid = from` 在协程外调用会
+//	直接 error('call getTLSTable() in main thread')。
+//	第一次实现就是直接调用，报的错是"attempt to call a non-function object"
+//	—— 看起来像函数没绑定，实际是 getTLSTable 内部主动 throw。
+func (s *NPCScript) HandleEvent(playerUID uint64, path string, event string, value *string) error {
+	res := s.SpawnEvent(playerUID, path, event, value)
+	if res.Err != nil {
+		s.host.Log(1, fmt.Sprintf("npc %s event %q failed: %v", s.FullName, event, res.Err))
+		return res.Err
+	}
+	return nil
+}
+
+// HasEventHandler 判断这个 NPC 是否装了事件处理器（原版 hasEventHandler()）。
+func (s *NPCScript) HasEventHandler() bool {
+	ret, err := s.Runtime.CallGlobal("hasEventHandler")
+	if err != nil || len(ret) == 0 {
+		return false
+	}
+	b, ok := ret[0].(lua.LBool)
+	return ok && bool(b)
+}
+
+// Close 释放脚本状态。
+func (s *NPCScript) Close() {
+	if s.Runtime != nil {
+		s.Runtime.Close()
+	}
+}
+
+// ==================== 绑定实现 ====================
+
+func (s *NPCScript) bindings() map[string]lua.LGFunction {
+	return map[string]lua.LGFunction{
+		// ---- NPC 自身信息 ----
+		"getNPCName": s.luaGetNPCName,
+		"getNPCFullName": func(l *lua.LState) int {
+			l.Push(lua.LString(s.FullName))
+			return 1
+		},
+		"getNPCMapName":     s.luaGetNPCMapName,
+		"getSubukGuildName": func(l *lua.LState) int { l.Push(lua.LString("")); return 1 },
+		"setNPCSell":        s.luaSetNPCSell,
+		"addNPCSell":        func(l *lua.LState) int { return 0 },
+		"clearNPCSell":      func(l *lua.LState) int { return 0 },
+
+		// ---- 发消息给客户端 ----
+		"uidPostXML":             s.luaPostXML,
+		"uidPostXMLString":       s.luaPostXML,
+		"uidPostInvOpCost":       s.luaPostInvOpCost,
+		"uidPostStartInvOp":      s.luaPostStartInvOp,
+		"uidPostStartInput":      s.luaPostStartInput,
+		"uidPostSell":            s.luaPostSell,
+		"uidPostAuctionItemList": func(l *lua.LState) int { return 0 },
+
+		// ---- 查询玩家 ----
+		"uidQueryName":         s.luaQueryName,
+		"uidQueryLevel":        s.luaQueryLevel,
+		"uidQueryGold":         s.luaQueryGold,
+		"uidQueryRedName":      s.luaQueryRedName,
+		"uidQueryItemDuration": s.luaQueryItemDuration,
+
+		// ---- 金币 ----
+		"uidRemoveGold": s.luaRemoveGold,
+		"uidGrantGold":  s.luaGrantGold,
+
+		// ---- 传送 ----
+		"uidSpaceMove":    s.luaSpaceMove,
+		"uidReqSpaceMove": s.luaSpaceMove,
+
+		// ---- 未实现的占位（返回 nil / false，不抛错）----
+		"uidRemoteCall":          s.luaRemoteCall,
+		"uidStartTrade":          luaReturnNothing,
+		"uidStartRepair":         luaReturnNothing,
+		"uidRepairItem":          luaReturnNothing,
+		"uidStartSecure":         luaReturnNothing,
+		"uidSecureItem":          luaReturnNothing,
+		"uidShowSecuredItemList": luaReturnNothing,
+		"uidGrant":               luaReturnNothing,
+		"uidRemove":              luaReturnNothing,
+		"uidDBSetKey":            func(l *lua.LState) int { l.Push(lua.LTrue); return 1 },
+		"uidDBGetKey":            func(l *lua.LState) int { l.Push(lua.LNil); return 1 },
+		"uidGetXMLSeqID":         func(l *lua.LState) int { l.Push(lua.LNumber(1)); return 1 },
+	}
+}
+
+func luaReturnNothing(l *lua.LState) int { return 0 }
+
+// luaGetNPCName 对应 npchar.cpp:88 getNPCName([skipSuffix])。
+//
+// 默认把 "阿天_1" 截成 "阿天"（去掉 _1 这种序号后缀）。
+// 传 true 才返回原名。这是脚本里最常调的：对话正文「我是%s」用它。
+func (s *NPCScript) luaGetNPCName(l *lua.LState) int {
+	skip := true
+	if l.GetTop() >= 1 {
+		skip = l.ToBool(1)
+	}
+	name := s.Name
+	if skip {
+		for i := 0; i < len(name); i++ {
+			if name[i] == '_' {
+				name = name[:i]
+				break
+			}
+		}
+	}
+	l.Push(lua.LString(name))
+	return 1
+}
+
+// luaGetNPCMapName 对应 npchar.cpp:113。
+func (s *NPCScript) luaGetNPCMapName(l *lua.LState) int {
+	skip := true
+	if l.GetTop() >= 1 {
+		skip = l.ToBool(1)
+	}
+	name := s.MapName
+	if skip {
+		for i := 0; i < len(name); i++ {
+			if name[i] == '_' {
+				name = name[:i]
+				break
+			}
+		}
+	}
+	l.Push(lua.LString(name))
+	return 1
+}
+
+// luaSetNPCSell 对应 npchar.cpp:60 setNPCSell(itemNameList)。
+//
+// 脚本用它声明「这个 NPC 卖什么」，客户端商店列表由此生成。
+// 当前版本只记录日志 —— 真正的售卖表在 shopkeeper 扩展里，
+// 与 game.ShopHandler 的价格逻辑对齐后再接。
+func (s *NPCScript) luaSetNPCSell(l *lua.LState) int {
+	tbl := l.CheckTable(1)
+	names := make([]string, 0, tbl.Len())
+	tbl.ForEach(func(_, v lua.LValue) {
+		names = append(names, v.String())
+	})
+	s.host.Log(0, fmt.Sprintf("npc %s sell list: %d items", s.FullName, len(names)))
+	return 0
+}
+
+// luaPostXML 对应 npchar.cpp:337 uidPostXMLString(uid, path, xml)。
+func (s *NPCScript) luaPostXML(l *lua.LState) int {
+	uid := uint64(l.CheckInt64(1))
+	path := l.OptString(2, "")
+	xmlStr := l.CheckString(3)
+	if err := s.host.PostXML(uid, path, xmlStr); err != nil {
+		s.host.Log(1, fmt.Sprintf("npc %s post xml failed: %v", s.FullName, err))
+	}
+	return 0
+}
+
+// luaPostInvOpCost 对应 npchar.cpp:441 postInvOpCost。
+func (s *NPCScript) luaPostInvOpCost(l *lua.LState) int {
+	uid := uint64(l.CheckInt64(1))
+	invOp := l.CheckInt(2)
+	itemID := uint32(l.CheckInt64(3))
+	seqID := uint32(l.CheckInt64(4))
+	cost := uint32(l.CheckInt64(5))
+	_ = s.host.PostInvOpCost(uid, invOp, itemID, seqID, cost)
+	return 0
+}
+
+// luaPostStartInvOp 对应 npchar.cpp:419 postStartInvOp。
+func (s *NPCScript) luaPostStartInvOp(l *lua.LState) int {
+	uid := uint64(l.CheckInt64(1))
+	invOp := l.CheckInt(2)
+	queryTag := l.CheckString(3)
+	commitTag := l.CheckString(4)
+	typeList := []string{}
+	if tbl, ok := l.Get(5).(*lua.LTable); ok {
+		tbl.ForEach(func(_, v lua.LValue) {
+			typeList = append(typeList, v.String())
+		})
+	}
+	_ = s.host.PostStartInvOp(uid, invOp, queryTag, commitTag, typeList)
+	return 0
+}
+
+// luaPostStartInput 对应 npchar.cpp:474 postStartInput。
+func (s *NPCScript) luaPostStartInput(l *lua.LState) int {
+	uid := uint64(l.CheckInt64(1))
+	title := l.CheckString(2)
+	commitTag := l.CheckString(3)
+	security := l.OptBool(4, false)
+	_ = s.host.PostStartInput(uid, title, commitTag, security)
+	return 0
+}
+
+// luaPostSell 对应 SM_SELLITEMLIST 的推送。
+//
+// 脚本里的签名是 uidPostSell(uid, itemList)，itemList 是
+// {itemID, seqID, cost} 的数组。
+func (s *NPCScript) luaPostSell(l *lua.LState) int {
+	uid := uint64(l.CheckInt64(1))
+	tbl := l.CheckTable(2)
+	var itemIDs []uint32
+	var costs []InvOpCost
+	tbl.ForEach(func(_, v lua.LValue) {
+		row, ok := v.(*lua.LTable)
+		if !ok {
+			return
+		}
+		itemID := uint32(lua.LVAsNumber(row.RawGetInt(1)))
+		cost := uint64(lua.LVAsNumber(row.RawGetInt(3)))
+		itemIDs = append(itemIDs, itemID)
+		costs = append(costs, InvOpCost{ItemID: itemID, Count: cost})
+	})
+	_ = s.host.PostSell(uid, itemIDs, costs)
+	return 0
+}
+
+func (s *NPCScript) luaQueryName(l *lua.LState) int {
+	uid := uint64(l.CheckInt64(1))
+	if name, ok := s.host.QueryName(uid); ok {
+		l.Push(lua.LString(name))
+	} else {
+		l.Push(lua.LNil)
+	}
+	return 1
+}
+
+func (s *NPCScript) luaQueryLevel(l *lua.LState) int {
+	uid := uint64(l.CheckInt64(1))
+	if level, ok := s.host.QueryLevel(uid); ok {
+		l.Push(lua.LNumber(level))
+	} else {
+		l.Push(lua.LNumber(0))
+	}
+	return 1
+}
+
+func (s *NPCScript) luaQueryGold(l *lua.LState) int {
+	uid := uint64(l.CheckInt64(1))
+	if gold, ok := s.host.QueryGold(uid); ok {
+		l.Push(lua.LNumber(gold))
+	} else {
+		l.Push(lua.LNumber(0))
+	}
+	return 1
+}
+
+func (s *NPCScript) luaQueryRedName(l *lua.LState) int {
+	uid := uint64(l.CheckInt64(1))
+	l.Push(lua.LBool(s.host.QueryRedName(uid)))
+	return 1
+}
+
+func (s *NPCScript) luaQueryItemDuration(l *lua.LState) int {
+	uid := uint64(l.CheckInt64(1))
+	itemID := uint32(l.CheckInt64(2))
+	seqID := uint32(l.CheckInt64(3))
+	if cur, max, ok := s.host.QueryItemDuration(uid, itemID, seqID); ok {
+		l.Push(lua.LNumber(cur))
+		l.Push(lua.LNumber(max))
+		return 2
+	}
+	l.Push(lua.LNil)
+	return 1
+}
+
+func (s *NPCScript) luaRemoveGold(l *lua.LState) int {
+	uid := uint64(l.CheckInt64(1))
+	amount := uint64(l.CheckInt64(2))
+	l.Push(lua.LBool(s.host.RemoveGold(uid, amount)))
+	return 1
+}
+
+func (s *NPCScript) luaGrantGold(l *lua.LState) int {
+	uid := uint64(l.CheckInt64(1))
+	amount := uint64(l.CheckInt64(2))
+	l.Push(lua.LBool(s.host.GrantGold(uid, amount)))
+	return 1
+}
+
+func (s *NPCScript) luaSpaceMove(l *lua.LState) int {
+	uid := uint64(l.CheckInt64(1))
+	// 地图参数可以是 ID 或名字；当前只支持数字
+	mapArg := l.Get(2)
+	var mapID uint32
+	switch v := mapArg.(type) {
+	case lua.LNumber:
+		mapID = uint32(v)
+	case lua.LString:
+		s.host.Log(1, fmt.Sprintf("uidSpaceMove by map name %q not supported yet", string(v)))
+		l.Push(lua.LFalse)
+		return 1
+	default:
+		l.Push(lua.LFalse)
+		return 1
+	}
+	x := l.CheckInt(3)
+	y := l.CheckInt(4)
+	if err := s.host.SpaceMove(uid, mapID, x, y); err != nil {
+		l.Push(lua.LFalse)
+		return 1
+	}
+	l.Push(lua.LTrue)
+	return 1
+}
+
+// luaRemoteCall 是跨 NPC 调用（uidRemoteCall）。
+//
+// 原版会起协程把代码串发到目标 actor 里执行。当前版本没有跨 actor
+// 调度，先返回 nil 并记日志 —— 脚本里通常写成
+//
+//	local ret = uidRemoteCall(uid, npcName, args, code)
+//	if ret then ... end
+//
+// 返回 nil 会走 else 分支，不会崩。
+func (s *NPCScript) luaRemoteCall(l *lua.LState) int {
+	s.host.Log(1, fmt.Sprintf("npc %s: uidRemoteCall not implemented", s.FullName))
+	l.Push(lua.LNil)
+	return 1
+}
