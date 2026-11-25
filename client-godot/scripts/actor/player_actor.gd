@@ -42,6 +42,7 @@ var _motion = null
 var _anim_node = null
 ## 动作帧累积时间（毫秒）
 var _frame_acc := 0.0
+var _one_shot := false
 
 var grid_checker: Callable
 
@@ -203,8 +204,31 @@ func _advance_animation(dt: float) -> void:
 	_frame_acc += dt * 1000.0
 	while _frame_acc >= delay:
 		_frame_acc -= delay
-		if not _anim_node.advance_frame():
+		var old_frame: int = int(_motion.frame)
+		_anim_node.advance_frame()
+		if _one_shot and int(_motion.frame) <= old_frame:
+			_one_shot = false
+			set_motion_type(MotionTypeScript.MOTION_STAND)
 			break
+
+
+func play_action_motion(motion_type: int, dir: int = -1) -> void:
+	if motion_type == MotionTypeScript.MOTION_WALK:
+		return
+	var m = MotionNodeScript.new()
+	m.type = motion_type
+	m.direction = facing if dir <= 0 else dir
+	m.x = grid.x
+	m.y = grid.y
+	m.end_x = grid.x
+	m.end_y = grid.y
+	_motion = m
+	_frame_acc = 0.0
+	_one_shot = true
+	if dir > 0:
+		facing = dir
+	if _anim_node != null:
+		_anim_node.set_motion(m)
 
 
 func _end_move() -> void:

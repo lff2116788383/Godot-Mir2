@@ -24,6 +24,10 @@ const GRID_X := 48
 const GRID_Y := 32
 
 var human: HumanActor = null
+var _name_label: Label = null
+var display_name: String = ""
+var hp_ratio: float = 1.0
+var is_male: bool = false
 var curr_motion = null
 var motion_queue: Array = []
 var forced_queue: Array = []
@@ -45,12 +49,44 @@ func setup(assets_root: String, p_dress: int = 0, p_hair: int = 1,
 	human.name = "Human"
 	add_child(human)
 	human.setup(assets_root)
+	is_male = p_gender
 	human.set_appearance(p_dress, p_hair, p_helmet, p_weapon, p_gender)
 	# 脚底锚点：人形图约 22x63，需向左上偏移使脚落在格中心
 	human.anchor_offset = Vector2(-10, -48)
 
 
 ## CoManager 创建实体后注入
+func _ensure_name_label() -> void:
+	if _name_label != null:
+		return
+	_name_label = Label.new()
+	_name_label.position = Vector2(-34, -76)
+	_name_label.size = Vector2(100, 36)
+	_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_name_label.add_theme_font_size_override("font_size", 11)
+	_name_label.add_theme_color_override("font_color", Color(0.82, 0.9, 1.0))
+	_name_label.add_theme_color_override("font_outline_color", Color(0,0,0,0.9))
+	_name_label.add_theme_constant_override("outline_size", 2)
+	add_child(_name_label)
+
+
+func set_display_name(nm: String) -> void:
+	display_name = nm
+	_ensure_name_label()
+	_refresh_name_label()
+
+
+func set_health_ratio(r: float) -> void:
+	hp_ratio = clampf(r, 0.0, 1.0)
+	_refresh_name_label()
+
+
+func _refresh_name_label() -> void:
+	if _name_label == null:
+		return
+	_name_label.text = "%s\nHP %d%%" % [display_name, int(hp_ratio * 100.0)]
+
+
 func set_walk_context(can_move: Callable, make_finder: Callable, max_step: int) -> void:
 	_can_move = can_move
 	_make_finder = make_finder

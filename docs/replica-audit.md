@@ -1,170 +1,212 @@
-# 客户端复刻进度审计（对照 mir2x client/src）
+# Godot-Mir2 客户端复刻进度审计（P0/P1 更新版）
 
-> 审计基准：`E:\Desktop\game\mir2x` 提交 `5826493`，`client/src/` 共 **268 个文件、33,902 行**
-> 本工程：`client-godot/scripts/` 共 **95 个文件、22,600+ 行**
-> 结论日期：2026-11-24
+> 审计日期：2026-11-25
+> 原版基线：`E:\Desktop\game\mir2x`，提交 `5826493`
+> Godot 基线：`C:\Users\Administrator\Desktop\github\Godot-Mir2`，分支 `client-godot`
+> 本文以当前代码实测和协议表为准，旧版939 项全过 / SM 33/86等结论已不再使用。
 
 ---
 
-## 一、总体进度
+## 一、总体结论
 
-| 维度 | 原版 | 已复刻 | 完成度 |
+| 维度 | 当前进度 | 说明 |
+|---|---:|---|
+| P0 核心链路 | **约 95%** | 登录、查角色、进图、服务端场景回放、地图 UID、动作上行、世界点击、魔法、物品基础链路已打通 |
+| P1 系统接线 | **约 90%** | 商店、交易、摆摊、拍卖、仓库、队伍、行会、好友、任务、小地图、安全区、火墙、BGM 已接基础协议和 UI |
+| 完整客户端复刻 | **约 65%70%** | P2 特殊怪物、像素级 UI、IME、调试工具、边缘玩法仍需继续 |
+| 真实生产服务端验收 | **约 20%30%** | 当前只在 Go mock 上做了链路验证，尚需真实 C++ 服务端/正式服务端回归 |
+
+### 本轮最重要的变化
+
+1. **协议码修复**：建账号、改密码、在线错误、静态缓冲区偏移等错误已修正。
+2. **新增 `WorldSession`**：把场景进入、实体交互、聊天、队伍、行会、交易、商店、任务等状态集中接线。
+3. **CM 封装补齐**：`MirClient` 现有 **86 个客户端消息封装**。
+4. **SM 分支覆盖补齐**：原版 `ProcessRun` 的 **86 个 SM 处理分支**均已有对应入口；登录流程 14 个 SM 分支也已修正。
+5. **服务端场景回放**：登录后收到 `SM_ONLINEOK` / `SM_STARTGAMESCENE` 后按 `mapUID` 加载地图，并回放场景实体。
+6. **移动/攻击/拾取/施法开始上行**：不再只是本地动画。
+7. **新增地图表、魔法特效、头顶名字/HP、安全区/火墙绘制、小地图和 BGM 切换**。
+8. **修复 UI 子控件事件 ROI 传递错误**，面板点击坐标开始正确。
+
+---
+
+## 二、当前代码与数据规模
+
+| 项目 | 原版客户端 | 当前 Godot | 说明 |
+|---|---:|---:|---|
+| 代码文件 | 407 个 cpp/hpp/inc | 97 个运行时 GDScript | 当前另有 tools 测试脚本 |
+| 代码行数 | 59,409 | 25,639 | 约 43%（含数据/布局/协议封装） |
+| 核心数据表 | item / monster / map / magic / buff | 1258 / 364 / 603 / 116 / 21 | 核心表全部转为 JSON |
+| 派生数据 | 怪物类、技能图标 | 32 类行为、12 类自定义帧表、63 技能图标 | 特殊怪物仍需继续逐类验收 |
+| CM 封装 | 86 个业务码 | 86 个 | 见 `scripts/net/mir_client.gd` |
+| ProcessRun SM 分支 | 86 个 | 86 个有处理入口 | 核心状态链路已覆盖，边缘表现仍需真实包回归 |
+| 登录流程 SM 分支 | 14 个 | 14 个 | 枚举值已改为引用 `MirClient` 常量 |
+| 主面板 | GUIManager 21 个 | 21 个均有布局/实现入口 | 部分面板仍是简化实现 |
+
+---
+
+## 三、P0 完成情况
+
+| 功能 | 状态 | 实现位置 | 说明 |
 |---|---|---|---|
-| 代码行数 | 33,902 | 22,600 | **约 67%** |
-| 文件数 | 268 | 95 | 35%（但原版 34 个怪物子类已数据化合并） |
-| GUI 面板目录 | 16 个 | 16 个全实现 | **100%** |
-| SM 协议处理器 | 86 个 | 33 个 | **38%** |
-| 自检项 | — | 939 项 | 全过 |
-
-**行数 67% 但协议 38%，说明"界面/数据"做得比"网络同步"多。**
-这是本阶段最需要补的短板。
-
----
-
-## 二、已完成（按批次）
-
-### B 系列：底层地基（全完成）
-| 批次 | 内容 | 与原版对应 |
-|---|---|---|
-| B1 | 协议枚举、常量、ActionNode、UID、物品结构 | `protocoldef.hpp` `sysconst.hpp` `actionnode` |
-| B2 | 5 张 .inc → JSON（1258 物品/364 怪物/603 地图/116 魔法/21 Buff） | `common/src/*.inc` |
-| B3 | 动作状态机（33 种动作帧表、frameDelay、移动队列、parseAction） | `creaturemovable.cpp` `motionnode` |
-| B4 | 魔法系统（基类/追踪/固定/附着/图形库） | `basemagic.cpp` `magicdb` |
-| B5 | 物品判定 + 布局算法 | `itemrecord.hpp` `invpack.cpp` |
-| B6 | 怪物帧表提取 + 基类 | 12 个类自定义帧表 |
-| B7 | 背包容器、消息栈、小地图 | `invpack.cpp` `messagestackboard` `minimapboard` |
-| B8 | XML 排版引擎 | `xmltypeset.cpp`(1730 行) `xmlparagraph.cpp` |
-| B9 | 人形七层渲染 | `hero.cpp:1411-1460` gfxID 计算 |
-| B10 | 动作播放 + mock 联调 | `processrun.cpp` 动作调度 |
-| B11 | 实体同步、怪物 APNG 渲染 | `clientmonster.cpp` `pngtexoffdb` |
-| B12 | 怪物走路与像素位移（getShift） | `creaturemovable.cpp:216` |
-
-### C 系列：界面与流程（全完成）
-| 批次 | 内容 | 覆盖率 |
-|---|---|---|
-| C1+C2 | UI 框架（10 文件）+ 主界面 | 控件树/ROI 裁剪/按钮三态/滑块/输入 |
-| C3+C4 | XML 解析 + NPC 对话 + 战斗飘字 | `xmlparagraph` `npcchatboard` `ascendstr` |
-| C5+C6 | 5 个面板 + 32 怪物类行为数据化 | `skillboard` `teamstateboard` `guildboard` `runtimeconfigboard` `itemlistboard` |
-| C7 | 14 个低频面板逐行移植 | 控制栏/状态板/快捷栏/头顶/脚下/摊位列/商店/交易/摆摊/拍卖/好友/任务/马匹/小地图/输入框/菜单 |
-| C8 | 音频系统 | `soundeffectdb` `bgmusicdb` 848 音效 + 25 BGM + 3D 定位 |
-| C9 | 登录 → 选人 → 建号 | `processlogo` `processlogin` `processselectchar` `processcreatechar` `processcreateaccount` `processchangepassword` |
-
-### C10：本轮新增（补的最大缺口）
-| 内容 | 对应原版 | 状态 |
-|---|---|---|
-| **地图物件层**（地面物件/上层物件0/上层物件1/光照） | `processrun.cpp:2388 drawObject` + `295-425` 分层 | **新增** |
-| MapLoader 扩展（light 位域、2×OBJECT 7×u32） | `mir2xmapdata.hpp` CELL 结构 | **新增** |
-| 角色状态消息解析（11 类） | `processrunnet.cpp` 各 on_SM_* | **新增** |
-| SM 协议常量补全（73 个） | `sm_table.gd` 逐值核对 | **新增** |
-| 地面物品同步与绘制 | `processrunnet.cpp:466` + `drawGroundItem` | **新增** |
-| 聊天/广播/打击格/NPC 消息 | `processrunnet.cpp:105-126, 738-790` | **新增** |
+| 协议常量纠错 |  | `login_flow.gd`、`mir_client.gd` | 建账号 32、改密码 6、在线错误 22 等已修正 |
+| 静态缓冲区布局 |  | `mir_client.gd`、`ui_account_process.gd`、mock | StaticBuffer<64> 按 68 字节布局 |
+| CM 上行封装 |  | `mir_client.gd` | 86 个 CM 封装齐全 |
+| SM 解析扩展 |  | `sd_msg_parser.gd` | 在线、场景、安全区、魔法、队伍、行会、好友、拍卖、摆摊、任务等 |
+| 登录查角色进游戏 |  | `login_flow.gd`、`main.gd` | mock 实测 18/18 通过 |
+| 服务端场景进入 |  | `WorldSession.apply_start_scene`、`main.apply_server_scene` | 按 mapUID、坐标、朝向进入；支持场景帧缓存回放 |
+| 地图表/多地图加载 |  | `map_record.gd`、`main.gd` | 支持 mapIDbin、BGM、小地图 ID、地图缓存 |
+| 主角移动上行 |  | `player_actor.gd`、`world_session.gd` | 本地 A* + `CM_ACTION` |
+| 怪物/玩家点击攻击 |  | `world_session.gd` | 邻格攻击，远距离走向后攻击 |
+| 拾取 |  | `world_session.gd` | 点击地面物品，接近后发 `CM_PICKUP` + 动作 |
+| NPC 对话入口 |  | `world_session.gd`、`ui_npc_chat.gd` | 点击 NPC 发 `SYS_ENTER`，XML 显示与事件回发已接 |
+| 魔法特效与伤害请求 |  | `world_session.gd`、`magic_effect_actor.gd` | `SM_CASTMAGIC` 播放 APNG；技能点击后点怪施法 |
+| 背包/装备/腰带更新 |  | `main.gd`、`sd_msg_parser.gd` | 更新、删除、装备、脱装、腰带消息已处理 |
+| 背包双击操作 |  | `game_ui.gd`、`world_session.gd` | 喝药、穿戴、放腰带；拍卖/摆摊窗口下转为登记/上架 |
+| 装备槽点击脱装 |  | `ui_hero_state_board.gd`、`world_session.gd` | 点击装备格发 `CM_REQUESTGRABWEAR` |
+| 世界坐标/地图同步 |  | `co_manager.gd`、`world_session.gd` | 主角换图触发地图重载；其他实体换图移除 |
+| 连接帧缓存 |  | `main.gd` | 登录期间缓存 STARTGAMESCENE/CORECORD/ACTION，进图后回放 |
 
 ---
 
-## 三、还缺什么（按影响排序）
+## 四、P1 完成情况
 
-### 缺口 1：地图渲染仍有 3 层没做 ⚠️ 高
+### 4.1 商店、交易、摆摊、拍卖、仓库
 
-原版绘制顺序 8 层，现状：
-
-| 层 | 原版 | 现状 |
+| 功能 | 状态 | 说明 |
 |---|---|---|
-| 1. 瓦片 | `drawTile` | ✅ 已做（Sprite2D 池化） |
-| 2. 地面物件 OBJD_GROUND | `drawObject(OBJD_GROUND)` | ✅ **本轮新增** |
-| 3. 地面魔法特效（火焰灰烬） | `FireAshEffect::drawGroundAsh` | ❌ 缺 |
-| 4. 地面掉落物 | `drawGroundItem` | ✅ **本轮新增** |
-| 5. 角色（按 y 排序） | `coLocList` 分组绘制 | ⚠️ 有，但**没有按 y 排序** |
-| 6. 上层物件 OBJD_OVERGROUND0 | `drawObject(OVERGROUND0)` | ✅ **本轮新增** |
-| 7. 火墙 | `fireWallList` | ❌ 缺 |
-| 8. 上层物件 OBJD_OVERGROUND1 | `drawObject(OVERGROUND1)` | ✅ 已接入（本图 0 个） |
+| NPC 商品列表 |  | `SM_NPCSELL` / `SM_SELLITEMLIST`  PurchaseBoard |
+| 购买 |  | PurchaseBoard on_buy  `CM_BUY` |
+| 直接交易请求/接受/拒绝 |  | 输入框确认，响应 `CM_RESPONDDIRECTTRADE` |
+| 交易锁定/确认/完成/关闭 |  | 交易报价更新、锁定、提交、取消、完成/错误消息 |
+| 摆摊查询/浏览/购买 |  | `CM_QUERYSTALL` / `SM_QUERYSTALLOK` / `CM_BUYSTALLITEM` |
+| 摆摊上架/取下/开始/收摊 |  | 双击背包上架；物品操作按钮取下；开始/收摊已接 |
+| 拍卖查询/购买/撤拍 |  | AuctionBoard + `CM_QUERYAUCTIONITEMLIST` / `CM_BUYAUCTIONITEM` / `CM_UNREGISTERAUCTIONITEM` |
+| 拍卖登记 |  | 拍卖面板打开时双击背包物品登记，默认价格取物品价格，备注玩家寄售 |
+| 仓库/寄存列表 |  | `SM_SHOWSECUREDITEMLIST`，打开背包和寄存面板 |
+| 仓库取回 |  | 通用物品列表按钮  `CM_REQUESTRETRIEVESECUREDITEM` |
+| 装备耐久 |  | `SM_WEARITEMDURATION` 更新装备耐久并刷新人物状态面板 |
+| 装备/腰带错误提示 |  | 四类错误消息已转系统日志 |
 
-**还差的**：
-- 角色按 y 排序（否则人会被后面的树挡住 / 挡住前面的树）
-- 火墙绘制（`SM_GROUNDFIREWALLLIST` 已解析但没画）
-- 地面魔法特效层（火焰灰烬）
+### 4.2 队伍、行会、好友、聊天
 
-### 缺口 2：SM 协议还有 53 个没接 ⚠️ 高
-
-已接 33 / 86。按系统分：
-
-| 系统 | 未接协议 | 影响 |
+| 功能 | 状态 | 说明 |
 |---|---|---|
-| **魔法/战斗** | `SM_CASTMAGIC`(已定义未处理) `SM_NEXTSTRIKE` `SM_STRIKEGRID`(已接) `SM_MISS` | 施法表现、连击 |
-| **安全区** | `SM_SAFEZONELIST` | 安全区边缘显示 |
-| **队伍** | `SM_TEAMINFO` `SM_TEAMMEMBERLIST` `SM_TEAMCANDIDATE` `SM_TEAMERROR` | 队伍面板无数据 |
-| **行会** | `SM_GUILDINFO` `SM_GUILDERROR` `SM_GUILDCHAT` `SM_GUILDWARLIST` `SM_PLAYERGUILD` | 行会面板无数据 |
-| **好友** | `SM_FRIENDLIST` `SM_ADDFRIENDACCEPTED/REJECTED` `SM_CHATMESSAGELIST` `SM_CREATECHATGROUP` | 好友面板无数据 |
-| **交易** | `SM_STARTDIRECTTRADE` `SM_UPDATEDIRECTTRADE` `SM_CLOSEDIRECTTRADE` `SM_COMPLETEDIRECTTRADE` `SM_DIRECTTRADEERROR` | 交易面板空壳 |
-| **拍卖** | `SM_AUCTIONITEMLIST` | 拍卖面板空壳 |
-| **摆摊** | `SM_STALL` `SM_STALLERROR` `SM_PLAYERSTALL` `SM_QUERYSTALLOK` | 摆摊面板空壳 |
-| **商店** | `SM_NPCSELL` `SM_SELLITEMLIST` `SM_BUYSUCCEED` `SM_BUYERROR` | 购买流程断 |
-| **任务** | `SM_QUESTDESPLIST`(已解析) `SM_QUESTDESPUPDATE` | 任务面板无数据 |
-| **拍卖/排行** | `SM_RANKINGLIST` | 排行榜空壳 |
-| **其他** | `SM_REVIVE` `SM_OFFLINE` `SM_PARTEXT` `SM_PLAYERCONFIG` `SM_UPDATEITEM` `SM_REMOVEITEM` `SM_INVOPCOST` `SM_STARTINVOP` `SM_EQUIPWEARERROR` `SM_GRABWEARERROR` | 零散 |
+| 队伍成员/申请/附近队伍 |  | `SM_TEAMMEMBERLIST` / `SM_TEAMCANDIDATE` / `SM_TEAMINFO` 绑定 TeamBoard |
+| 加入/离开/查询/转让队长/跟随 |  | UI/命令及 CM 封装已接 |
+| 创建队伍/设置要求 |  | `CM_CREATETEAM` / `CM_SETTEAMREQUIREMENT` 已封装 |
+| 行会公告/成员/聊天 |  | `SM_GUILDINFO` / `SM_GUILDCHAT` 绑定 GuildBoard |
+| 行会邀请/退出/踢人/转让/解散/公告 |  | 命令与 CM 封装已接 |
+| 行会战列表 |  | `SM_GUILDWARLIST` 状态保存 |
+| 好友列表/添加/接受/拒绝/黑名单 |  | FriendChatBoard 和 CM 封装已接 |
+| 好友搜索/会话预览/私聊 |  | 搜索、打开会话、消息发送/接收解析已接 |
+| 本地说话/广播/行会聊天 |  | 控制栏命令 `普通 / !广播 / @行会` |
+| 聊天历史/送达回执 |  | `SM_CHATMESSAGELIST`、`SM_QUERYCHATMESSAGEOK`、`SM_CHATMESSAGEOK` |
 
-### 缺口 3：processrun.cpp 的"世界交互" ⚠️ 中
+### 4.3 任务、NPC、显示、小地图、音频
 
-| 功能 | 原版 | 现状 |
+| 功能 | 状态 | 说明 |
 |---|---|---|
-| 点击 NPC 对话 | `processEvent` 里判 `UID_NPC` | ⚠️ 有 NPC 面板，但没有点击触发 |
-| 点击地面物品拾取 | `tryPickUpItem` | ❌ 缺 |
-| 鼠标悬停显示物品名 | `drawItemHoverText` | ❌ 缺 |
-| 鼠标位置显示坐标 | `drawMouseLocation` | ❌ 缺 |
-| 攻击目标锁定（红框） | `getTargetBox` | ❌ 缺 |
-| 安全区边缘虚线 | `resetSafeZoneEdge` | ❌ 缺 |
-| 近身攻击判定 | `oneStepCost` `canMove` | ⚠️ 部分 |
-| 用户命令 `@` | `userCommand` `luaCommand` | ❌ 缺 |
-
-### 缺口 4：hero.cpp 的战斗逻辑 ⚠️ 中
-
-| 功能 | 原版行 | 现状 |
-|---|---|---|
-| `hasSwingMagic` 挥砍带魔法 | 有 | ❌ 缺 |
-| `toggleSwingMagic` | 有 | ❌ 缺 |
-| 攻击目标选择 `weaponOrder` | 有 | ❌ 缺 |
-| 死亡淡出 `deadFadeOut` | 有 | ✅ 有（`fight_effects`） |
-| 头顶板 `getOverHeadLoc` | 有 | ✅ 有（`ui_over_head`） |
-| 名字查询 `queryName` | 有 | ❌ 缺 |
-
-### 缺口 5：怪物子类独有逻辑（数据化遗漏）⚠️ 低
-
-34 个子类里 20 个有 cpp。我做了行为数据化，但有 1 个不可数据化的：
-- `ClientCannibalPlant::onActionTransf` —— **变身动作**（食人花变形态），
-  这不是帧表差异，是独立的状态机分支。当前未实现。
-
-其余 19 个确认是纯帧表/帧数差异，已数据化。
-
-### 缺口 6：其他系统性缺失 ⚠️ 低-中
-
-| 项 | 原版 | 现状 |
-|---|---|---|
-| `gfxdebugboard.cpp`(713 行) | 调试面板（F3 显示碰撞/坐标/物件层） | ❌ 缺（开发辅助，非游戏功能） |
-| `ime.cpp` `imeboard.cpp`(697 行) | 中文输入法候选窗 | ⚠️ 用 Godot 原生 IME 顶替 |
-| `processconnectionerror` | 断线提示界面 | ⚠️ 只有日志 |
-| `processchangepasswordnet` | 改密网络交互 | ✅ 已接（在 account 面板） |
-| 多地图切换 | `loadMap` `preloadMapBin` | ❌ 只有单图 |
-| 地图预加载 | `preloadMapBin` | ❌ 缺 |
+| 任务列表/更新 |  | `SM_QUESTDESPLIST` / `SM_QUESTDESPUPDATE`  QuestBoard |
+| NPC XML 对话 |  | `SDNPCChat` 字符串布局已修正为 uid + eventPath + XML |
+| NPC 提交输入 |  | `SM_STARTINPUT`  输入框  `CM_NPCEVENT(commitTag)` |
+| 小地图 |  | 地图 miniMapID、角色格坐标、拖动/缩放面板 |
+| BGM |  | 登录、建号、进图地图 BGM |
+| 头顶名字/HP |  | 人形与怪物节点增加名字和 HP 百分比标签 |
+| 安全区绘制 |  | 矩形/圆形边界和浅色区域 |
+| 火墙绘制 |  | 地面火焰格 |
+| 设置面板 |  | 音量设置本地生效；配置项值保存 |
+| 技能面板 |  | 已学魔法列表  技能图标；选中后点怪施法 |
+| 快捷栏 |  | 数字键 16 使用腰带物品并发 `CM_REQUESTCONSUMEBELT` |
+| 系统配置/排行消息 |  | `SM_PLAYERCONFIG`、`SM_RANKINGLIST` 已解析/存储 |
 
 ---
 
-## 四、优先级建议
+## 五、渲染与表现完成度
 
-| 优先级 | 内容 | 理由 |
-|---|---|---|
-| **P0** | 角色按 y 排序绘制 | 一层排序就能让"人走在树前后"正确，改动小收益大 |
-| **P0** | `SM_CASTMAGIC` 施法表现 | 战斗手感核心，且协议已定义 |
-| **P1** | 队伍/行会/好友 12 个协议 | 三个面板已做好，只差数据接入 |
-| **P1** | 交易/拍卖/摆摊/商店 12 个协议 | 同上，面板全是空壳 |
-| **P2** | 点击 NPC / 拾取 / 悬停提示 | 让世界"可交互" |
-| **P2** | 火墙 + 地面魔法特效层 | 视觉完整性 |
-| **P3** | 多地图切换 + 预加载 | 需要服务端配合 |
-| **P3** | 食人花变身、GfxDebug 面板 | 边缘功能 |
+| 模块 | 现状 |
+|---|---|
+| 地图瓦片 | 视口裁剪、瓦片池化、单图加载、地图缓存 |
+| 地图物件 | GROUND / OVERGROUND0 / OVERGROUND1、地面物品、动画物件 |
+| 光照 | 简单圆形色光；尚未达到原版完整暗化/光照混合 |
+| 人物 | 七层结构核心层已接：武器后层、影子、身体0/1、头/头盔、武器前层 |
+| 怪物 | APNG 帧表、方向、动作队列、32 类行为数据、12 类自定义帧表 |
+| 魔法 | APNG 特效节点，按 MagicDB gfxID 查找素材 |
+| 战斗表现 | MISS/伤害/治疗飘字、受击闪烁、死亡淡出 |
+| 排序 | 主角与场景实体使用 y_sort，地图物件按层分 z |
+| 特效层 | 安全区、火墙、魔法、飘字已分层 |
 
 ---
 
-## 五、一句话总结
+## 六、仍属于 P2 / 后续事项
 
-**界面层（GUI 16/16、登录链路、音频）已完整复刻；**
-**网络同步层只做了 38%，这是当前最主要的不完整之处。**
-本轮补上了地图物件层与 15 类状态消息，把"能看见世界"做到了位，
-但"世界会响应玩家操作"（交易/队伍/战斗交互）还差一大截。
+1. **32 类怪物特殊状态机逐类验收**：食人花变身、神兽、触龙神、祖玛教主等特殊逻辑。
+2. **魔法系统深度还原**：三类魔法飞行/旋转/命中/附着细节与真实服务端包逐字段回归。
+3. **UI 像素级复刻**：部分面板仍是简化布局，需要逐面板与原版截图比对。
+4. **IME 候选框、表情、字体**：目前优先使用 Godot 原生输入。
+5. **GfxDebugBoard、GM 命令、客户端 Lua 调试**。
+6. **完整排行榜 UI**：消息已解析，独立排行面板尚未从 RuntimeConfigBoard 拆出。
+7. **真实 C++ 服务端联调**：当前主要验证渠道是 `tools/mock-server`。
+8. **正式导出/资源打包流程**。
+9. **特殊地图切换点、随机传送、地图预加载策略**：当前按服务端地图 UID 即时加载并缓存。
+
+---
+
+## 七、本轮测试结果（集中测试）
+
+### 直接自检
+
+12 个 SceneTree 自检全部通过：
+
+| 测试 | 结果 |
+|---|---:|
+| `test_data.gd` | 51 / 0 |
+| `test_path.gd` | 25 / 0 |
+| `test_human.gd` | 31 / 0 |
+| `test_monster.gd` | 28 / 0 |
+| `test_typeset.gd` | 20 / 0 |
+| `test_ui_framework.gd` | 60 / 0 |
+| `test_ui.gd` | 39 / 0 |
+| `test_c3_c4.gd` | 42 / 0 |
+| `test_c5_c6.gd` | 45 / 0 |
+| `test_c7_c8.gd` | 235 / 0 |
+| `test_c9.gd` | 205 / 0 |
+| `test_c10.gd` | 54 / 0 |
+| **合计** | **835 / 0** |
+
+### 真实 TCP mock 联调
+
+`c9c8` 场景通过 **18/18**：
+
+- 登录
+- 查询角色
+- 职业/性别/动画帧
+- 在线进图
+- `WorldSession` 创建
+- `SM_STARTGAMESCENE` 回放
+- 服务端场景实体回放
+- 主角 UID 同步
+
+### mock 协议修正
+
+本轮同时修正 mock 的：
+
+1. `SM_QUERYCHAROK` 68/69/70 字段偏移。
+2. `SM_STARTGAMESCENE` 的 cereal 尾压缩标志位置。
+3. 登录静态缓冲区偏移。
+
+---
+
+## 八、结论
+
+本轮已经把原版客户端最关键、最容易被 UI 空壳掩盖的链路补上：
+
+- 协议不再大面积抄错；
+- 登录后进入的是服务端指定地图和坐标；
+- 场景帧不会在登录切进程时丢失；
+- 玩家动作开始上行；
+- 面板开始接真实数据和真实 CM；
+- 队伍、行会、好友、商店、交易、摆摊、拍卖、仓库、任务、小地图、音频均有基础闭环。
+
+当前项目已经超过只能看不能玩的静态复刻阶段，进入可在 mock/真实协议服务端上继续逐系统联调的阶段。
+
+下一阶段应集中在 **P2 特殊怪物行为、真实服务端回归和 UI 像素级精修**，而不是继续无边界新增空壳面板。

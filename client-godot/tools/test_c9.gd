@@ -495,7 +495,7 @@ func _test_account() -> void:
 	ap.do_submit()
 	_ok(sent.size() == 1, "合法输入发一包")
 	if sent.size() == 1:
-		_ok(int(sent[0][0]) == 8, "消息码 CM_CREATEACCOUNT=8")
+		_ok(int(sent[0][0]) == 32, "消息码 CM_CREATEACCOUNT=32")
 		_ok(ap.info_text == "提交中", "提示提交中")
 
 	# 改密模式
@@ -506,8 +506,8 @@ func _test_account() -> void:
 	ap.do_submit()
 	_ok(sent.size() == 1, "改密发一包")
 	if sent.size() == 1:
-		_ok(int(sent[0][0]) == 10, "消息码 CM_CHANGEPASSWORD=10")
-		_ok(int(sent[0][1]) == AccountRef.CMCHANGEPWD_SIZE, "包体 201 字节",
+		_ok(int(sent[0][0]) == 6, "消息码 CM_CHANGEPASSWORD=6")
+		_ok(int(sent[0][1]) == AccountRef.CMCHANGEPWD_SIZE, "包体 204 字节",
 			str(sent[0][1]))
 
 	# Tab 循环
@@ -544,8 +544,8 @@ func _test_flow() -> void:
 	_ok(FlowRef.CM_CREATECHAR == 4, "CM_CREATECHAR=4")
 	_ok(FlowRef.CM_DELETECHAR == 5, "CM_DELETECHAR=5")
 	_ok(FlowRef.CM_ONLINE == 7, "CM_ONLINE=7")
-	_ok(FlowRef.CM_CREATEACCOUNT == 8, "CM_CREATEACCOUNT=8")
-	_ok(FlowRef.CM_CHANGEPASSWORD == 10, "CM_CHANGEPASSWORD=10")
+	_ok(FlowRef.CM_CREATEACCOUNT == 32, "CM_CREATEACCOUNT=32")
+	_ok(FlowRef.CM_CHANGEPASSWORD == 6, "CM_CHANGEPASSWORD=6")
 	_ok(FlowRef.SM_LOGINOK == 5, "SM_LOGINOK=5")
 	_ok(FlowRef.SM_QUERYCHAROK == 11, "SM_QUERYCHAROK=11")
 	_ok(FlowRef.SM_CREATECHAROK == 13, "SM_CREATECHAROK=13")

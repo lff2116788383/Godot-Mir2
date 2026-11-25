@@ -19,6 +19,9 @@ class_name CoManager
 
 const CoRecordRef := preload("res://scripts/core/co_record.gd")
 const UidRef := preload("res://scripts/core/uid.gd")
+const MonsterRecordRef := preload("res://scripts/item/monster_record.gd")
+const ItemRecordRef := preload("res://scripts/item/item_record.gd")
+const ProtocolDefRef := preload("res://scripts/core/protocol_def.gd")
 const ActionNodeRef := preload("res://scripts/action/action_node.gd")
 const ActionTypeRef := preload("res://scripts/action/action_type.gd")
 const MonsterActorRef := preload("res://scripts/actor/monster_actor.gd")
@@ -97,6 +100,31 @@ func remove_uid(uid: int) -> void:
 		node.queue_free()
 	_entities.erase(uid)
 	entity_removed.emit(uid)
+
+
+func find_at_grid(gx: int, gy: int):
+	for uid in _entities.keys():
+		var e = _entities[uid]
+		var node: Node2D = e["node"]
+		if not is_instance_valid(node):
+			continue
+		var g = node.get("grid")
+		if g is Vector2i and g.x == gx and g.y == gy:
+			return {"uid": uid, "node": node, "record": e["record"], "kind": e["kind"]}
+	return null
+
+
+func get_record(uid: int):
+	var e = _entities.get(uid)
+	return e["record"] if e != null else null
+
+
+func set_action_context_all() -> void:
+	for uid in _entities.keys():
+		var node: Node2D = _entities[uid]["node"]
+		if node != null and node.has_method("set_walk_context"):
+			var ctx := walk_context()
+			node.set_walk_context(ctx["can_move"], ctx["make_finder"], ctx["max_step"])
 
 
 func all_uids() -> Array:
@@ -178,10 +206,9 @@ func on_sm_action(body: PackedByteArray) -> void:
 	# ---- processrunnet.cpp:155 地图不一致 ----
 	if act_map_uid != map_uid:
 		if uid == _my_uid:
-			# 主角换图：清空所有实体，等待新图记录
-			print("[CoManager] 主角切换地图 0x%X -> 0x%X" % [map_uid, act_map_uid])
 			_clear_all()
 			map_uid = act_map_uid
+			map_change_requested.emit(act_map_uid, action)
 		else:
 			# 其他实体换图 = 离开本图
 			remove_uid(uid)
@@ -216,6 +243,7 @@ func on_sm_action(body: PackedByteArray) -> void:
 
 
 signal entity_query_requested(uid: int)
+signal map_change_requested(map_uid: int, action)
 
 
 # ==================== 创建实体 ====================
@@ -229,6 +257,7 @@ func _create_monster(r) -> void:
 	var node: Node2D = ActorFactoryRef.make_monster(assets_root, r.uid, r.monster_id)
 	if node == null:
 		return
+	node.set_display_name(MonsterRecordRef.name_of(r.monster_id))
 	_register(r.uid, node, r, "mon")
 	apply_action(r.uid, r.action)
 
@@ -238,6 +267,7 @@ func _create_monster_from_action(uid: int, action) -> void:
 	var node: Node2D = ActorFactoryRef.make_monster(assets_root, uid, mon_id)
 	if node == null:
 		return
+	node.set_display_name(MonsterRecordRef.name_of(mon_id))
 	var r := CoRecordRef.new()
 	r.uid = uid
 	r.map_uid = map_uid
@@ -251,6 +281,7 @@ func _create_player(r) -> void:
 	var node: Node2D = ActorFactoryRef.make_player_view(assets_root, r.uid, bool(r.gender), r.job)
 	if node == null:
 		return
+	node.set_display_name("玩家")
 	_register(r.uid, node, r, "ply")
 	apply_action(r.uid, r.action)
 
@@ -259,6 +290,7 @@ func _create_npc(r) -> void:
 	var node: Node2D = ActorFactoryRef.make_npc(assets_root, r.uid, r.npc_id)
 	if node == null:
 		return
+	node.set_display_name("NPC")
 	_register(r.uid, node, r, "npc")
 	apply_action(r.uid, r.action)
 
@@ -290,6 +322,41 @@ func _register(uid: int, node: Node2D, record, kind: String) -> void:
 
 
 # ==================== 动作应用 ====================
+
+func set_actor_wear(uid: int, wear: Dictionary, hair: int = 1, hair_color: int = 0) -> void:
+	var node = find_uid(uid)
+	if node == null:
+		return
+	var human = node.get("human")
+	if human == null:
+		return
+	var dress := 0
+	var helmet := 0
+	var weapon := 0
+	if wear.has(ProtocolDefRef.WLG_DRESS):
+		dress = ItemRecordRef.pkg_gfx_id(int(wear[ProtocolDefRef.WLG_DRESS].item_id))
+	if wear.has(ProtocolDefRef.WLG_HELMET):
+		helmet = ItemRecordRef.pkg_gfx_id(int(wear[ProtocolDefRef.WLG_HELMET].item_id))
+	if wear.has(ProtocolDefRef.WLG_WEAPON):
+		weapon = ItemRecordRef.pkg_gfx_id(int(wear[ProtocolDefRef.WLG_WEAPON].item_id))
+	var col := Color.from_hsv(float((hair_color >> 16) & 0xFF) / 255.0,
+		float((hair_color >> 8) & 0xFF) / 255.0, float(hair_color & 0xFF) / 255.0)
+	if hair_color == 0:
+		col = Color.WHITE
+	human.set_appearance(dress, hair, helmet, weapon, bool(node.get("is_male")), col)
+
+
+func set_actor_name(uid: int, nm: String, _color: int = 0) -> void:
+	var node = find_uid(uid)
+	if node != null and node.has_method("set_display_name"):
+		node.set_display_name(nm)
+
+
+func set_actor_health(uid: int, hp: int, max_hp: int) -> void:
+	var node = find_uid(uid)
+	if node != null and node.has_method("set_health_ratio"):
+		node.set_health_ratio(float(hp) / maxf(1.0, float(max_hp)))
+
 
 func apply_action(uid: int, action) -> void:
 	var e = _entities.get(uid)

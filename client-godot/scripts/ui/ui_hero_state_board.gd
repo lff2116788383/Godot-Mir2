@@ -124,6 +124,7 @@ var hover_slot := -1
 var on_close: Callable = Callable()
 var on_trade: Callable = Callable()
 var on_add_friend: Callable = Callable()
+var on_unequip: Callable = Callable()
 
 var _canvas_ref = null
 var hit_areas: Dictionary = {}
@@ -135,6 +136,7 @@ func _init(p_name: String = "MyHeroStateBoard", p_is_self: bool = true) -> void:
 	var p: Dictionary = PRESET_SELF if p_is_self else PRESET_PEER
 	w = int(p["w"])
 	h = int(p["h"])
+	on_event = _handle_board_event
 	show = false
 	on_draw = _draw_board
 
@@ -360,6 +362,13 @@ func set_abs(x: int, y: int) -> void:
 	_abs_y = y
 
 
+func _handle_board_event(_w, event: InputEvent, _valid: bool, roi) -> bool:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if roi.contains(int(event.position.x), int(event.position.y)):
+			return handle_click(int(event.position.x), int(event.position.y))
+	return false
+
+
 func handle_click(px: int, py: int) -> bool:
 	for key in hit_areas.keys():
 		var r: Rect2 = hit_areas[key]
@@ -371,6 +380,9 @@ func handle_click(px: int, py: int) -> bool:
 				return true
 			if k == "trade" and on_trade.is_valid():
 				on_trade.call(self)
+				return true
+			if k.begins_with("slot_") and on_unequip.is_valid():
+				on_unequip.call(self, int(k.substr(5)))
 				return true
 			if k == "addfriend" and on_add_friend.is_valid():
 				on_add_friend.call(self)

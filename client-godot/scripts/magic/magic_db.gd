@@ -124,3 +124,55 @@ static func frame_count(gfx_entry: Dictionary, dir: int) -> int:
 	if declared > 0:
 		return declared
 	return 0
+
+
+# ==================== 运行期查询 ====================
+static var _records: Dictionary = {}
+static var _loaded := false
+
+static func load_data(path: String = "res://data/magicrecord.json") -> bool:
+	if _loaded:
+		return true
+	if not FileAccess.file_exists(path):
+		return false
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return false
+	var parsed = JSON.parse_string(f.get_as_text())
+	f.close()
+	if not parsed is Dictionary:
+		return false
+	_records = parsed.get("records", {})
+	_loaded = true
+	return true
+
+static func record(magic_id: int) -> Dictionary:
+	if not _loaded: load_data()
+	return _records.get(str(magic_id), {})
+
+static func record_count() -> int:
+	if not _loaded: load_data()
+	return _records.size()
+
+static func name_of(magic_id: int) -> String:
+	return str(record(magic_id).get("name", ""))
+
+static func find_id_by_name(name_: String) -> int:
+	if not _loaded: load_data()
+	for k in _records.keys():
+		if str(_records[k].get("name", "")) == name_:
+			return int(k)
+	return 0
+
+static func gfx_entries(magic_id: int) -> Array:
+	var gl = record(magic_id).get("gfxList", {})
+	if gl is Dictionary:
+		return gl.get("_array", [])
+	return []
+
+static func gfx_entry(magic_id: int, stage: String = "运行") -> Dictionary:
+	var list := gfx_entries(magic_id)
+	for e in list:
+		if stage.is_empty() or str(e.get("stage", "")) == stage:
+			return e
+	return list[0] if not list.is_empty() else {}

@@ -44,27 +44,28 @@ const PID_RUN := 8
 const PID_CONNECTIONERROR := 9
 
 ## 协议码（以 sm_table.gd 为唯一真源，这里只做引用）
-const CM_LOGIN := 2
-const CM_QUERYCHAR := 3
-const CM_CREATECHAR := 4
-const CM_DELETECHAR := 5
-const CM_ONLINE := 7
-const CM_CREATEACCOUNT := 8
-const CM_CHANGEPASSWORD := 10
-const SM_LOGINOK := 5
-const SM_LOGINERROR := 6
-const SM_QUERYCHAROK := 11
-const SM_QUERYCHARERROR := 12
-const SM_CREATECHAROK := 13
-const SM_CREATECHARERROR := 14
-const SM_DELETECHAROK := 18
-const SM_DELETECHARERROR := 19
-const SM_ONLINEOK := 20
-const SM_ONLINEERROR := 21
-const SM_CREATEACCOUNTOK := 22
-const SM_CREATEACCOUNTERROR := 23
-const SM_CHANGEPASSWORDOK := 24
-const SM_CHANGEPASSWORDERROR := 25
+## 直接引用 MirClient 的协议常量，避免再次手抄错枚举值
+const CM_LOGIN := MirClient.CM_LOGIN
+const CM_QUERYCHAR := MirClient.CM_QUERYCHAR
+const CM_CREATECHAR := MirClient.CM_CREATECHAR
+const CM_DELETECHAR := MirClient.CM_DELETECHAR
+const CM_CHANGEPASSWORD := MirClient.CM_CHANGEPASSWORD
+const CM_ONLINE := MirClient.CM_ONLINE
+const CM_CREATEACCOUNT := MirClient.CM_CREATEACCOUNT
+const SM_LOGINOK := MirClient.SM_LOGINOK
+const SM_LOGINERROR := MirClient.SM_LOGINERROR
+const SM_CREATEACCOUNTOK := MirClient.SM_CREATEACCOUNTOK
+const SM_CREATEACCOUNTERROR := MirClient.SM_CREATEACCOUNTERROR
+const SM_CHANGEPASSWORDOK := MirClient.SM_CHANGEPASSWORDOK
+const SM_CHANGEPASSWORDERROR := MirClient.SM_CHANGEPASSWORDERROR
+const SM_QUERYCHAROK := MirClient.SM_QUERYCHAROK
+const SM_QUERYCHARERROR := MirClient.SM_QUERYCHARERROR
+const SM_CREATECHAROK := MirClient.SM_CREATECHAROK
+const SM_CREATECHARERROR := MirClient.SM_CREATECHARERROR
+const SM_DELETECHAROK := MirClient.SM_DELETECHAROK
+const SM_DELETECHARERROR := MirClient.SM_DELETECHARERROR
+const SM_ONLINEOK := MirClient.SM_ONLINEOK
+const SM_ONLINEERROR := MirClient.SM_ONLINEERROR
 
 const LoginProcRef := preload("res://scripts/ui/login/ui_login_process.gd")
 const SelectProcRef := preload("res://scripts/ui/login/ui_select_char_process.gd")
@@ -111,6 +112,9 @@ func _ready() -> void:
 
 	ProgUseRef.setup()
 	SelectGfxRef.setup()
+	var audio = get_node_or_null("/root/Audio")
+	if audio != null:
+		audio.play_bgm(0x00040007)
 
 	login = LoginProcRef.new()
 	login.set_canvas(_canvas)

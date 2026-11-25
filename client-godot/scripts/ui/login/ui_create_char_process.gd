@@ -123,6 +123,10 @@ func set_canvas(c) -> void:
 
 func enter() -> void:
 	ani_time = 0.0
+	var tree := Engine.get_main_loop()
+	var audio = tree.root.get_node_or_null("Audio") if tree != null else null
+	if audio != null:
+		audio.play_bgm(0x00040001)
 	last_start_abs_frame = 0xFFFFFFFF
 	notify.clear()
 

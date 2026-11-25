@@ -83,6 +83,16 @@ func run(main: Node) -> void:
 		lf.select_char.char_name)
 	_ok(lf.select_char.char_job == 1, "职业 = 战士(1)", str(lf.select_char.char_job))
 	_ok(lf.select_char.char_gender_male, "性别 = 男")
+	# 8. 进入世界后等待服务端 STARTGAMESCENE + CORECORD/ACTION 回放
+	waited = 0
+	while (main.get("co_manager") == null or main.co_manager.count() == 0) and waited < 240:
+		await get_tree().process_frame
+		waited += 1
+	_ok(main.get("world") != null, "WorldSession 已创建")
+	_ok(main.get("co_manager") != null and main.co_manager.count() > 0,
+		"服务端场景实体已回放", str(main.co_manager.count() if main.get("co_manager") != null else -1))
+	_ok(main.get("world") != null and main.world.self_uid != 0, "主角 UID 已同步")
+
 
 	_report()
 	get_tree().quit(0)

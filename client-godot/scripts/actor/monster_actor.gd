@@ -33,6 +33,9 @@ const GRID_Y := 32
 var logic: ClientMonster = null
 
 var _spr: Sprite2D = null
+var _name_label: Label = null
+var display_name: String = ""
+var hp_ratio: float = 1.0
 var _assets_root: String = ""
 
 ## 当前动作
@@ -86,6 +89,37 @@ func setup(p_assets_root: String, uid: int, monster_id: int) -> bool:
 
 
 ## CoManager 创建实体后注入
+func _ensure_name_label() -> void:
+	if _name_label != null:
+		return
+	_name_label = Label.new()
+	_name_label.position = Vector2(-34, -76)
+	_name_label.size = Vector2(100, 36)
+	_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_name_label.add_theme_font_size_override("font_size", 11)
+	_name_label.add_theme_color_override("font_color", Color(0.95, 0.92, 0.82))
+	_name_label.add_theme_color_override("font_outline_color", Color(0,0,0,0.9))
+	_name_label.add_theme_constant_override("outline_size", 2)
+	add_child(_name_label)
+
+
+func set_display_name(nm: String) -> void:
+	display_name = nm
+	_ensure_name_label()
+	_refresh_name_label()
+
+
+func set_health_ratio(r: float) -> void:
+	hp_ratio = clampf(r, 0.0, 1.0)
+	_refresh_name_label()
+
+
+func _refresh_name_label() -> void:
+	if _name_label == null:
+		return
+	_name_label.text = "%s\nHP %d%%" % [display_name, int(hp_ratio * 100.0)]
+
+
 func set_walk_context(can_move: Callable, make_finder: Callable, max_step: int) -> void:
 	_can_move = can_move
 	_make_finder = make_finder

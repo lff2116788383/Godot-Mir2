@@ -33,6 +33,81 @@ const CM_QUERYGOLD := 25
 const CM_CHATMESSAGE := 43
 const CM_PLAYERSAY := 44
 
+const CM_SETRUNTIMECONFIG := 10
+const CM_QUERYCORECORD := 11
+const CM_QUERYNPCNAME := 12
+const CM_REQUESTADDHEALTH := 13
+const CM_REQUESTADDEXP := 14
+const CM_REQUESTDIE := 15
+const CM_REQUESTREVIVE := 16
+const CM_REQUESTLOGOUT := 17
+const CM_REQUESTHOSTOFFLINE := 18
+const CM_REQUESTKILLPETS := 19
+const CM_REQUESTRETRIEVESECUREDITEM := 20
+const CM_REQUESTSPACEMOVE := 21
+const CM_REQUESTMAGICDAMAGE := 22
+const CM_PICKUP := 23
+const CM_QUERYBASEMAPUID := 24
+const CM_QUERYUIDBUFF := 26
+const CM_QUERYPLAYERNAME := 27
+const CM_QUERYPLAYERWLDESP := 28
+const CM_QUERYCHATPEERLIST := 29
+const CM_QUERYCHATMESSAGE := 30
+const CM_CREATECHATGROUP := 31
+const CM_CREATEACCOUNT := 32
+const CM_NPCEVENT := 33
+const CM_QUERYSELLITEMLIST := 34
+const CM_DROPITEM := 35
+const CM_CONSUMEITEM := 36
+const CM_MAKEITEM := 37
+const CM_BUY := 38
+const CM_ADDFRIEND := 39
+const CM_ACCEPTADDFRIEND := 40
+const CM_REJECTADDFRIEND := 41
+const CM_BLOCKPLAYER := 42
+const CM_PLAYERBROADCAST := 45
+const CM_REQUESTEQUIPWEAR := 46
+const CM_REQUESTGRABWEAR := 47
+const CM_REQUESTEQUIPBELT := 48
+const CM_REQUESTGRABBELT := 49
+const CM_REQUESTCONSUMEBELT := 50
+const CM_REQUESTJOINTEAM := 51
+const CM_REQUESTLEAVETEAM := 52
+const CM_CREATETEAM := 53
+const CM_SETTEAMREQUIREMENT := 54
+const CM_QUERYTEAMINFO := 55
+const CM_TRANSFERTEAMLEADER := 56
+const CM_SETFOLLOWTEAMLEADER := 57
+const CM_REQUESTLATESTCHATMESSAGE := 58
+const CM_QUERYRANKING := 59
+const CM_CLAIMDELIVERY := 60
+const CM_QUERYAUCTIONITEMLIST := 61
+const CM_REGISTERAUCTIONITEM := 62
+const CM_BUYAUCTIONITEM := 63
+const CM_UNREGISTERAUCTIONITEM := 64
+const CM_REQUESTDIRECTTRADE := 65
+const CM_RESPONDDIRECTTRADE := 66
+const CM_UPDATEDIRECTTRADE := 67
+const CM_COMMITDIRECTTRADE := 68
+const CM_CANCELDIRECTTRADE := 69
+const CM_ADDSTALLITEM := 70
+const CM_REMOVESTALLITEM := 71
+const CM_STARTSTALL := 72
+const CM_CLOSESTALL := 73
+const CM_QUERYSTALL := 74
+const CM_BUYSTALLITEM := 75
+const CM_QUERYPLAYERGUILD := 76
+const CM_INVITEGUILDMEMBER := 77
+const CM_RESPONDGUILDINVITE := 78
+const CM_LEAVEGUILD := 79
+const CM_KICKGUILDMEMBER := 80
+const CM_TRANSFERGUILDLEADER := 81
+const CM_DISBANDGUILD := 82
+const CM_QUERYGUILDINFO := 83
+const CM_SETGUILDNOTICE := 84
+const CM_SETGUILDMEMBERTITLE := 85
+const CM_GUILDCHAT := 86
+
 ## 服务端消息码（从 tables 反查确认）
 const SM_PING := 3
 const SM_UID := 4
@@ -118,6 +193,47 @@ const SM_GUILDCHAT := 113
 const SM_GUILDWARLIST := 114
 const SM_FRIENDLIST := 25
 const SM_RANKINGLIST := 85
+
+const SM_CREATEACCOUNTOK := 7
+const SM_CREATEACCOUNTERROR := 8
+const SM_CHANGEPASSWORDOK := 9
+const SM_CHANGEPASSWORDERROR := 10
+const SM_QUERYCHARERROR := 12
+const SM_CREATECHAROK := 13
+const SM_CREATECHARERROR := 14
+const SM_CREATECHATGROUP := 15
+const SM_ADDFRIENDACCEPTED := 16
+const SM_ADDFRIENDREJECTED := 17
+const SM_DELETECHAROK := 18
+const SM_DELETECHARERROR := 19
+const SM_ONLINEERROR := 22
+const SM_PLAYERWLDESP := 27
+const SM_NEXTSTRIKE := 31
+const SM_REMOVEGROUNDITEM := 41
+const SM_NPCERROR := 44
+const SM_PLAYERNAME := 53
+const SM_BUILDVERSION := 54
+const SM_REMOVESECUREDITEM := 59
+const SM_EQUIPBELT := 69
+const SM_EQUIPBELTERROR := 70
+const SM_GRABBELT := 71
+const SM_GRABBELTERROR := 72
+const SM_WEARITEMDURATION := 73
+const SM_SHOWSECUREDITEMLIST := 74
+const SM_PLAYERTEAMLEADER := 75
+const SM_CHATMESSAGELIST := 82
+const SM_CLAIMDELIVERYERROR := 86
+const SM_AUCTIONREGISTERERROR := 88
+const SM_AUCTIONBUYERROR := 89
+const SM_AUCTIONUNREGISTERERROR := 90
+const SM_QUERYCHATPEERLISTOK := 91
+const SM_QUERYCHATMESSAGEOK := 92
+const SM_CHATMESSAGEOK := 93
+const SM_ADDFRIENDOK := 94
+const SM_CREATECHATGROUPOK := 95
+const SM_REQUESTDIRECTTRADE := 96
+const SM_QUERYSTALLOK := 109
+const SM_PLAYERGUILD := 110
 
 const SM_TABLE := preload("res://scripts/net/sm_table.gd")
 
@@ -374,6 +490,35 @@ func login(account: String, password: String) -> int:
 	return send(CM_LOGIN, body, true)
 
 
+func create_account(account: String, password: String) -> int:
+	var b := _fixed_body(136)
+	_write_static(b, 0, account, 64)
+	_write_static(b, 68, password, 64)
+	return send(CM_CREATEACCOUNT, b, true)
+
+
+func change_password(account: String, old_pwd: String, new_pwd: String) -> int:
+	var b := _fixed_body(204)
+	_write_static(b, 0, account, 64)
+	_write_static(b, 68, old_pwd, 64)
+	_write_static(b, 136, new_pwd, 64)
+	return send(CM_CHANGEPASSWORD, b, true)
+
+
+func create_char(name_: String, job: int, gender: int) -> int:
+	var b := _fixed_body(70)
+	_write_static(b, 0, name_, 64)
+	b[68] = job & 0xFF
+	b[69] = gender & 0xFF
+	return send(CM_CREATECHAR, b, true)
+
+
+func delete_char(password: String) -> int:
+	var b := _fixed_body(68)
+	_write_static(b, 0, password, 64)
+	return send(CM_DELETECHAR, b, true)
+
+
 func query_char() -> int:
 	return send(CM_QUERYCHAR, PackedByteArray(), true)
 
@@ -409,6 +554,447 @@ func send_action(uid: int, map_uid: int, action_bytes: PackedByteArray) -> int:
 	for i in range(mini(action_bytes.size(), 28)):
 		body[16 + i] = action_bytes[i]
 	return send(CM_ACTION, body)
+
+
+
+# ==================== 通用编码辅助 ====================
+
+func _fixed_body(n: int) -> PackedByteArray:
+	var b := PackedByteArray()
+	b.resize(n)
+	b.fill(0)
+	return b
+
+
+func _write_static(body: PackedByteArray, off: int, text: String, cap: int) -> void:
+	var raw := text.to_utf8_buffer()
+	var n: int = mini(raw.size(), cap)
+	body.encode_u16(off, n)
+	for i in range(n):
+		body[off + 2 + i] = raw[i]
+
+
+func _write_u64(body: PackedByteArray, off: int, v: int) -> void:
+	body.encode_u64(off, v)
+
+
+# ==================== 查询类上行 ====================
+
+func query_gold() -> int:
+	return send(CM_QUERYGOLD, PackedByteArray(), true)
+
+func query_corecord(uid: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, uid)
+	return send(CM_QUERYCORECORD, b, true)
+
+func query_npc_name(uid: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, uid)
+	return send(CM_QUERYNPCNAME, b, true)
+
+func query_player_name(uid: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, uid)
+	return send(CM_QUERYPLAYERNAME, b, true)
+
+func query_player_wl_desp(uid: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, uid)
+	return send(CM_QUERYPLAYERWLDESP, b, true)
+
+func query_uid_buff(uid: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, uid)
+	return send(CM_QUERYUIDBUFF, b, true)
+
+func query_base_map_uid(map_id: int) -> int:
+	var b := _fixed_body(4); b.encode_u32(0, map_id)
+	return send(CM_QUERYBASEMAPUID, b, true)
+
+func query_sell_item_list(npc_uid: int, item_id: int = 0) -> int:
+	var b := _fixed_body(12)
+	b.encode_u64(0, npc_uid); b.encode_u32(8, item_id)
+	return send(CM_QUERYSELLITEMLIST, b, true)
+
+
+# ==================== 动作 / 魔法 / 拾取 ====================
+
+func request_die() -> int:
+	return send(CM_REQUESTDIE, PackedByteArray())
+
+func request_revive() -> int:
+	return send(CM_REQUESTREVIVE, PackedByteArray(), true)
+
+func request_logout() -> int:
+	return send(CM_REQUESTLOGOUT, PackedByteArray(), true)
+
+func request_host_offline() -> int:
+	return send(CM_REQUESTHOSTOFFLINE, PackedByteArray())
+
+func request_kill_pets() -> int:
+	return send(CM_REQUESTKILLPETS, PackedByteArray())
+
+func request_add_health(hp: int, mp: int) -> int:
+	var b := _fixed_body(8)
+	b.encode_s32(0, hp); b.encode_s32(4, mp)
+	return send(CM_REQUESTADDHEALTH, b)
+
+func request_add_exp(exp: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, exp)
+	return send(CM_REQUESTADDEXP, b)
+
+func request_space_move(map_uid: int, x: int, y: int) -> int:
+	var b := _fixed_body(12)
+	b.encode_u64(0, map_uid); b.encode_u16(8, x); b.encode_u16(10, y)
+	return send(CM_REQUESTSPACEMOVE, b, true)
+
+func request_magic_damage(magic_id: int, aim_uid: int) -> int:
+	var b := _fixed_body(12)
+	b.encode_u32(0, magic_id); b.encode_u64(4, aim_uid)
+	return send(CM_REQUESTMAGICDAMAGE, b)
+
+func pickup(x: int, y: int, map_uid: int) -> int:
+	var b := _fixed_body(12)
+	b.encode_u16(0, x); b.encode_u16(2, y); b.encode_u64(4, map_uid)
+	return send(CM_PICKUP, b, true)
+
+func set_magic_key(magic_id: int, key: String) -> int:
+	var b := _fixed_body(5)
+	b.encode_u32(0, magic_id)
+	b[4] = key.to_utf8_buffer()[0] if not key.is_empty() else 0
+	return send(CM_SETMAGICKEY, b)
+
+func request_retrieve_secured_item(item_id: int, seq_id: int) -> int:
+	var b := _fixed_body(8)
+	b.encode_u32(0, item_id); b.encode_u32(4, seq_id)
+	return send(CM_REQUESTRETRIEVESECUREDITEM, b, true)
+
+
+# ==================== 背包 / 装备 / 商店 ====================
+
+func drop_item(item_id: int, seq_id: int, count: int) -> int:
+	var b := _fixed_body(10)
+	b.encode_u32(0, item_id); b.encode_u32(4, seq_id); b.encode_u16(8, count)
+	return send(CM_DROPITEM, b)
+
+func consume_item(item_id: int, seq_id: int, count: int) -> int:
+	var b := _fixed_body(10)
+	b.encode_u32(0, item_id); b.encode_u32(4, seq_id); b.encode_u16(8, count)
+	return send(CM_CONSUMEITEM, b)
+
+func make_item(item_id: int, count: int) -> int:
+	var b := _fixed_body(6)
+	b.encode_u32(0, item_id); b.encode_u16(4, count)
+	return send(CM_MAKEITEM, b)
+
+func buy(npc_uid: int, item_id: int, seq_id: int, count: int) -> int:
+	var b := _fixed_body(24)
+	b.encode_u64(0, npc_uid); b.encode_u32(8, item_id)
+	b.encode_u32(12, seq_id); b.encode_u64(16, count)
+	return send(CM_BUY, b, true)
+
+func request_equip_wear(item_id: int, seq_id: int, wltype: int) -> int:
+	var b := _fixed_body(10)
+	b.encode_u32(0, item_id); b.encode_u32(4, seq_id); b.encode_u16(8, wltype)
+	return send(CM_REQUESTEQUIPWEAR, b, true)
+
+func request_grab_wear(wltype: int) -> int:
+	var b := _fixed_body(2); b.encode_u16(0, wltype)
+	return send(CM_REQUESTGRABWEAR, b, true)
+
+func request_equip_belt(item_id: int, seq_id: int, slot: int) -> int:
+	var b := _fixed_body(10)
+	b.encode_u32(0, item_id); b.encode_u32(4, seq_id); b.encode_u16(8, slot)
+	return send(CM_REQUESTEQUIPBELT, b, true)
+
+func request_grab_belt(slot: int) -> int:
+	var b := _fixed_body(2); b.encode_u16(0, slot)
+	return send(CM_REQUESTGRABBELT, b, true)
+
+func request_consume_belt(slot: int) -> int:
+	var b := _fixed_body(2); b.encode_u16(0, slot)
+	return send(CM_REQUESTCONSUMEBELT, b)
+
+
+# ==================== 聊天 / 好友 ====================
+
+func player_broadcast(content: String) -> int:
+	var b := _fixed_body(128)
+	var raw := content.to_utf8_buffer()
+	for i in range(mini(raw.size(), 127)):
+		b[i] = raw[i]
+	return send(CM_PLAYERBROADCAST, b)
+
+func chat_message(to_cpid: int, content: String, ref_id: int = 0) -> int:
+	var raw := content.to_utf8_buffer()
+	var b := PackedByteArray()
+	b.resize(16 + raw.size())
+	b.encode_u64(0, to_cpid)
+	var refbits := 0
+	if ref_id != 0:
+		refbits = 1 | ((ref_id & 0x7FFFFFFFFFFFFFFF) << 1)
+	b.encode_u64(8, refbits)
+	for i in range(raw.size()):
+		b[16 + i] = raw[i]
+	return send(CM_CHATMESSAGE, b, true)
+
+func add_friend(cpid: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, cpid)
+	return send(CM_ADDFRIEND, b, true)
+
+func accept_add_friend(cpid: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, cpid)
+	return send(CM_ACCEPTADDFRIEND, b, true)
+
+func reject_add_friend(cpid: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, cpid)
+	return send(CM_REJECTADDFRIEND, b, true)
+
+func block_player(cpid: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, cpid)
+	return send(CM_BLOCKPLAYER, b, true)
+
+func query_chat_peer_list(input_text: String = "") -> int:
+	var b := _fixed_body(132)
+	_write_static(b, 0, input_text, 128)
+	return send(CM_QUERYCHATPEERLIST, b, true)
+
+func query_chat_message(msg_id: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, msg_id)
+	return send(CM_QUERYCHATMESSAGE, b, true)
+
+
+# ==================== 队伍 ====================
+
+func create_team(max_member: int = 0, auto_accept: bool = false) -> int:
+	var b := PackedByteArray()
+	b.resize(9)
+	b.fill(0)
+	b.encode_s32(0, max_member)
+	b[4] = 1 if auto_accept else 0
+	# 3 x optional<SDTeamJobReq>: all absent
+	b[5] = 0; b[6] = 0; b[7] = 0
+	b[8] = 0 # cerealf CF_NONE
+	return send(CM_CREATETEAM, b, true)
+
+func request_join_team(uid: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, uid)
+	return send(CM_REQUESTJOINTEAM, b, true)
+
+func request_leave_team(uid: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, uid)
+	return send(CM_REQUESTLEAVETEAM, b, true)
+
+func query_team_info(uid: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, uid)
+	return send(CM_QUERYTEAMINFO, b, true)
+
+func transfer_team_leader(uid: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, uid)
+	return send(CM_TRANSFERTEAMLEADER, b, true)
+
+func set_follow_team_leader(follow: bool) -> int:
+	var b := _fixed_body(1); b[0] = 1 if follow else 0
+	return send(CM_SETFOLLOWTEAMLEADER, b)
+
+
+# ==================== 直接交易 ====================
+
+func request_direct_trade(uid: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, uid)
+	return send(CM_REQUESTDIRECTTRADE, b, true)
+
+func respond_direct_trade(uid: int, accept: bool) -> int:
+	var b := _fixed_body(9)
+	b.encode_u64(0, uid); b[8] = 1 if accept else 0
+	return send(CM_RESPONDDIRECTTRADE, b, true)
+
+func update_direct_trade_offer(uid: int, gold: int, locked: bool, items: Array) -> int:
+	var n := items.size()
+	var b := _fixed_body(8 + 8 + 1 + 8 + n * 16)
+	b.encode_u64(0, uid)
+	b.encode_u64(8, gold)
+	b[16] = 1 if locked else 0
+	b.encode_u64(17, n)
+	var off := 25
+	for it in items:
+		b.encode_u32(off, int(it.item_id))
+		b.encode_u32(off + 4, int(it.seq_id))
+		b.encode_u64(off + 8, int(it.count))
+		off += 16
+	return send(CM_UPDATEDIRECTTRADE, b, true)
+
+func commit_direct_trade(uid: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, uid)
+	return send(CM_COMMITDIRECTTRADE, b, true)
+
+func cancel_direct_trade(uid: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, uid)
+	return send(CM_CANCELDIRECTTRADE, b)
+
+
+# ==================== 摆摊 / 拍卖 / 仓库 ====================
+
+func add_stall_item(item_id: int, seq_id: int, price: int) -> int:
+	var b := _fixed_body(16)
+	b.encode_u32(0, item_id); b.encode_u32(4, seq_id); b.encode_u64(8, price)
+	return send(CM_ADDSTALLITEM, b, true)
+
+func remove_stall_item(item_id: int, seq_id: int) -> int:
+	var b := _fixed_body(8)
+	b.encode_u32(0, item_id); b.encode_u32(4, seq_id)
+	return send(CM_REMOVESTALLITEM, b, true)
+
+func start_stall(name: String) -> int:
+	var b := _fixed_body(52)
+	_write_static(b, 0, name, 48)
+	return send(CM_STARTSTALL, b, true)
+
+func close_stall() -> int:
+	return send(CM_CLOSESTALL, PackedByteArray(), true)
+
+func query_stall(dbid: int) -> int:
+	var b := _fixed_body(4); b.encode_u32(0, dbid)
+	return send(CM_QUERYSTALL, b, true)
+
+func buy_stall_item(seller_dbid: int, item_id: int, seq_id: int,
+		count: int, price: int) -> int:
+	var b := _fixed_body(28)
+	b.encode_u32(0, seller_dbid); b.encode_u32(4, item_id)
+	b.encode_u32(8, seq_id); b.encode_u64(12, count); b.encode_u64(20, price)
+	return send(CM_BUYSTALLITEM, b, true)
+
+func query_auction_item_list(category: int) -> int:
+	var b := _fixed_body(1); b[0] = category & 0xff
+	return send(CM_QUERYAUCTIONITEMLIST, b, true)
+
+func register_auction_item(item_id: int, seq_id: int, price: int, note: String) -> int:
+	var b := _fixed_body(148)
+	b.encode_u32(0, item_id); b.encode_u32(4, seq_id)
+	b.encode_u64(8, price); _write_static(b, 16, note, 128)
+	return send(CM_REGISTERAUCTIONITEM, b, true)
+
+func buy_auction_item(auction_id: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, auction_id)
+	return send(CM_BUYAUCTIONITEM, b, true)
+
+func unregister_auction_item(auction_id: int) -> int:
+	var b := _fixed_body(8); b.encode_u64(0, auction_id)
+	return send(CM_UNREGISTERAUCTIONITEM, b, true)
+
+
+# ==================== 行会 ====================
+
+func query_player_guild(dbid: int) -> int:
+	var b := _fixed_body(4); b.encode_u32(0, dbid)
+	return send(CM_QUERYPLAYERGUILD, b, true)
+
+func invite_guild_member(name_: String) -> int:
+	var b := _fixed_body(68)
+	_write_static(b, 0, name_, 64)
+	return send(CM_INVITEGUILDMEMBER, b, true)
+
+func respond_guild_invite(guild_id: int, accept: bool) -> int:
+	var b := _fixed_body(5)
+	b.encode_u32(0, guild_id); b[4] = 1 if accept else 0
+	return send(CM_RESPONDGUILDINVITE, b, true)
+
+func leave_guild() -> int:
+	return send(CM_LEAVEGUILD, PackedByteArray(), true)
+
+func kick_guild_member(dbid: int) -> int:
+	var b := _fixed_body(4); b.encode_u32(0, dbid)
+	return send(CM_KICKGUILDMEMBER, b, true)
+
+func transfer_guild_leader(dbid: int) -> int:
+	var b := _fixed_body(4); b.encode_u32(0, dbid)
+	return send(CM_TRANSFERGUILDLEADER, b, true)
+
+func disband_guild() -> int:
+	return send(CM_DISBANDGUILD, PackedByteArray(), true)
+
+func query_guild_info() -> int:
+	return send(CM_QUERYGUILDINFO, PackedByteArray(), true)
+
+func set_guild_notice(notice: String) -> int:
+	var b := _fixed_body(1028)
+	_write_static(b, 0, notice, 1024)
+	return send(CM_SETGUILDNOTICE, b, true)
+
+func set_guild_member_title(dbid: int, title: String) -> int:
+	var b := _fixed_body(40)
+	b.encode_u32(0, dbid); _write_static(b, 4, title, 32)
+	return send(CM_SETGUILDMEMBERTITLE, b, true)
+
+func guild_chat(content: String) -> int:
+	var b := _fixed_body(128)
+	var raw := content.to_utf8_buffer()
+	for i in range(mini(raw.size(), 127)):
+		b[i] = raw[i]
+	return send(CM_GUILDCHAT, b)
+
+
+# ==================== NPC / 设置 / 排行 ====================
+
+func npc_event(uid: int, path: String, event: String, value: String = "") -> int:
+	var b := _fixed_body(410)
+	b.encode_u64(0, uid)
+	var pb := path.to_utf8_buffer()
+	var eb := event.to_utf8_buffer()
+	var vb := value.to_utf8_buffer()
+	for i in range(mini(pb.size(), 99)): b[8 + i] = pb[i]
+	for i in range(mini(eb.size(), 99)): b[108 + i] = eb[i]
+	for i in range(mini(vb.size(), 199)): b[208 + i] = vb[i]
+	b.encode_s16(408, vb.size())
+	return send(CM_NPCEVENT, b, true)
+
+func set_runtime_config(cfg_type: int, key_bytes: PackedByteArray,
+		value_bytes: PackedByteArray) -> int:
+	var b := _fixed_body(330)
+	b.encode_u16(0, cfg_type)
+	for i in range(mini(key_bytes.size(), 64)):
+		b[2 + i] = key_bytes[i]
+	for i in range(mini(value_bytes.size(), 256)):
+		b[70 + i] = value_bytes[i]
+	return send(CM_SETRUNTIMECONFIG, b, true)
+
+func query_ranking(rank_type: int) -> int:
+	var b := _fixed_body(1); b[0] = rank_type & 0xff
+	return send(CM_QUERYRANKING, b, true)
+
+func set_team_requirement(max_member: int = 0, auto_accept: bool = false) -> int:
+	var b := _fixed_body(9)
+	b.encode_s32(0, max_member)
+	b[4] = 1 if auto_accept else 0
+	b[5] = 0; b[6] = 0; b[7] = 0
+	b[8] = 0
+	return send(CM_SETTEAMREQUIREMENT, b, true)
+
+
+func create_chat_group(group_name: String, member_ids: Array) -> int:
+	var b := _fixed_body(2184)
+	_write_static(b, 0, group_name, 128)
+	var n: int = mini(member_ids.size(), 512)
+	b.encode_u16(132, n)
+	for i in range(n):
+		b.encode_u32(134 + i * 4, int(member_ids[i]))
+	return send(CM_CREATECHATGROUP, b, true)
+
+
+func request_latest_chat_message(cpid_list: Array, limit_count: int,
+		include_send: bool, include_recv: bool) -> int:
+	var b := _fixed_body(1036)
+	var n: int = mini(cpid_list.size(), 128)
+	b.encode_u16(0, n)
+	for i in range(n):
+		b.encode_u64(2 + i * 8, int(cpid_list[i]))
+	var bits := (limit_count & 0x3FFFFFFF)
+	if include_send: bits |= (1 << 30)
+	if include_recv: bits |= (1 << 31)
+	b.encode_u32(1032, bits)
+	return send(CM_REQUESTLATESTCHATMESSAGE, b, true)
+
+
+func claim_delivery(record: String) -> int:
+	var b := _fixed_body(36)
+	_write_static(b, 0, record, 32)
+	return send(CM_CLAIMDELIVERY, b, true)
 
 
 func close_connection() -> void:

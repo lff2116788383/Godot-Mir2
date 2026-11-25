@@ -79,8 +79,8 @@ const MODE_CREATE := 0
 const MODE_CHANGE := 1
 
 ## 协议体
-const CMCREATEACCOUNT_SIZE := 203
-const CMCHANGEPWD_SIZE := 201
+const CMCREATEACCOUNT_SIZE := 136
+const CMCHANGEPWD_SIZE := 204
 
 ## 进程 id
 const PID_LOGIN := 3
@@ -379,9 +379,9 @@ func _post_create_account() -> void:
 	body.resize(CMCREATEACCOUNT_SIZE)
 	body.fill(0)
 	_put_static_buf(body, 0, id_str)
-	_put_static_buf(body, 69, pwd_str)
+	_put_static_buf(body, 68, pwd_str)
 	if on_send.is_valid():
-		on_send.call(8, body)   # CM_CREATEACCOUNT
+		on_send.call(MirClient.CM_CREATEACCOUNT, body)   # CM_CREATEACCOUNT
 
 
 ## processchangepassword.cpp:doPostPassword（同构，多一个旧密码）
@@ -411,10 +411,10 @@ func _post_change_password() -> void:
 	body.resize(CMCHANGEPWD_SIZE)
 	body.fill(0)
 	_put_static_buf(body, 0, id_str)
-	_put_static_buf(body, 67, old_pwd)
-	_put_static_buf(body, 134, new_pwd)
+	_put_static_buf(body, 68, old_pwd)
+	_put_static_buf(body, 136, new_pwd)
 	if on_send.is_valid():
-		on_send.call(10, body)  # CM_CHANGEPASSWORD
+		on_send.call(MirClient.CM_CHANGEPASSWORD, body)  # CM_CHANGEPASSWORD
 
 
 static func _put_static_buf(buf: PackedByteArray, off: int, s: String) -> void:

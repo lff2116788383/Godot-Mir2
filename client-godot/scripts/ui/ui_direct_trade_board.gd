@@ -52,6 +52,7 @@ const STATE_CONFIRM := "已确认"
 
 # ==================== 状态 ====================
 
+var peer_uid: int = 0
 var peer_name: String = ""
 var peer_locked := false
 var peer_confirmed := false
@@ -101,11 +102,13 @@ func begin_trade(p_peer_uid: int, p_peer_name: String) -> void:
 
 func close_trade() -> void:
 	show = false
+	peer_uid = 0
 	if on_close.is_valid():
 		on_close.call(self)
 
 
 func complete_trade() -> void:
+	peer_uid = 0
 	my_items = []
 	peer_items = []
 	my_gold_text = ""

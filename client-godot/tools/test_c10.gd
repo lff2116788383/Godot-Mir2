@@ -166,9 +166,9 @@ func _test_sd_parser() -> void:
 	_ok(int(rew["wltype"]) == 3, "装备槽 = 武器(3)")
 	_ok(rew["item"] != null and rew["item"].item_id == 555, "装备物品 id=555")
 
-	# SM_REMOVEITEM
-	var rm := PackedByteArray(); rm.resize(32)
-	rm.encode_u64(0, 1); rm.encode_u64(8, 777); rm.encode_u64(16, 2); rm.encode_u64(24, 1)
+	# SM_REMOVEITEM: uint32 itemID + uint32 seqID + uint16 count = 10
+	var rm := PackedByteArray(); rm.resize(10)
+	rm.encode_u32(0, 777); rm.encode_u32(4, 2); rm.encode_u16(8, 1)
 	var rrm := ParserRef.parse_remove_item(rm)
 	_ok(int(rrm["item_id"]) == 777, "removeitem id=777")
 	_ok(int(rrm["count"]) == 1, "removeitem count=1")
@@ -221,6 +221,6 @@ func _test_proto_consts() -> void:
 		_ok(const_val == int(c[1]), "%s = %d" % [c[0], c[1]], str(const_val))
 
 	# 表内 SM 总数
-	var spec = SMT.SM_SPEC
+	var spec = SMT.SM_TABLE
 	if spec is Dictionary:
 		print("    [info] 表内 SM 数 = %d" % (spec as Dictionary).size())

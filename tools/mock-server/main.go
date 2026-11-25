@@ -288,9 +288,9 @@ func (s *Server) onQueryChar(sess *Session, f *Frame) {
 	name := []byte(p.Name)
 	putU16(body, 0, uint16(len(name)))
 	copy(body[2:], name)
-	body[2+65] = p.Gender
-	body[2+65+1] = p.Job
-	putU64(body, 2+65+2, p.Exp)
+	body[68] = p.Gender
+	body[69] = p.Job
+	putU64(body, 70, p.Exp)
 
 	WriteFrame(sess.conn, smQueryCharOK, f.RespID, body)
 }
@@ -349,7 +349,6 @@ func (s *Server) sendStartGameScene(sess *Session, p *Player, uid uint64) {
 	var w cerealWriter
 
 	// endian 标记
-	w.byte(1)
 
 	// SDStartGameScene:
 	//   uid u64, mapUID u64, x i32, y i32, direction i32,
@@ -373,6 +372,7 @@ func (s *Server) sendStartGameScene(sess *Session, p *Player, uid uint64) {
 	// viewRange
 	w.i32(15)
 
+	w.byte(0) // CF_NONE
 	WriteFrame(sess.conn, smStartGameScene, 0, w.buf)
 }
 

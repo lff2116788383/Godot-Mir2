@@ -45,6 +45,8 @@ var view_h := 28
 
 ## 地面物品：[{ gx, gy, item_id, count, highlighted }]
 var ground_items: Array = []
+var safe_zone: Dictionary = {}
+var firewalls: Array = []
 
 ## 物件贴图提供者（texID -> Texture2D）
 var obj_tex_fn: Callable = Callable()
@@ -57,6 +59,7 @@ var _layer_item: Node2D = null
 var _layer_over0: Node2D = null
 var _layer_over1: Node2D = null
 var _layer_light: Node2D = null
+var _layer_world_fx: Node2D = null
 
 var _now_ms := 0.0
 ## 统计（自检用）
@@ -175,6 +178,36 @@ func _on_layer_draw(layer: Node2D) -> void:
 	elif layer == _layer_light:
 		drawn_lights = ObjRef.draw_light(canvas, map_data,
 			int(r[0]), int(r[1]), int(r[2]), int(r[3]), view)
+
+
+func _draw_world_fx(canvas, view: Vector2i) -> void:
+	if not safe_zone.is_empty():
+		for z in safe_zone.get("rects", []):
+			var rx: int = int(z.get("x", 0)) * GRID_X - view.x
+			var ry: int = int(z.get("y", 0)) * GRID_Y - view.y
+			var rw: int = int(z.get("w", 0)) * GRID_X
+			var rh: int = int(z.get("h", 0)) * GRID_Y
+			canvas.draw_border(Color(0.25, 0.9, 0.45, 0.85), rx, ry, rw, rh, 2)
+		for c in safe_zone.get("circles", []):
+			canvas.draw_circle_c(Color(0.25, 0.9, 0.45, 0.12),
+				int(c.get("x",0))*GRID_X - view.x + GRID_X/2,
+				int(c.get("y",0))*GRID_Y - view.y + GRID_Y/2,
+				int(c.get("r",0))*GRID_X, true)
+	for fw in firewalls:
+		var fx: int = int(fw.get("x",0))*GRID_X - view.x
+		var fy: int = int(fw.get("y",0))*GRID_Y - view.y
+		canvas.draw_rect_c(Color(1.0, 0.3, 0.08, 0.35), fx + 8, fy + 4, GRID_X - 16, GRID_Y - 8, true)
+		canvas.draw_border(Color(1.0, 0.55, 0.15, 0.85), fx + 8, fy + 4, GRID_X - 16, GRID_Y - 8, 1)
+
+
+func remove_ground_item(gx: int, gy: int, item_id: int = 0) -> void:
+	for i in range(ground_items.size() - 1, -1, -1):
+		var it: Dictionary = ground_items[i]
+		if int(it.get("gx", -1)) == gx and int(it.get("gy", -1)) == gy:
+			if item_id == 0 or int(it.get("item_id", 0)) == item_id:
+				ground_items.remove_at(i)
+				if item_id != 0:
+					return
 
 
 func add_ground_item(gx: int, gy: int, item_id: int, count: int = 1,

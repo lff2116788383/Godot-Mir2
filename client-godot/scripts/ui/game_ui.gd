@@ -118,6 +118,7 @@ var vh := 720
 ## 引用的游戏数据（由 main 注入）
 var player_actor = null
 var co_manager = null
+var world = null
 var message_stack = null
 var inventory = null
 
@@ -325,6 +326,8 @@ func _on_ctrl_action(act: String) -> void:
 
 ## 控制栏命令提交（controlboard.cpp:onInputDone 的分发规则）
 func _on_ctrl_command(text: String) -> void:
+	if world != null and world.handle_command(text):
+		return
 	var kind: String = CtrlBoardRef.command_kind(text)
 	match kind:
 		"guild":
@@ -441,6 +444,7 @@ func _build_inventory() -> void:
 	inventory_board.h = 268
 	inventory_board.show = false
 	inventory_board.on_draw = _draw_inventory
+	inventory_board.on_event = _handle_inventory_event
 	control_board.add_widget(inventory_board, 0, 0)
 
 
@@ -500,6 +504,28 @@ func _draw_inventory(_w, roi) -> void:
 
 
 ## 消息栈（对应 messagestackboard，173 行）
+func _handle_inventory_event(_w, event: InputEvent, _valid: bool, roi) -> bool:
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+		return false
+	var p: Vector2 = event.position
+	var gx := int((p.x - roi.x - 12) / INV_GRID_W)
+	var gy := int((p.y - roi.y - 30) / INV_GRID_H)
+	if gx < 0 or gy < 0 or gx >= INV_COLS or gy >= INV_ROWS:
+		return false
+	if inventory_data == null:
+		return true
+	var idx := gy * INV_COLS + gx
+	var items: Array = inventory_data.item_list()
+	if idx >= items.size() or items[idx] == null:
+		return true
+	var it = items[idx]
+	if event.double_click and world != null:
+		world.activate_inventory_item(it)
+	else:
+		_push_sys_msg("物品：%s x%d" % [ItemRecordRef.name(it.item_id), it.count])
+	return true
+
+
 func _build_msg_stack() -> void:
 	msg_stack_board = WidgetRef.new()
 	msg_stack_board.widget_name = "MessageStack"

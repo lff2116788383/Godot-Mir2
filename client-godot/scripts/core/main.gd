@@ -10,6 +10,7 @@ const GRID_Y := 32
 @onready var hud: Label = $UI/HUD
 
 var _map: MapLoader.MapData = null
+var _map_cache: Dictionary = {}
 var _player: PlayerActor = null
 var _human: HumanActor = null
 var _spawn := Vector2i.ZERO
@@ -30,10 +31,16 @@ var _inventory = null
 const SdInventory := preload("res://scripts/item/sd_inventory.gd")
 const LoginFlowRef := preload("res://scripts/ui/login/login_flow.gd")
 const SdMsgParserRef := preload("res://scripts/net/sd_msg_parser.gd")
+const WorldSessionRef := preload("res://scripts/core/world_session.gd")
+const MapRecordRef := preload("res://scripts/item/map_record.gd")
+const MagicDBRef := preload("res://scripts/magic/magic_db.gd")
 const SdMsgParser = SdMsgParserRef
 
 ## 登录链路（--login 模式启用）
 var login_flow: LoginFlowRef = null
+var world: WorldSession = null
+var _capture_world_frames := false
+var _pending_world_frames: Array = []
 ## 地图物件层（地面物件/上层物件/地面物品/光照）
 var obj_layer: MapObjectLayer = null
 ## 角色运行时状态（由 SM_HEALTH / SM_GOLD / SM_EXP 等驱动）
@@ -126,6 +133,153 @@ func _create_ui() -> void:
 	print("[Main] 界面已创建")
 
 
+func _ensure_co_manager() -> void:
+	if co_manager != null:
+		return
+	co_manager = CoManager.new()
+	co_manager.name = "CoManager"
+	add_child(co_manager)
+	co_manager.setup(Game.assets_root)
+	co_manager.map_uid = map_uid
+	co_manager.set_my_position_provider(func() -> Vector3i:
+		return Vector3i(_player.grid.x, _player.grid.y, map_uid) if _player != null else Vector3i.ZERO)
+	co_manager.entity_query_requested.connect(func(uid: int):
+		if net != null:
+			net.query_corecord(uid))
+	if _player != null:
+		co_manager.set_map_context(Callable(self, "can_move_to"), Callable(self, "make_path_finder"))
+
+
+func _setup_world_session() -> void:
+	if ui == null:
+		return
+	if world == null:
+		world = WorldSessionRef.new()
+		world.name = "WorldSession"
+		add_child(world)
+		world.setup({
+			"main": self, "net": net, "ui": ui, "co_manager": co_manager,
+			"player": _player, "obj_layer": obj_layer, "fx": fx,
+			"inventory": _inventory, "map_uid": map_uid,
+		})
+		if _player != null and not _player.move_finished.is_connected(world.on_player_move_finished):
+			_player.move_finished.connect(world.on_player_move_finished)
+	else:
+		world.net = net
+		world.ui = ui
+		world.co_manager = co_manager
+		world.player = _player
+		world.obj_layer = obj_layer
+		world.fx = fx
+		world.inventory = _inventory
+		world.map_uid = map_uid
+		world._bind_ui()
+	ui.world = world
+	if co_manager != null and not co_manager.map_change_requested.is_connected(world._on_map_change_requested):
+		co_manager.map_change_requested.connect(world._on_map_change_requested)
+	if ui.ctrl_board != null:
+		ui.ctrl_board.player = _player
+		ui.ctrl_board.map_id = Uid.get_map_id(map_uid) if map_uid != 0 else 1
+
+
+func apply_server_scene(d: Dictionary) -> void:
+	var target_map_uid := int(d.get("map_uid", map_uid))
+	var target_map_id := Uid.get_map_id(target_map_uid)
+	if target_map_id <= 0:
+		target_map_id = Uid.get_map_id(map_uid)
+	if target_map_id <= 0:
+		target_map_id = 1
+	var need_reload := (_map == null or _player == null or map_uid != target_map_uid)
+	map_uid = target_map_uid
+	if need_reload:
+		var path := MapRecordRef.path_for(target_map_id)
+		if not FileAccess.file_exists(path):
+			path = "%s/map/%d.bin" % [Game.assets_root, target_map_id - 1]
+		var md = _map_cache.get(target_map_id)
+		if md == null:
+			md = MapLoader.load_file(path)
+			if md != null:
+				_map_cache[target_map_id] = md
+		if md == null:
+			push_error("地图加载失败: " + path)
+			return
+		_map = md
+		map_view.set_camera(cam)
+		map_view.load_map(_map)
+		if obj_layer != null:
+			obj_layer.queue_free()
+			obj_layer = null
+		_create_obj_layer()
+		if _player != null:
+			_player.queue_free()
+			_player = null
+			_human = null
+		_spawn = _find_spawn(Vector2i(_map.w / 2, _map.h / 2))
+		_create_player()
+	if _inventory == null:
+		_init_inventory()
+	if fx == null:
+		_create_fx()
+	_ensure_co_manager()
+	if ui == null:
+		_create_ui()
+	else:
+		ui.player_actor = _player
+		ui.co_manager = co_manager
+		ui.inventory_data = _inventory
+	_setup_world_session()
+	if world != null:
+		world.net = net
+		world.player = _player
+		world.co_manager = co_manager
+		world.obj_layer = obj_layer
+		world.map_uid = map_uid
+		if _player != null and not _player.move_finished.is_connected(world.on_player_move_finished):
+			_player.move_finished.connect(world.on_player_move_finished)
+	if co_manager != null:
+		co_manager.map_uid = map_uid
+		co_manager.set_my_uid(Game.self_uid)
+		co_manager.set_map_context(Callable(self, "can_move_to"), Callable(self, "make_path_finder"))
+	if ui != null and ui.ctrl_board != null:
+		ui.ctrl_board.player = _player
+		ui.ctrl_board.map_id = target_map_id
+	if map_view != null:
+		map_view.visible = true
+	if hud != null:
+		hud.visible = true
+	_update_hud()
+
+
+func _capture_world_frame(code: int, body: PackedByteArray, resp: int) -> void:
+	if world != null:
+		return
+	_pending_world_frames.append([code, body, resp])
+
+
+func _enter_world_from_online(online_body: PackedByteArray) -> void:
+	var od := SdMsgParser.parse_online_ok(online_body)
+	if od.is_empty():
+		od = {"uid": 0, "name": "玩家", "gender": 0, "job": 1,
+			"map_uid": Uid.build_map_uid(1, 1), "action": null}
+	if int(od.get("uid", 0)) != 0:
+		Game.set_self(int(od["uid"]), str(od.get("name", "")))
+	map_uid = int(od.get("map_uid", Uid.build_map_uid(1, 1)))
+	apply_server_scene(od)
+	if world != null:
+		world.bind_net(net)
+		world.apply_start_scene(od)
+	if net != null:
+		if net.frame_received.is_connected(_capture_world_frame):
+			net.frame_received.disconnect(_capture_world_frame)
+		_capture_world_frames = false
+		if not net.frame_received.is_connected(_on_net_frame):
+			net.frame_received.connect(_on_net_frame)
+		var pending := _pending_world_frames.duplicate()
+		_pending_world_frames.clear()
+		for frame in pending:
+			_on_net_frame(int(frame[0]), frame[1], int(frame[2]))
+
+
 ## 支持 --demo：演示 NPC 对话与战斗飘字（用于截图验证）
 func _maybe_demo() -> void:
 	var args := OS.get_cmdline_user_args()
@@ -163,21 +317,15 @@ func _maybe_connect() -> void:
 	if args.find("--online") < 0:
 		return
 
-	co_manager = CoManager.new()
-	co_manager.name = "CoManager"
-	add_child(co_manager)
-	co_manager.setup(Game.assets_root)
-	co_manager.set_map_context(Callable(self, "can_move_to"), Callable(self, "make_path_finder"))
-	co_manager.map_uid = map_uid
-	co_manager.set_my_position_provider(func() -> Vector3i:
-		return Vector3i(_player.grid.x, _player.grid.y, map_uid))
-	co_manager.entity_query_requested.connect(func(uid: int):
-		print("[Main] 请求查询实体 0x%X" % uid))
+	_ensure_co_manager()
 
 	net = MirClient.new()
 	net.name = "Net"
 	add_child(net)
 	net.frame_received.connect(_on_net_frame)
+	_setup_world_session()
+	if world != null:
+		world.bind_net(net)
 
 	var ok = await net.connect_to("127.0.0.1", 7000)
 	if not ok:
@@ -198,6 +346,8 @@ func _maybe_connect() -> void:
 func _on_net_frame(code: int, body: PackedByteArray, _resp: int) -> void:
 	# 先处理「角色自身状态」一类，它们不依赖场景实体管理器
 	if _on_hero_state_frame(code, body):
+		return
+	if world != null and world.handle_frame(code, body):
 		return
 	if co_manager == null:
 		return
@@ -406,18 +556,36 @@ func _update_hud() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	# 登录链路优先吃掉所有输入
 	if login_flow != null and login_flow.in_login_flow():
 		login_flow.handle_input(event)
 		return
 	if _map == null:
 		return
-	# UI 优先处理（对应原版 GUIManager::processEventDefault 先于地图）
 	if ui != null and ui.handle_input(event):
 		return
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		var world: Vector2 = get_global_mouse_position()
-		_click_move(map_view.world_to_grid(world))
+	if event is InputEventMouseButton and event.pressed:
+		var gp: Vector2 = get_global_mouse_position()
+		var g := map_view.world_to_grid(gp)
+		if event.button_index == MOUSE_BUTTON_RIGHT:
+			_click_move(g)
+		elif event.button_index == MOUSE_BUTTON_LEFT:
+			if world != null and world.handle_world_click(g, event.shift_pressed):
+				return
+			_click_move(g)
+		return
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode >= KEY_1 and event.keycode <= KEY_6:
+			if world != null:
+				world.on_quick_slot(int(event.keycode - KEY_1))
+			return
+		if event.keycode == KEY_TAB:
+			if world != null:
+				world.request_nearest_pickup()
+			return
+		if event.keycode == KEY_ESCAPE:
+			if _player != null:
+				cam.position = _player.position
+			return
 
 
 func _click_move(g: Vector2i) -> void:
@@ -430,8 +598,11 @@ func _click_move(g: Vector2i) -> void:
 	if not _is_walkable(g):
 		hud.text = "格(%d,%d) 不可行走" % [g.x, g.y]
 		return
-	if not _player.request_move(g):
+	if not _player.request_move(g, 2):
 		hud.text = "格(%d,%d) 无法到达" % [g.x, g.y]
+		return
+	if world != null:
+		world.send_move(g)
 
 
 func _find_spawn(center: Vector2i) -> Vector2i:
@@ -482,6 +653,9 @@ func _start_login_flow() -> void:
 	net = MirClient.new()
 	net.name = "LoginNet"
 	add_child(net)
+	_capture_world_frames = true
+	_pending_world_frames.clear()
+	net.frame_received.connect(_capture_world_frame)
 	login_flow.bind_net(net)
 
 	var host := "127.0.0.1"
@@ -504,8 +678,7 @@ func _start_login_flow() -> void:
 
 ## SM_ONLINEOK 到达后接管进游戏
 func _on_run_entered(online_body: PackedByteArray) -> void:
-	print("[C9] 进入游戏，SM_ONLINEOK %d 字节" % online_body.size())
-	# 收起登录层
+	print("[C9] 进入游戏：SM_ONLINEOK %d 字节" % online_body.size())
 	if login_flow != null:
 		login_flow.visible = false
 		if login_flow._canvas != null:
@@ -514,6 +687,7 @@ func _on_run_entered(online_body: PackedByteArray) -> void:
 		hud.visible = true
 	if map_view != null:
 		map_view.visible = true
+	_enter_world_from_online(online_body)
 
 
 # ==================== 角色状态消息（processrunnet.cpp on_SM_*）====================
@@ -532,6 +706,8 @@ func _on_hero_state_frame(code: int, body: PackedByteArray) -> bool:
 			hero_state["max_mp"] = int(h["max_mp"])
 			hero_state["hp_recover"] = int(h["hp_recover"])
 			hero_state["mp_recover"] = int(h["mp_recover"])
+			if int(h.get("uid", 0)) != Game.self_uid and co_manager != null:
+				co_manager.set_actor_health(int(h["uid"]), int(h["hp"]), int(h["max_hp"]))
 			_sync_hud_bars()
 			return true
 
@@ -578,20 +754,68 @@ func _on_hero_state_frame(code: int, body: PackedByteArray) -> bool:
 
 		MirClient.SM_EQUIPWEAR:
 			var ew := SdMsgParser.parse_equip_wear(body)
-			if ew["item"] != null:
+			if ew.get("item") != null:
 				hero_state["wear"][int(ew["wltype"])] = ew["item"]
 			else:
 				hero_state["wear"].erase(int(ew["wltype"]))
+			if ui != null and ui.my_state_board != null:
+				ui.my_state_board.wear = hero_state["wear"]
+			if world != null:
+				world._refresh_player_appearance({"wear": hero_state["wear"], "gender": world.gender})
 			return true
 
 		MirClient.SM_GRABWEAR:
 			var gw := SdMsgParser.parse_grab_wear(body)
 			hero_state["wear"].erase(int(gw["wltype"]))
+			if ui != null and ui.my_state_board != null:
+				ui.my_state_board.wear = hero_state["wear"]
+			if world != null:
+				world._refresh_player_appearance({"wear": hero_state["wear"], "gender": world.gender})
+			return true
+
+		MirClient.SM_EQUIPBELT:
+			var eb := SdMsgParser.parse_equip_belt(body)
+			hero_state["belt"][int(eb["slot"])] = eb["item"]
+			if ui != null and ui.quick_access != null:
+				ui.quick_access.set_belt(hero_state["belt"])
+			return true
+
+		MirClient.SM_GRABBELT:
+			var gb := SdMsgParser.parse_grab_belt(body)
+			hero_state["belt"][int(gb["slot"])] = null
+			if ui != null and ui.quick_access != null:
+				ui.quick_access.set_belt(hero_state["belt"])
+			return true
+
+		MirClient.SM_UPDATEITEM:
+			var ui_item := SdMsgParser.parse_update_item(body)
+			if _inventory != null and ui_item.has("item"):
+				var found = _inventory.find(int(ui_item["item_id"]), int(ui_item["seq_id"]))
+				if found != null:
+					found.count = int(ui_item["count"])
+					found.duration = ui_item["item"].duration
+			_refresh_inventory_ui()
+			return true
+
+		MirClient.SM_REMOVEITEM:
+			var ri := SdMsgParser.parse_remove_item(body)
+			if _inventory != null:
+				_inventory.remove(int(ri["item_id"]), int(ri["seq_id"]), int(ri["count"]), true)
+			_refresh_inventory_ui()
+			return true
+
+		MirClient.SM_REMOVESECUREDITEM:
+			var rsi := SdMsgParser.parse_remove_secured_item(body)
+			_push_log("寄存物品已移除：%d/%d" % [int(rsi["item_id"]), int(rsi["seq_id"])])
 			return true
 
 		MirClient.SM_LEARNEDMAGICLIST:
 			var lm := SdMsgParser.parse_learned_magic(body)
 			hero_state["magics"] = lm["magics"]
+			for mid in hero_state["magics"]:
+				var nm := MagicDBRef.name_of(int(mid))
+				if not nm.is_empty() and ui != null and ui.skill_board != null:
+					ui.skill_board.learn(nm)
 			return true
 
 		MirClient.SM_BUFFIDLIST:
@@ -655,6 +879,8 @@ func _on_hero_state_frame(code: int, body: PackedByteArray) -> bool:
 
 		MirClient.SM_NPCNAME:
 			var nn := SdMsgParser.parse_npc_name(body)
+			if co_manager != null:
+				co_manager.set_actor_name(int(nn.get("uid", 0)), str(nn.get("name", "")))
 			if ui != null and ui.ctrl_board != null and not str(nn["name"]).is_empty():
 				ui.ctrl_board.add_log("NPC: " + str(nn["name"]))
 			return true
@@ -662,7 +888,7 @@ func _on_hero_state_frame(code: int, body: PackedByteArray) -> bool:
 		MirClient.SM_NPCXMLLAYOUT:
 			var nx := SdMsgParser.parse_npc_xml(body)
 			if ui != null and ui.npc_chat != null and not str(nx["xml"]).is_empty():
-				ui.npc_chat.show_layout(int(nx["uid"]), str(nx["xml"]), "npc_reply")
+				ui.npc_chat.show_layout(int(nx["uid"]), str(nx["xml"]), str(nx.get("event_path", "")))
 			return true
 
 		MirClient.SM_LOGOUTOK:
