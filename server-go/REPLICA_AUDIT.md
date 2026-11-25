@@ -779,3 +779,125 @@ common/src/uidf.cpp:320
 | 守卫归位 | 原版守卫会走回自己的岗位（`m_standX/m_standY`），现在会一直追出去 |
 | 尸体消失 | 尸体永久躺在地上 |
 | 掉落归属保护期 | 谁都能捡 |
+
+### B5 第九批：击杀结算 / 尸体淡出 / 掉落归属（本轮）
+
+**修掉一个「客户端不报错但游戏没法玩」的缺陷：战士打怪不掉落、不得经验。**
+
+#### 1. 物理击杀从不结算（本轮最重要）
+
+结算逻辑最初只写在 `SpellHandler.settleKill` 里，因为「法术打死怪」是最先做的路径。
+但玩家用**普通物理攻击**打死怪走的是：
+
+```
+ActionHandler.handleAttack
+  → attackWorldEntity
+    → broadcastAction（攻击动画）
+    → broadcastDamage（打击特效 + 血量）
+    → broadcastDeath（SM_NOTIFYDEAD）
+    ✗ 没有 settleKill
+```
+
+后果：
+
+| 职业 | 打怪结果 |
+|---|---|
+| 法师（火球打死） | 有经验、有掉落 |
+| **战士（砍死）** | **零经验、零掉落** |
+
+而且客户端完全不报错 —— 怪确实死了、尸体也在，只是「打怪没意义」。
+这类缺陷最难发现，因为它不产生任何错误信号。
+
+修法：把结算抽成 `KillSettler`，`main` 里创建**一个实例**同时注入
+`ActionHandler.Kills` 与 `SpellHandler.Kills`。
+
+★ 必须是同一个实例，不能各建一个 —— 两份实现迟早漂移
+（一边加了归属保护、另一边忘了），而且玩家会遇到
+「用法术打有掉落、用刀砍没有」这种诡异现象。
+
+#### 2. `RollDrop` 传 nil 随机源会 panic
+
+`World.CommitDeath` 走 actor 通道，拿不到调用方随机源，一直传 `nil`。
+初版 `rollProb` 直接 `r.Intn(probRecip)` —— 怪物一旦配了掉落就是
+`panic: runtime error: invalid memory address`，**整个 map actor 挂掉**。
+
+之所以之前没暴露：法术击杀路径传了随机源，只有新接的物理路径才踩到。
+
+修法：`rollProb` 容忍 `nil`，用包级随机源兜底（掉落不需要可复现性）。
+
+#### 3. 尸体永不消失
+
+原版 `monster.cpp:704`：
+
+```cpp
+if(getMR().deadFadeOut){
+    addDelay(1000, [this](bool){ goGhost(); });   // 1 秒后消失
+}else{
+    defer([this]{ goGhost(); });                   // 立刻消失
+}
+```
+
+之前 `deadFadeOut` 字段根本没提取，所有尸体永久躺在地上。
+
+修法：
+- 提取脚本加 `deadFadeOut`（364 条里 363 条为 1，1 条为 0）
+- `Entity.DieAtMS` 记录死亡时刻（`Combat` 与 `Attack` 两处扣血点都记）
+- `Advance` 里 `fadeOutCarcasses()` 按 `DeadFadeOut` 决定延时，到期 `RemoveEntity`
+- tick 把 `corpse_fade` 转成 `SM_CODISAPPEAR`
+
+★ 尸体清理必须在 AI **之前**：尸体还占着 `cell.Occupants`，
+`CanOccupy` 返回 false，活怪走不进那一格 —— 表现为「怪绕着尸体走」。
+
+★ 尸体消失只发 `SM_CODISAPPEAR`，不再发 `SM_DEADFADEOUT`：
+后者在死亡瞬间已发过，1 秒后再发一次会让客户端重新播一遍淡出
+（表现是尸体闪一下又淡一次）。
+
+#### 4. 掉落没有归属保护
+
+之前谁都能捡。多人打同一只怪时「谁手快谁得」——
+法师放完火墙去捡的路上会被路过的战士全捡走。
+
+修法：
+- `GroundItem.Owner` / `ProtectUntilMS`（保护期 30 秒）
+- `MapState.CanPickup(x, y, itemID, pickerUID)` 判权
+- `MapState.DropItemsOwned` 落地时打标记
+- `World.PickupOne` 从尾往前找**自己有权捡**的那一件
+
+★ 拾取要跳过受保护物品，不能无脑取最后一件：
+否则地上有别人保护期物品时，玩家点「捡」会反复失败 ——
+表现是「地上有东西但怎么点都捡不起来」。
+
+#### 5. 玩家/守卫打死怪也要结算
+
+- 物理攻击打死 → `ActionHandler.settleKill`（本轮新增）
+- 法术打死 → `SpellHandler.Cast`（已有，改为委托给同一 settler）
+- **守卫打死怪** → `MapTicker` 里按 `AIAction.Dead` 调 `SettleNoKiller`
+
+`SettleNoKiller`：只落地掉落（无归属保护），经验不给任何人。
+不结算的话，「守卫帮你打死半兽人，东西凭空消失」——
+玩家会以为被系统吞了。
+
+**经验归属的已知简化**
+
+原版 `dispatchOffenderExp` 按仇恨列表分摊（多人都打则各有份）。
+当前版本简化成「最后一击的人独得」。多人围殴时会与原文有差异，
+记为已知简化。
+
+**验证**
+
+| 层 | 结果 |
+|---|---|
+| `TestPhysicalKillSettlesLoot` | 经验 0→100、掉落 itemID=6 落地、归属保护生效、`SM_DEADFADEOUT` 已发 |
+| `TestCorpseFadesOut` | 500ms 时尸体还在，1.1 秒后消失，产生 `corpse_fade` 事件 |
+| `TestNoFadeOutKeepsCorpse` | `deadFadeOut=0` 的怪死后下一个 tick 就移除 |
+| 服务端实跑 | 比奇县 1102 只怪 / 27 守卫 / 3 安全区，零 error |
+| 客户端 c9c8 | **15 项全过** |
+
+**本轮未做**
+
+| 项目 | 影响 |
+|---|---|
+| 经验按仇恨分摊 | 多人围殴时只有最后一击得经验 |
+| 金币入背包 | 金币（小）作为物品落地，还没接「拾取后加到 Gold 字段」 |
+| 怪与怪阵营 | 守卫仍不打敌对怪物（`pickTarget` 只筛玩家） |
+| 火墙击杀结算 | 火墙命中还没接 `SM_STRIKEGRID` |

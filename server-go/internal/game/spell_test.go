@@ -17,6 +17,7 @@ type b5spellFixture struct {
 	*b5Fixture
 	Items     *ItemDB
 	Magics    *MagicDB
+	Monsters  *world.MonsterDB
 	Spells    *SpellHandler
 	Deaths    *DeathHandler
 	Shops     *ShopHandler
@@ -39,14 +40,24 @@ func newB5SpellFixture(t *testing.T) *b5spellFixture {
 	}
 	GoldItemID = items.GoldID()
 
+	monsters, err := world.LoadMonsterDB("../../content/monsters.json")
+	if err != nil {
+		t.Fatalf("load monster db: %v", err)
+	}
+
 	f := &b5spellFixture{
-		b5Fixture: base, Items: items, Magics: magics,
+		b5Fixture: base, Items: items, Magics: magics, Monsters: monsters,
 		clockMS: 1000, clockStep: 100,
 	}
 	f.Spells = &SpellHandler{
 		Players: base.Players, Worlds: base.Worlds.Worlds,
 		Items: items, Magics: magics, Broadcast: base.Cast,
 		Sessions: base.Sessions, Logger: discardLogger(),
+		// 击杀结算器与 main 里装配方式一致：法术和物理攻击共用一份。
+		Kills: &KillSettler{
+			Players: base.Players, Worlds: base.Worlds.Worlds,
+			Items: items, Broadcast: base.Cast, Logger: discardLogger(),
+		},
 	}
 	f.Deaths = &DeathHandler{
 		Players: base.Players, Worlds: base.Worlds.Worlds,
@@ -58,6 +69,8 @@ func newB5SpellFixture(t *testing.T) *b5spellFixture {
 		Chars: base.Chars,
 	}
 	f.Actions.Spells = f.Spells
+	// 物理攻击的击杀结算 —— 与 main 装配一致，共用同一个 settler
+	f.Actions.Kills = f.Spells.Kills
 
 	// 世界时钟用可控时钟，避免测试依赖真实时间
 	f.Ticker = NewMapTicker(base.Worlds.Worlds, base.Worlds, base.Cast,

@@ -310,13 +310,22 @@ func (w *World) PickupOne(ctx context.Context, mapID uint32, x, y int, uid uint6
 		if len(ids) == 0 {
 			return []uint32(nil), nil
 		}
-		// 从尾部取（与 PickupItem 的尾部语义一致）
-		itemID := ids[len(ids)-1]
-		ok, _ := state.PickupItem(x, y, itemID)
-		if !ok {
-			return []uint32(nil), nil
+		// ★ 从尾往前找**自己有权捡**的那一件，而不是无脑取最后一件。
+		//
+		//	不判归属的话，一堆掉落里有别人保护期的物品时，
+		//	玩家点一次「捡」，服务端拿走的是那件受保护的、
+		//	然后因为无权而失败 —— 表现是「地上有东西但怎么点都捡不起来」。
+		//	（原版 realizeItem 就是在候选列表里先过滤掉无权捡的。）
+		for i := len(ids) - 1; i >= 0; i-- {
+			itemID := ids[i]
+			if !state.CanPickup(x, y, itemID, uid) {
+				continue
+			}
+			if ok, _ := state.PickupItem(x, y, itemID); ok {
+				return []uint32{itemID}, nil
+			}
 		}
-		return []uint32{itemID}, nil
+		return []uint32(nil), nil
 	}))
 	if err != nil {
 		return nil, err
@@ -560,4 +569,40 @@ func (w *World) ObserversAt(ctx context.Context, mapID uint32, x, y int) ([]uint
 	}
 	uids, _ := value.([]uint64)
 	return uids, nil
+}
+
+// DropItemOwned 放一批带归属的地面物品（掉落保护期）。
+func (w *World) DropItemOwned(ctx context.Context, mapID uint32, x, y int, itemIDs []uint32, owner uint64) ([]GroundItemEvent, error) {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return state.DropItemsOwned(x, y, itemIDs, owner), nil
+	}))
+	if err != nil {
+		return nil, err
+	}
+	events, _ := value.([]GroundItemEvent)
+	return events, nil
+}
+
+// CanPickup 判断玩家能否拾取某格某物品（归属保护期判定）。
+func (w *World) CanPickup(ctx context.Context, mapID uint32, x, y int, itemID uint32, pickerUID uint64) bool {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return state.CanPickup(x, y, itemID, pickerUID), nil
+	}))
+	if err != nil {
+		return false
+	}
+	ok, _ := value.(bool)
+	return ok
+}
+
+// CollectGroundItems 收集某圆范围内的地面物品（用于下发 SM_GROUNDITEMIDLIST）。
+func (w *World) CollectGroundItems(ctx context.Context, mapID uint32, x, y, r int) []GroundItemSnapshot {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return state.CollectGroundItems(x, y, r), nil
+	}))
+	if err != nil {
+		return nil
+	}
+	snaps, _ := value.([]GroundItemSnapshot)
+	return snaps
 }

@@ -42,12 +42,14 @@ type MonsterRecord struct {
 	View       int
 	AI         int
 	BehaveMode int
-	WalkWait   int
-	WalkStep   int
-	AttackWait int
-	DCDodgeSet bool
-	DropItems  [][]DropItem
-	Elem       ElementResist
+	// DeadFadeOut 尸体是否在死亡 1 秒后从地图移除（monsterrecord.hpp:52）
+	DeadFadeOut int
+	WalkWait    int
+	WalkStep    int
+	AttackWait  int
+	DCDodgeSet  bool
+	DropItems   [][]DropItem
+	Elem        ElementResist
 }
 
 // DropItem 是一条掉落配置。
@@ -119,9 +121,20 @@ func RollDrop(rec MonsterRecord, r *rand.Rand) []DropResult {
 }
 
 // rollProb 判定 probRecip 概率：1 必中，N 表示 1/N。
+//
+// ★ 必须容忍 r == nil：
+//
+//	World.CommitDeath 走 actor 通道，拿不到调用方的随机源，
+//	一直传的是 nil。初版直接 `r.Intn(...)`，怪物一旦配了掉落
+//	就是 panic: runtime error (nil pointer) —— 服务端整个 map actor 挂掉。
+//
+//	nil 时用包级随机源兜底（掉落不需要可复现性）。
 func rollProb(probRecip int, r *rand.Rand) bool {
 	if probRecip <= 1 {
 		return true
+	}
+	if r == nil {
+		return rand.Intn(probRecip) == 0
 	}
 	return r.Intn(probRecip) == 0
 }

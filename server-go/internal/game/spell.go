@@ -51,6 +51,12 @@ type SpellHandler struct {
 	ItemRepo ItemRepository
 	// KeySaver 技能快捷键落库（可为 nil）
 	KeySaver MagicKeySaver
+	// Kills 击杀结算器。
+	//
+	// ★ 与 ActionHandler.Kills 是**同一个实例**（main 里注入）。
+	//	法术击杀和物理击杀的结算逻辑必须完全一致 ——
+	//	两套实现迟早会漂移（一边算了归属保护、另一边忘了）。
+	Kills *KillSettler
 }
 
 // MagicKeySaver 是快捷键持久化的最小接口。
@@ -355,35 +361,13 @@ func (h *SpellHandler) castGroundMagic(ctx context.Context, p *Player, rec Magic
 
 // settleKill 结算击杀奖励（经验 + 掉落）。
 //
-// 掉落归属取仇恨最高者（DeathResult.Owner），但当前版本掉落直接落地，
-// 谁都能拾 —— 原版的「归属保护期」需要 ground item 上带 owner 字段，
-// 已在 REPLICA_AUDIT 记为后续批次。
+// 委托给共享的 KillSettler —— 物理攻击走同一份逻辑。
+// 两套实现会漂移：一边加了归属保护、另一边忘了，是很难查的缺陷。
 func (h *SpellHandler) settleKill(ctx context.Context, killer *Player, targetUID uint64) {
-	result, ok, err := h.Worlds.CommitDeath(ctx, killer.MapID, targetUID)
-	if err != nil || !ok {
+	if h.Kills == nil {
 		return
 	}
-	if len(result.Drops) > 0 {
-		itemIDs := make([]uint32, 0, len(result.Drops))
-		for _, d := range result.Drops {
-			// DropResult.Item 是物品名（monsterrecord 里写的是名字），
-			// 需要经物品表换成 itemID 才能落地。
-			id, found := h.Items.FindByName(d.Item)
-			if !found {
-				h.logReject(killer, "drop item not in item db: "+d.Item, 0)
-				continue
-			}
-			itemIDs = append(itemIDs, id)
-		}
-		if len(itemIDs) > 0 {
-			if _, err := h.Worlds.DropItem(ctx, killer.MapID, result.X, result.Y, itemIDs); err == nil {
-				h.broadcastGroundItems(ctx, killer.MapID, result.X, result.Y, itemIDs)
-			}
-		}
-	}
-	if result.Exp > 0 {
-		h.gainExp(ctx, killer, result.Exp)
-	}
+	h.Kills.Settle(ctx, killer, targetUID)
 }
 
 // ==================== 共用辅助 ====================

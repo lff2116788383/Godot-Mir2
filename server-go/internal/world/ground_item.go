@@ -31,7 +31,21 @@ type GroundItem struct {
 	ExpireMS int64
 	// X, Y 所在格
 	X, Y int
+	// Owner 掉落归属（0 = 无归属，谁都能捡）
+	Owner uint64
+	// ProtectUntilMS 归属保护期到期时刻（世界时钟毫秒）
+	//
+	// ★ 保护期是「保护归属者的拾取权」，不是「禁止别人捡」：
+	//   原版 realizeItem 在保护期内只有 owner 能捡。
+	//   不做保护的话，多人打同一只怪时「谁手快谁得」，
+	//   法师放完火墙去捡的路上会被路过的战士全捡走 —— 这在实战里非常气人。
+	ProtectUntilMS int64
 }
+
+// GroundOwnerProtectMS 掉落归属保护期（原版 SYS_GROUNDITEMPROTECTTIME）。
+//
+// 取 30 秒：够玩家从 3~4 格开外跑过来，又不会让掉落长期无法被清理。
+const GroundOwnerProtectMS = 30 * 1000
 
 // GroundItemEvent 是地面物品变化事件，由上层转成 SM_GROUNDITEMIDLIST。
 type GroundItemEvent struct {
@@ -80,6 +94,54 @@ func (m *MapState) DropItems(x, y int, itemIDs []uint32) []GroundItemEvent {
 	return []GroundItemEvent{{Kind: "appear", X: x, Y: y}}
 }
 
+// DropItemsOwned 放一批带归属的物品（掉落保护期）。
+//
+// 与 DropItems 的区别只有 Owner / ProtectUntilMS 两个字段，
+// 但语义差很多：带归属的物品在保护期内只有归属者能捡。
+func (m *MapState) DropItemsOwned(x, y int, itemIDs []uint32, owner uint64) []GroundItemEvent {
+	events := m.DropItems(x, y, itemIDs)
+	if len(events) == 0 || owner == 0 {
+		return events
+	}
+	protected := m.NowMS + GroundOwnerProtectMS
+	// 只给刚落地的那一批（尾部 len(itemIDs) 条）打标记
+	start := len(m.groundItems) - len(itemIDs)
+	if start < 0 {
+		start = 0
+	}
+	for i := start; i < len(m.groundItems); i++ {
+		m.groundItems[i].Owner = owner
+		m.groundItems[i].ProtectUntilMS = protected
+	}
+	return events
+}
+
+// CanPickup 判断某玩家能否拾取这一格的某件物品。
+//
+// 判定顺序：
+//
+//  1. 物品不存在 → false
+//  2. 无归属 / 保护期已过 → true
+//  3. 归属者本人 → true
+//  4. 其他人在保护期内 → false
+//
+// ★ 保护期用世界时钟而不是系统时间：
+//
+//	地图 actor 串行执行，同一 tick 内 NowMS 一致。
+//	用 time.Now() 会让「同一 tick 内的两次拾取」行为不确定。
+func (m *MapState) CanPickup(x, y int, itemID uint32, pickerUID uint64) bool {
+	for _, item := range m.groundItems {
+		if item.X != x || item.Y != y || item.ItemID != itemID {
+			continue
+		}
+		if item.Owner == 0 || item.ProtectUntilMS <= m.NowMS {
+			return true
+		}
+		return item.Owner == pickerUID
+	}
+	return false
+}
+
 // PickupItem 从 (x,y) 拾取一件指定 itemID 的物品。
 //
 // 对照 servermap.cpp:removeGridItemID —— 从**尾部**往前找第一个匹配。
@@ -92,6 +154,8 @@ func (m *MapState) PickupItem(x, y int, itemID uint32) (bool, []GroundItemEvent)
 		return false, nil
 	}
 
+	// 归属保护期在调用方（World.PickupItem）校验，
+	// 这里只做「按 itemID 删除」的纯操作。
 	// 先删 CellState 里的 id（尾部第一个匹配）
 	found := false
 	for i := len(cell.GroundItems) - 1; i >= 0; i-- {

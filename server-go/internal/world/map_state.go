@@ -69,6 +69,12 @@ type Entity struct {
 	// PKPoint PK 值（>=100 红名）。守卫只打红名，NPC 脚本也用它判红名。
 	PKPoint int32
 
+	// DieAtMS 死亡时刻（世界时钟毫秒，0 表示未死）。
+	//
+	// 尸体淡出靠它算：DeadFadeOut 的怪在死亡 1 秒后从地图移除。
+	// 用世界时钟而不是 time.Now()：地图 actor 串行，同 tick 内一致。
+	DieAtMS int64
+
 	// MonsterRec 怪物的静态配置（掉落表 / 经验 / AI 参数）。
 	//
 	// ★ 必须挂在实体上，不能靠「死亡时按名字反查表」：
@@ -453,6 +459,9 @@ func (m *MapState) Attack(attackerUID, targetUID uint64, damage int32) (DamageEv
 	if target.HP < 0 {
 		target.HP = 0
 	}
+	if target.HP == 0 && target.DieAtMS == 0 {
+		target.DieAtMS = m.NowMS
+	}
 	return DamageEvent{
 		AttackerUID: attackerUID, TargetUID: targetUID, Damage: damage,
 		TargetHP: target.HP, Dead: target.HP == 0,
@@ -574,6 +583,8 @@ type TickEvent struct {
 	X       int
 	Y       int
 	Amount  int32
+	// Dead 该动作导致目标死亡（ai_attack 专用）
+	Dead bool
 }
 
 // Advance 推进世界时钟到 nowMS，并处理本 tick 的到期事件。
@@ -629,7 +640,21 @@ func (m *MapState) Advance(nowMS int64) []TickEvent {
 		events = append(events, TickEvent{Kind: "firewall_expire", X: p.X, Y: p.Y})
 	}
 
-	// 5. 怪物 AI（决策周期 1 秒，内部自己判时间）
+	// 5. 尸体淡出（原版 monster.cpp:706 的 addDelay(1000, goGhost)）
+	//
+	// ★ 必须在 AI 之前：
+	//
+	//	AI 选目标时会跳过 Dead() 的实体，但尸体还占着格子
+	//	（cell.Occupants 里有它），CanOccupy 会返回 false，
+	//	导致活着的怪走不进尸体那一格 —— 表现为「怪绕着尸体走」。
+	//	先清尸体再跑 AI，格子就腾出来了。
+	for _, dead := range m.fadeOutCarcasses() {
+		events = append(events, TickEvent{
+			Kind: "corpse_fade", UID: dead.UID, X: dead.X, Y: dead.Y,
+		})
+	}
+
+	// 6. 怪物 AI（决策周期 1 秒，内部自己判时间）
 	//
 	// 放在最后：前面几步会把死亡实体标记出来，
 	// AI 选目标时才能正确跳过尸体（Dead() 读的就是 HP<=0）。
@@ -641,6 +666,7 @@ func (m *MapState) Advance(nowMS int64) []TickEvent {
 			Y:       act.To.Y,
 			Amount:  act.Damage,
 			Monster: targetUIDString(act.Target),
+			Dead:    act.Dead,
 		})
 	}
 
@@ -767,7 +793,8 @@ func (m *MapState) combatWith(attackerUID, targetUID uint64, magicID int,
 	}
 
 	// 4. 死亡判定
-	if target.HP == 0 {
+	if target.HP == 0 && target.DieAtMS == 0 {
+		target.DieAtMS = m.NowMS
 		res.Dead = true
 		res.Killer = attackerUID
 	}
@@ -884,4 +911,58 @@ func (m *MapState) SafeZoneBlocksAttack(targetUID uint64, isMapDamage bool) bool
 		return false // 地图伤害绕过安全区
 	}
 	return m.InSafeZone(targetUID)
+}
+
+// CorpseFadeDelayMS 是尸体淡出的延时（原版 monster.cpp:706 addDelay(1000)）。
+const CorpseFadeDelayMS = 1000
+
+// fadeOutCarcasses 移除所有已过淡出期的尸体，返回被移除的实体快照。
+//
+// 【依据】monster.cpp:704-712 的 onDie 结尾：
+//
+//	if(getMR().deadFadeOut){
+//	    addDelay(1000, [this](bool) { goGhost(); });
+//	}
+//	else{
+//	    defer([this]{ goGhost(); });
+//	}
+//
+// 也就是说：
+//
+//	deadFadeOut=1  → 死亡 1 秒后才移除（客户端有 1 秒播淡出动画）
+//	deadFadeOut=0  → 立刻移除（尸体不保留）
+//
+// ★ 玩家的尸体不在这里处理：
+//
+//	玩家死了要留尸体等复活，移除时机由 DeathHandler 控制。
+//	这里只处理 Type == EntityMonster 且 HP<=0 的。
+func (m *MapState) fadeOutCarcasses() []Entity {
+	var removed []Entity
+	for uid, e := range m.Entities {
+		if e.Type != EntityMonster || !e.Dead() {
+			continue
+		}
+		if e.DieAtMS == 0 {
+			// 没有死亡时刻（老数据/manual 设 HP=0）：补一个，下轮再清，
+			// 避免「立刻删除」导致客户端连尸体都看不到。
+			e.DieAtMS = m.NowMS
+			continue
+		}
+
+		// deadFadeOut=0 的怪：尸体不该保留，死亡当 tick 就清。
+		// deadFadeOut=1 的怪：等 1 秒，让客户端播完淡出动画。
+		delay := int64(CorpseFadeDelayMS)
+		if e.MonsterRec != nil && e.MonsterRec.DeadFadeOut == 0 {
+			delay = 0
+		}
+		if m.NowMS-e.DieAtMS < delay {
+			continue
+		}
+
+		snapshot, ok, _ := m.RemoveEntity(uid)
+		if ok {
+			removed = append(removed, snapshot)
+		}
+	}
+	return removed
 }

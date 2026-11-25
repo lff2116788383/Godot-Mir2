@@ -51,6 +51,11 @@ type MapTicker struct {
 	Broadcast Broadcaster
 	Players   *PlayerManager
 	Logger    *slog.Logger
+	// Kills 击杀结算器。
+	//
+	// 守卫打死怪、怪互相打死也要掉东西 —— 但 killer 不是玩家，
+	// 所以经验不给任何人，只有掉落落地（Owner=0，谁都能捡）。
+	Kills *KillSettler
 
 	// interval 推进间隔（测试可改小/改大）
 	interval time.Duration
@@ -206,6 +211,9 @@ func (t *MapTicker) dispatch(mapID uint32, events []world.TickEvent) {
 			t.broadcastAIMove(mapID, ev)
 		case "ai_attack":
 			t.broadcastAIAttack(mapID, ev)
+		case "corpse_fade":
+			t.broadcastCorpseFade(mapID, ev)
+
 		default:
 			// 刷新/火墙由后续批次接
 		}
@@ -323,6 +331,36 @@ func (t *MapTicker) broadcastAIAttack(mapID uint32, ev world.TickEvent) {
 	if p, exists := t.Players.Get(targetUID); exists {
 		t.syncPlayerHealth(mapID, p)
 	}
+
+	// 4. 被打死：广播死亡 + 结算掉落
+	//
+	// ★ 不结算的话，「守卫帮你打死半兽人」时地上的东西会凭空消失，
+	//   玩家会以为被系统吞了。killer 不是玩家，所以走 SettleNoKiller：
+	//   掉落落地（无归属保护），经验不给任何人。
+	if ev.Dead {
+		t.broadcastMap(mapID, protocol.SM_NOTIFYDEAD, encodeWire(protocol.SMNotifyDead{UID: targetUID}))
+		t.broadcastMap(mapID, protocol.SM_DEADFADEOUT, encodeWire(protocol.SMDeadFadeOut{
+			UID:    targetUID,
+			MapUID: t.mapUID(mapID),
+			X:      uint32(ev.X),
+			Y:      uint32(ev.Y),
+		}))
+		if t.Kills != nil {
+			t.Kills.SettleNoKiller(context.Background(), mapID, targetUID)
+		}
+	}
+}
+
+// encodeWire 编码定长载荷，失败返回 nil。
+//
+// ★ 不叫 mustWire：e2e_test.go 里已有同名辅助函数，
+// 同包内重复定义会编译失败。
+func encodeWire(value any) []byte {
+	payload, err := protocol.AppendWirePayload(nil, value)
+	if err != nil {
+		return nil
+	}
+	return payload
 }
 
 // sendToMapObservers 只发给能看到这一格的玩家（AOI 精确投递）。
@@ -403,4 +441,32 @@ func (t *MapTicker) mapUID(mapID uint32) uint64 {
 		}
 	}
 	return 0
+}
+
+// broadcastCorpseFade 广播尸体消失（SM_CODISAPPEAR）。
+//
+// 客户端收到后会把这只怪从场景里删掉。
+//
+// ★ 只发 SM_CODISAPPEAR，不发 SM_DEADFADEOUT：
+//
+//	SM_NOTIFYDEAD / SM_DEADFADEOUT 在**死亡那一刻**就该发（客户端靠它
+//	播倒地动画并开始淡出）。1 秒后再发一次 DEADFADEOUT 会让客户端
+//	重新播一遍淡出 —— 表现是尸体闪一下又淡一次。
+//
+//	所以职责分工是：
+//	  SM_NOTIFYDEAD     死亡瞬间 → 播倒地
+//	  SM_DEADFADEOUT    死亡瞬间 → 开始淡出
+//	  SM_CODISAPPEAR    1 秒后   → 从场景移除（本函数）
+func (t *MapTicker) broadcastCorpseFade(mapID uint32, ev world.TickEvent) {
+	if t.Broadcast == nil || ev.UID == 0 {
+		return
+	}
+	payload, err := protocol.AppendWirePayload(nil, protocol.SMCODisappear{
+		UID:    ev.UID,
+		MapUID: t.mapUID(mapID),
+	})
+	if err != nil {
+		return
+	}
+	t.broadcastMap(mapID, protocol.SM_CODISAPPEAR, payload)
 }

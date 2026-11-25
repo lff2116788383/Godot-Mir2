@@ -38,6 +38,14 @@ type ActionHandler struct {
 	// Spells 施法处理器（ACTION_SPELL 转发给它）。
 	// 为 nil 时施法退化成「回站立」，不会崩但技能放不出来。
 	Spells *SpellHandler
+	// Kills 击杀结算器（掉落 + 经验）。
+	//
+	// ★ 这个字段是必需的，不是可选优化：
+	//
+	//	物理攻击打死怪时如果不结算，战士（近战职业）就永远
+	//	打不到经验、看不到掉落 —— 而客户端完全不报错，
+	//	只是「打怪没反应」。这是最隐蔽的一类缺陷。
+	Kills *KillSettler
 }
 
 // Broadcaster 把一条 SM 发给指定玩家。
@@ -226,11 +234,47 @@ func (h *ActionHandler) attackWorldEntity(ctx context.Context, p *Player, aimUID
 		h.broadcastMiss(ctx, p, aimUID)
 	}
 
-	// 打死则广播死亡
+	// 打死则广播死亡 + 结算奖励
 	if result.Dead {
+		// ★ 顺序：先广播死亡，再结算掉落。
+		//
+		//	反过来会让客户端先收到「地上有东西了」再收到「怪死了」，
+		//	而那时怪还站着、玩家会看到物品从活怪身上掉出来。
 		h.broadcastDeath(ctx, p, aimUID)
+		h.broadcastDeathFadeOut(ctx, p, aimUID)
+		h.settleKill(ctx, p, aimUID)
 	}
 	return nil
+}
+
+// settleKill 结算击杀奖励（掉落 + 经验）。
+func (h *ActionHandler) settleKill(ctx context.Context, p *Player, targetUID uint64) {
+	if h.Kills == nil {
+		return
+	}
+	h.Kills.Settle(ctx, p, targetUID)
+}
+
+// broadcastDeathFadeOut 广播死亡淡出（SM_DEADFADEOUT）。
+//
+// ★ 必须和 SM_NOTIFYDEAD 一起发，两条消息的分工不同：
+//
+//	SM_NOTIFYDEAD   让客户端把角色切到「倒地」状态
+//	SM_DEADFADEOUT  让客户端开始播淡出动画
+//
+// 只发前者：角色倒地但永远躺在那儿。
+// 只发后者：没有倒地动画，直接开始淡出，看起来很突兀。
+func (h *ActionHandler) broadcastDeathFadeOut(ctx context.Context, p *Player, targetUID uint64) {
+	e, ok, err := h.Worlds.Entity(ctx, p.MapID, targetUID)
+	if err != nil || !ok {
+		return
+	}
+	_ = h.broadcastToAll(ctx, p.MapID, protocol.SM_DEADFADEOUT, protocol.SMDeadFadeOut{
+		UID:    targetUID,
+		MapUID: p.MapUID,
+		X:      uint32(e.X),
+		Y:      uint32(e.Y),
+	})
 }
 
 // handlePickUp 处理拾取。

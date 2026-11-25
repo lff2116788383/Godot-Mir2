@@ -56,6 +56,16 @@ type MonsterDef struct {
 	BehaveMode     int    `json:"behaveMode"`
 	BehaveModeName string `json:"behaveModeName,omitempty"`
 
+	// DeadFadeOut 尸体是否在淡出后消失（monsterrecord.hpp:52）
+	//
+	//	1 = 死后 1 秒淡出并移除（363 条怪都是这个）
+	//	0 = 尸体永久留着（Boss/剧情怪用）
+	//
+	// ★ 不读它的后果：所有尸体永久躺在地上。
+	//   一屏 30 只怪打死后全是尸体，客户端要一直画它们，
+	//   而且新怪刷在同一格会和尸体叠在一起。
+	DeadFadeOut int `json:"deadFadeOut"`
+
 	ACElem map[string]int  `json:"acElem,omitempty"`
 	Drops  [][]MonsterDrop `json:"dropItemList"`
 }
@@ -179,26 +189,27 @@ func (d MonsterDef) ToRecord() MonsterRecord {
 	}
 
 	return MonsterRecord{
-		Name:       d.Name,
-		LookID:     d.LookID,
-		HP:         d.HP,
-		MP:         d.MP,
-		Exp:        d.Exp,
-		DC:         AbilityBounds{Min: d.DC[0], Max: d.DC[1]},
-		MC:         AbilityBounds{Min: d.MC[0], Max: d.MC[1]},
-		AC:         AbilityBounds{Min: d.AC[0], Max: d.AC[1]},
-		MAC:        AbilityBounds{Min: d.MAC[0], Max: d.MAC[1]},
-		DCHit:      d.DCHit,
-		MCHit:      d.MCHit,
-		DCDodge:    d.DCDodge,
-		MCDodge:    d.MCDodge,
-		View:       d.View,
-		WalkWait:   d.WalkWait,
-		WalkStep:   d.WalkStep,
-		AttackWait: d.AttackWait,
-		BehaveMode: d.BehaveMode,
-		DropItems:  groups,
-		Elem:       d.elementResist(),
+		Name:        d.Name,
+		LookID:      d.LookID,
+		HP:          d.HP,
+		MP:          d.MP,
+		Exp:         d.Exp,
+		DC:          AbilityBounds{Min: d.DC[0], Max: d.DC[1]},
+		MC:          AbilityBounds{Min: d.MC[0], Max: d.MC[1]},
+		AC:          AbilityBounds{Min: d.AC[0], Max: d.AC[1]},
+		MAC:         AbilityBounds{Min: d.MAC[0], Max: d.MAC[1]},
+		DCHit:       d.DCHit,
+		MCHit:       d.MCHit,
+		DCDodge:     d.DCDodge,
+		MCDodge:     d.MCDodge,
+		View:        d.View,
+		WalkWait:    d.WalkWait,
+		WalkStep:    d.WalkStep,
+		AttackWait:  d.AttackWait,
+		BehaveMode:  d.BehaveMode,
+		DeadFadeOut: d.DeadFadeOut,
+		DropItems:   groups,
+		Elem:        d.elementResist(),
 	}
 }
 

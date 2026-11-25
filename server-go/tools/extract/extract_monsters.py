@@ -211,6 +211,13 @@ def parse_block(block):
         "walkWait": find_int(r'\.walkWait\s*=\s*(-?\d+)', block),
         "walkStep": find_int(r'\.walkStep\s*=\s*(-?\d+)', block),
         "attackWait": find_int(r'\.attackWait\s*=\s*(-?\d+)', block),
+        # deadFadeOut：尸体是否淡出（monsterrecord.hpp:52 默认 0）
+        #
+        # ★ 默认值是 0（不淡出），但 inc 里几乎所有怪都显式写了
+        #   .deadFadeOut = 1。不读它的话：
+        #   - 该淡出的尸体永久留在地上（客户端堆满尸体）
+        #   - 不该淡出的（比如某些 Boss 留尸体）会被错误移除
+        "deadFadeOut": find_int(r'\.deadFadeOut\s*=\s*(-?\d+)', block),
     }
 
     # behaveMode：怪物行为模式（monsterrecord.hpp:37-39）

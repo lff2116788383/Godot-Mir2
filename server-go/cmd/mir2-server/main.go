@@ -159,6 +159,24 @@ func main() {
 	}
 	actionHandler.Spells = spellHandler
 
+	// 击杀结算器：物理攻击与法术共用一个实例。
+	//
+	// ★ 必须是同一个实例，不能各建一个：
+	//   结算逻辑有两份就会漂移（一边加了归属保护、另一边忘了），
+	//   而且玩家会遇到「用法术打有掉落、用刀砍没有」这种诡异现象。
+	killSettler := &game.KillSettler{
+		Players:   players,
+		Worlds:    worlds,
+		Items:     itemDB,
+		Broadcast: broadcaster,
+		Logger:    slog.Default(),
+	}
+	actionHandler.Kills = killSettler
+	spellHandler.Kills = killSettler
+	// ticker 早于 killSettler 创建（它要随地图就绪立刻启动），
+	// 这里回填 —— 守卫杀怪的结算走 ticker。
+	ticker.Kills = killSettler
+
 	deathHandler := &game.DeathHandler{
 		Players:   players,
 		Worlds:    worlds,
