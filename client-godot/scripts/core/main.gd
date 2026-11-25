@@ -25,6 +25,7 @@ var net: MirClient = null
 var ui: GameUi = null
 ## 战斗表现层（C4 产物）
 var fx: FightEffects = null
+var debug_overlay: GfxDebugOverlay = null
 ## 背包数据（SDInventory）
 var _inventory = null
 
@@ -34,6 +35,7 @@ const SdMsgParserRef := preload("res://scripts/net/sd_msg_parser.gd")
 const WorldSessionRef := preload("res://scripts/core/world_session.gd")
 const MapRecordRef := preload("res://scripts/item/map_record.gd")
 const MagicDBRef := preload("res://scripts/magic/magic_db.gd")
+const GfxDebugOverlayRef := preload("res://scripts/core/gfx_debug_overlay.gd")
 const SdMsgParser = SdMsgParserRef
 
 ## 登录链路（--login 模式启用）
@@ -117,6 +119,10 @@ func _create_fx() -> void:
 	fx = FightEffects.new()
 	fx.name = "FightEffects"
 	add_child(fx)
+	debug_overlay = GfxDebugOverlayRef.new()
+	debug_overlay.name = "GfxDebugOverlay"
+	add_child(debug_overlay)
+	debug_overlay.setup(_player, co_manager, obj_layer)
 	print("[Main] 战斗表现层已创建")
 
 
@@ -228,6 +234,8 @@ func apply_server_scene(d: Dictionary) -> void:
 		ui.co_manager = co_manager
 		ui.inventory_data = _inventory
 	_setup_world_session()
+	if debug_overlay != null:
+		debug_overlay.setup(_player, co_manager, obj_layer)
 	if world != null:
 		world.net = net
 		world.player = _player
@@ -563,6 +571,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if ui != null and ui.handle_input(event):
 		return
+	if event is InputEventMouseMotion:
+		var mg := map_view.world_to_grid(get_global_mouse_position())
+		if debug_overlay != null and world != null:
+			var info: Dictionary = world.describe_cell(mg)
+			debug_overlay.set_hover(mg, info.get("hit"), info.get("items", []))
+		return
 	if event is InputEventMouseButton and event.pressed:
 		var gp: Vector2 = get_global_mouse_position()
 		var g := map_view.world_to_grid(gp)
@@ -581,6 +595,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_TAB:
 			if world != null:
 				world.request_nearest_pickup()
+			return
+		if event.keycode == KEY_F3:
+			if debug_overlay != null:
+				debug_overlay.toggle()
 			return
 		if event.keycode == KEY_ESCAPE:
 			if _player != null:

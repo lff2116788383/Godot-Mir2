@@ -24,6 +24,8 @@ const MonsterRecordRef := preload("res://scripts/item/monster_record.gd")
 const UidRef := preload("res://scripts/core/uid.gd")
 const BehaviorsRef := preload("res://scripts/actor/monster_behaviors.gd")
 const AudioManagerRef := preload("res://scripts/audio/audio_manager.gd")
+const MagicDBRef := preload("res://scripts/magic/magic_db.gd")
+const MagicEffectRef := preload("res://scripts/magic/magic_effect_actor.gd")
 
 ## 格尺寸
 const GRID_X := 48
@@ -36,6 +38,7 @@ var _spr: Sprite2D = null
 var _name_label: Label = null
 var display_name: String = ""
 var hp_ratio: float = 1.0
+var _effect_fired: Dictionary = {}
 var _assets_root: String = ""
 
 ## 当前动作
@@ -194,6 +197,38 @@ func _on_action_move(action) -> void:
 		motion_queue.append(mn)
 
 
+func _attack_motion_type() -> int:
+	var nm := str(behavior.get("attack_motion", "MOTION_MON_ATTACK0"))
+	return MotionTypeRef.MOTION_MON_ATTACK1 if nm.ends_with("ATTACK1") else MotionTypeRef.MOTION_MON_ATTACK0
+
+
+func _class_attack_magic_name() -> String:
+	var cls := str(logic.gfx_class) if logic != null else ""
+	match cls:
+		"ClientNumaWizard": return "诺玛法老_火球术"
+		"ClientSandCactus": return "沙漠树魔_喷刺"
+		"ClientShipwreckLord": return "霸王教主_火刃"
+		"ClientTaoDog": return "神兽_喷火"
+		"ClientZumaTaurus": return "祖玛教主_地狱火"
+	return ""
+
+
+func _spawn_attack_magic(aim_grid: Vector2i, dir: int) -> void:
+	var magic_name := _class_attack_magic_name()
+	if magic_name.is_empty():
+		return
+	var mid := MagicDBRef.find_id_by_name(magic_name)
+	var entry := MagicDBRef.gfx_entry(mid)
+	if entry.is_empty():
+		return
+	var root := get_parent()
+	if root == null:
+		return
+	var node := MagicEffectRef.new()
+	root.add_child(node)
+	node.setup(mid, entry, aim_grid, clampi(dir * 2, 0, 15), bool(entry.get("loop", false)))
+
+
 ## clientmonster.cpp:534 onActionAttack
 func _on_action_attack(action) -> void:
 	var end := _motion_end()
@@ -206,10 +241,13 @@ func _on_action_attack(action) -> void:
 	if not PathFinderRef.dir_valid(d):
 		d = end.z
 	var mn := MotionNodeRef.new()
-	mn.type = MotionTypeRef.MOTION_MON_ATTACK0
+	mn.type = _attack_motion_type()
 	mn.direction = d
 	mn.x = action.x
 	mn.y = action.y
+	mn.set_meta("aim_grid", Vector2i(action.aim_x, action.aim_y))
+	mn.set_meta("aim_uid", action.aim_uid)
+	mn.set_meta("attack_effect", bool(behavior.get("attack_magic", false)))
 	motion_queue.append(mn)
 
 
@@ -357,6 +395,11 @@ func _advance_animation(dt: float) -> void:
 			curr_motion.frame += 1
 			_refresh_texture()
 			_play_frame_sound()
+			if curr_motion.frame == 4 and curr_motion.has_meta("attack_effect") and bool(curr_motion.get_meta("attack_effect")):
+				var seq: int = curr_motion.get_seq_id()
+				if not _effect_fired.has(seq):
+					_effect_fired[seq] = true
+					_spawn_attack_magic(curr_motion.get_meta("aim_grid"), curr_motion.direction)
 		else:
 			# 末帧：allowSwitchMotion=true 时切动作
 			_move_next_motion()

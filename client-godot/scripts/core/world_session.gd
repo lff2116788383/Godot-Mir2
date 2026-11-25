@@ -520,7 +520,10 @@ func handle_frame(code: int, body: PackedByteArray) -> bool:
 
 	# 排行
 	if code == MirClient.SM_RANKINGLIST:
-		ranking = Parser.parse_ranking_list(body).get("entries", [])
+		var rl := Parser.parse_ranking_list(body)
+		ranking = rl.get("entries", [])
+		if ui != null and ui.ranking_board != null:
+			ui.ranking_board.set_entries(int(rl.get("type", 0)), ranking)
 		_log("排行榜已更新：%d 条" % ranking.size())
 		return true
 
@@ -530,6 +533,16 @@ func handle_frame(code: int, body: PackedByteArray) -> bool:
 		return true
 
 	return false
+
+
+func describe_cell(g: Vector2i) -> Dictionary:
+	var hit = co_manager.find_at_grid(g.x, g.y) if co_manager != null else null
+	var names: Array = []
+	if obj_layer != null:
+		for it in obj_layer.ground_items:
+			if int(it.get("gx", -1)) == g.x and int(it.get("gy", -1)) == g.y:
+				names.append(ItemRecordRef.name(int(it.get("item_id", 0))))
+	return {"hit": hit, "items": names}
 
 
 func handle_world_click(g: Vector2i, shift: bool) -> bool:
@@ -651,7 +664,9 @@ func _target_pickup(g: Vector2i, item_id: int) -> void:
 	else:
 		pending_action = {"kind": "pickup", "grid": g}
 		if player != null:
-			player.request_move(_approach_grid(g), 2)
+			var dst := _approach_grid(g)
+			if player.request_move(dst, 2):
+				send_move(dst)
 
 
 func _send_pickup(g: Vector2i) -> void:
@@ -708,6 +723,22 @@ func handle_command(text: String) -> bool:
 	if t.is_empty() or net == null:
 		return false
 	var parts := t.split(" ", false)
+	if parts.size() >= 1 and parts[0] == "/debug":
+		if main != null and main.get("debug_overlay") != null:
+			main.debug_overlay.toggle()
+		return true
+	if parts.size() >= 3 and parts[0] == "/tp":
+		if net != null:
+			net.request_space_move(map_uid, int(parts[1]), int(parts[2]))
+		return true
+	if parts.size() >= 1 and parts[0] == "/querygold":
+		if net != null:
+			net.query_gold()
+		return true
+	if parts.size() >= 1 and parts[0] == "/querymap":
+		if net != null:
+			net.query_base_map_uid(map_id)
+		return true
 	if parts.size() >= 2 and parts[0] == "/team":
 		match parts[1]:
 			"create": net.create_team()
@@ -734,6 +765,11 @@ func handle_command(text: String) -> bool:
 			"info": net.query_guild_info()
 			"notice":
 				net.set_guild_notice(t.substr(t.find("notice") + 7).strip_edges())
+		return true
+	if parts.size() >= 1 and parts[0] == "/ranking":
+		var rt := 1
+		if parts.size() >= 2: rt = int(parts[1])
+		net.query_ranking(rt)
 		return true
 	if parts.size() >= 3 and parts[0] == "/friend" and parts[1] == "add":
 		net.add_friend(int(parts[2]))

@@ -56,6 +56,7 @@ const HorseBoardRef := preload("res://scripts/ui/ui_horse_board.gd")
 const MiniMapBoardRef := preload("res://scripts/ui/ui_mini_map_board.gd")
 const InputStringRef := preload("res://scripts/ui/ui_input_string_board.gd")
 const MenuBoardRef := preload("res://scripts/ui/ui_menu_board.gd")
+const RankingBoardRef := preload("res://scripts/ui/ui_ranking_board.gd")
 const ProgUseTexRef := preload("res://scripts/data/proguse_tex.gd")
 const OverHeadRef := preload("res://scripts/ui/ui_over_head.gd")
 
@@ -94,9 +95,12 @@ var horse_board: HorseBoardRef = null         ## 马匹
 var mini_map2: MiniMapBoardRef = null         ## 小地图（完整版）
 var input_board: InputStringRef = null        ## 输入串 / 确认框
 var menu: MenuBoardRef = null                 ## 右键菜单
+var ranking_board: RankingBoardRef = null    ## 排行榜
 
 ## 背包数据（由 main 注入 SDInventory）
 var inventory_data = null
+var inv_hover := -1
+var inv_mouse := Vector2.ZERO
 ## 人物装备（WLG 槽位 -> 物品 id）
 var wear_list: Dictionary = {}
 ## 悬停的背包格（-1 表示无）
@@ -199,7 +203,7 @@ func _layout() -> void:
 
 	# C7 面板统一居中（按各自实际尺寸）
 	var centered := [purchase_board, direct_trade, stall_board2, auction2,
-		friend_chat, quest_board, horse_board, input_board]
+		friend_chat, quest_board, horse_board, input_board, ranking_board]
 	for b in centered:
 		if b != null:
 			b.position = Vector2((vw - b.size_w()) / 2, (vh - b.size_h()) / 2)
@@ -505,12 +509,20 @@ func _draw_inventory(_w, roi) -> void:
 
 ## 消息栈（对应 messagestackboard，173 行）
 func _handle_inventory_event(_w, event: InputEvent, _valid: bool, roi) -> bool:
-	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
-		return false
 	var p: Vector2 = event.position
 	var gx := int((p.x - roi.x - 12) / INV_GRID_W)
 	var gy := int((p.y - roi.y - 30) / INV_GRID_H)
-	if gx < 0 or gy < 0 or gx >= INV_COLS or gy >= INV_ROWS:
+	var inside := gx >= 0 and gy >= 0 and gx < INV_COLS and gy < INV_ROWS
+	if event is InputEventMouseMotion:
+		var old := inv_hover
+		inv_hover = gy * INV_COLS + gx if inside else -1
+		inv_mouse = p
+		if old != inv_hover:
+			inventory_board.queue_redraw()
+		return false
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+		return false
+	if not inside:
 		return false
 	if inventory_data == null:
 		return true
@@ -524,6 +536,35 @@ func _handle_inventory_event(_w, event: InputEvent, _valid: bool, roi) -> bool:
 	else:
 		_push_sys_msg("物品：%s x%d" % [ItemRecordRef.name(it.item_id), it.count])
 	return true
+
+
+func _draw_item_tooltip(canvas, item) -> void:
+	if item == null:
+		return
+	var x := int(inv_mouse.x + 16)
+	var y := int(inv_mouse.y + 12)
+	var nm := ItemRecordRef.name(item.item_id)
+	var typ := ItemRecordRef.type(item.item_id)
+	var lines: Array = [nm, "类型：" + typ]
+	if item.duration.size() >= 2 and int(item.duration[1]) > 0:
+		lines.append("耐久：%d / %d" % [int(item.duration[0]), int(item.duration[1])])
+	var desc := ItemRecordRef.description(item.item_id)
+	if not desc.is_empty():
+		lines.append(desc)
+	var w := 220
+	var h := 12 + lines.size() * 18
+	canvas.draw_rect_c(Color(0, 0, 0, 0.92), x, y, w, h, true)
+	canvas.draw_border(Color(0.62, 0.52, 0.3, 1.0), x, y, w, h, 1)
+	var yy := y + 6
+	for i in range(lines.size()):
+		canvas.draw_string_c(str(lines[i]), x + 8, yy,
+				Color(0.95, 0.88, 0.65) if i == 0 else Color(0.84, 0.82, 0.76), null, 12)
+		yy += 18
+
+	if inv_hover >= 0 and inventory_data != null:
+		var all_items: Array = inventory_data.item_list()
+		if inv_hover < all_items.size():
+			_draw_item_tooltip(canvas, all_items[inv_hover])
 
 
 func _build_msg_stack() -> void:
@@ -627,6 +668,10 @@ func _build_c7_boards() -> void:
 	control_board.add_widget(input_board, 0, 0)
 
 	# 右键菜单（运行时创建，先建空实例）
+	ranking_board = RankingBoardRef.new("RankingBoard")
+	ranking_board.set_canvas(_canvas)
+	control_board.add_widget(ranking_board, 0, 0)
+
 	menu = MenuBoardRef.new()
 	menu.set_canvas(_canvas)
 
