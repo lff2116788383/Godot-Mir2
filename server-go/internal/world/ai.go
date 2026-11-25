@@ -148,28 +148,54 @@ func (m *MapState) pickTarget(uid uint64, e *Entity, rec MonsterRecord) uint64 {
 
 	// 3. 视野 0 的怪看不见东西（MonsterViewDistance 已钳到至少 1）
 	// 4. 找视野内最近的目标
+	//
+	// ★ 必须用「视野方格」而不是全表遍历。
+	//
+	//	初版 `for otherUID := range m.Entities` 是全表扫：
+	//	1000 只怪 × 1000 实体 = 100 万次比较，单 tick 峰值 196ms
+	//	（实测 TestAIWith1000MonstersPerf），会明显掉帧。
+	//
+	//	改成遍历视野范围内的格子、读每格的 Occupants，
+	//	复杂度从 O(怪物数 × 实体数) 降到 O(怪物数 × 视野面积)。
+	//	视野 8 → 17×17 = 289 格，比 1000 实体还少。
+	self := e.Point()
+	view := MonsterViewDistance(rec)
+
 	bestUID := uint64(0)
 	bestDist := int(^uint(0) >> 1) // MaxInt
-	for otherUID, other := range m.Entities {
-		if otherUID == uid || other.Dead() {
-			continue
-		}
-		// 只打玩家（守卫打红名由 ShouldAggro 判）
-		if other.Type != EntityPlayer {
-			continue
-		}
-		if !InViewRange(rec, e.Point(), other.Point()) {
-			continue
-		}
-		// 守卫只打红名 —— 这里用 PKPoint 粗判
-		hostile := other.PKPoint >= 100 || rec.BehaveMode == BehaveDefault
-		if !ShouldAggro(rec, hostile, false) {
-			continue
-		}
-		dist := ChebyshevDistance(e.Point(), other.Point())
-		if dist < bestDist {
-			bestDist = dist
-			bestUID = otherUID
+
+	for dy := -view; dy <= view; dy++ {
+		for dx := -view; dx <= view; dx++ {
+			cell, err := m.cell(self.X+dx, self.Y+dy)
+			if err != nil || len(cell.Occupants) == 0 {
+				continue
+			}
+			for otherUID := range cell.Occupants {
+				if otherUID == uid {
+					continue
+				}
+				other, exists := m.Entities[otherUID]
+				if !exists || other.Dead() {
+					continue
+				}
+				// 只打玩家（守卫打红名由 ShouldAggro 判）
+				if other.Type != EntityPlayer {
+					continue
+				}
+				if !InViewRange(rec, self, other.Point()) {
+					continue
+				}
+				// 守卫只打红名 —— 这里用 PKPoint 粗判
+				hostile := other.PKPoint >= 100 || rec.BehaveMode == BehaveDefault
+				if !ShouldAggro(rec, hostile, false) {
+					continue
+				}
+				dist := ChebyshevDistance(self, other.Point())
+				if dist < bestDist {
+					bestDist = dist
+					bestUID = otherUID
+				}
+			}
 		}
 	}
 	return bestUID
@@ -208,21 +234,14 @@ func (m *MapState) trackAndAttack(uid uint64, e *Entity, rec MonsterRecord,
 		}, true
 	}
 
-	// 不相邻：朝目标走一步
+	// 不相邻：向目标靠近一格
 	if !ai.CanMoveNow(m.NowMS, rec) {
 		return AIAction{}, false
 	}
 	from := e.Point()
-	next := stepToward(from, target.Point())
-	if !m.CanOccupy(uid, next.X, next.Y) {
-		// 挡路：随机挪一步（避免卡死在墙角）
-		if r == nil || r.Intn(2) == 0 {
-			return AIAction{}, false
-		}
-		next = randomAdjacent(from, r)
-		if !m.CanOccupy(uid, next.X, next.Y) {
-			return AIAction{}, false
-		}
+	next, ok := m.chaseStep(uid, from, target.Point(), ai, r)
+	if !ok {
+		return AIAction{}, false
 	}
 
 	_, err, _ := m.MoveEntity(uid, next.X, next.Y, 1)
@@ -245,7 +264,13 @@ func (m *MapState) randomMove(uid uint64, e *Entity, rec MonsterRecord,
 	if r == nil {
 		return AIAction{}, false
 	}
-	if r.Intn(4) != 0 {
+	// ★ 1/8 概率，不是 1/4。
+	//
+	//	实测 983 只怪、1/4 概率时单 tick 平均 10ms；
+	//	降到 1/8 后平均 5ms，峰值也降一半。
+	//	玩家观感上「怪物在缓慢游荡」和「怪在原地不动」差别不大，
+	//	但 CPU 占用差一倍。
+	if r.Intn(8) != 0 {
 		return AIAction{}, false
 	}
 	if !ai.CanMoveNow(m.NowMS, rec) {
@@ -293,4 +318,148 @@ func randomAdjacent(from Point, r *rand.Rand) Point {
 // SetAISeed 设置 AI 随机源（测试可注入固定种子）。
 func (m *MapState) SetAISeed(seed int64) {
 	m.aiRand = rand.New(rand.NewSource(seed))
+}
+
+// ==================== 追击寻路（monster.cpp:784 moveOneStep + FPMETHOD_COMBINE）====================
+//
+// 原版默认 FindPathMethod() = FPMETHOD_COMBINE，含义是：
+//
+//	if(moveOneStepGreedy()) return true;   // 先试「朝目标方向直接走」
+//	if(moveOneStepNeighbor()) return true; // 再试「走相邻格」
+//
+// ★ 为什么必须 greedy 优先，不能一上来就 A*：
+//
+//	比奇县有 1100 只怪，AI 每秒决策一次。每只怪都跑一次 A*
+//	（600×600 地图、最坏 36 万格）= 每秒上亿次节点扩展，
+//	单核跑不动。
+//
+//	而实战里 90% 的追击都是「空旷地带朝目标走」——
+//	greedy 一次判断就能走，成本几乎为零。
+//	只有撞墙/被挡时才落到 A*，那时才付寻路代价。
+//
+// ★ 路径缓存 2 秒（AStarCacheRefreshMS）：
+//
+//	原版注释：「we refresh (drop) the cache every 2 sec,
+//	since co's are moving and valid road won't keep valid」。
+//	不缓存的话，被墙挡住的怪会每秒重算一次完整 A*。
+
+// chaseStep 算出朝目标走的下一格。
+//
+// 三层降级，与原版 FPMETHOD_COMBINE 一致：
+//
+//  1. 目标就在相邻格 → 直接走
+//  2. greedy：朝目标方向的那一格可走 → 走它
+//  3. A*：算出完整路径，取第一步（并缓存后续路径）
+//
+// 全失败返回 false（这只怪这轮不动）。
+func (m *MapState) chaseStep(uid uint64, from, target Point, ai *AIState, r *rand.Rand) (Point, bool) {
+	// 1. 相邻直接走
+	if ChebyshevDistance(from, target) <= 1 {
+		if m.CanOccupy(uid, target.X, target.Y) {
+			return target, true
+		}
+		// 目标格被占（比如玩家站在那里）：找一个相邻空位挤过去
+		for _, off := range directionOffsets[DirUp:DirEnd] {
+			next := Point{X: target.X + off.X, Y: target.Y + off.Y}
+			if next.Equal(from) || !m.CanOccupy(uid, next.X, next.Y) {
+				continue
+			}
+			if ChebyshevDistance(next, target) <= 1 {
+				return next, true
+			}
+		}
+		return Point{}, false
+	}
+
+	// 2. greedy：朝目标方向走一格
+	//
+	// ★ 关键：greedy 失败必须**落到 A\***，不能直接 return false。
+	//
+	//	初版在斜向被墙挡住时直接 `return false`，于是怪会永远卡在
+	//	墙角外侧 —— 明明 A* 能绕过去，却一步都不走。
+	//	实测：怪追到 (4,7)，目标在右上，greedy 想斜穿 (5,6)，
+	//	但 (4,6) 是墙（不能穿墙角），greedy 返回 false 后
+	//	整个函数就结束了，路径缓存里的 (5,7) 永远用不上。
+	//
+	//	原版 moveOneStepCombine 的语义正是「greedy 不成就 next」。
+	if greedy := stepToward(from, target); !greedy.Equal(from) && m.CanOccupy(uid, greedy.X, greedy.Y) {
+		// 斜向要检查两个直向是否也通（不能穿墙角）
+		diagonalOK := true
+		if greedy.X != from.X && greedy.Y != from.Y {
+			if !m.CanOccupy(uid, greedy.X, from.Y) || !m.CanOccupy(uid, from.X, greedy.Y) {
+				diagonalOK = false
+			}
+		}
+		if diagonalOK {
+			return greedy, true
+		}
+	}
+
+	// 3. A*：用缓存的路径，失效则重算
+	if ai.PathValid(m.NowMS) {
+		if next, ok := ai.NextStep(); ok && m.CanOccupy(uid, next.X, next.Y) {
+			return next, true
+		}
+		ai.DropPath()
+	}
+
+	// ★ 不能直接寻路到「目标格」——那一格被目标自己占着，
+	//   CanOccupy 必然返回 false，A* 一律失败。
+	//   原版也是寻路到「目标相邻的可站格」。
+	dest, hasDest := m.findApproachGrid(uid, target)
+	if !hasDest {
+		return Point{}, false
+	}
+	path, err := m.FindPath(uid, dest, maxAStarVisited)
+	if err != nil || len(path) == 0 {
+		// A* 都找不到：随机挪一步，避免原地卡死
+		if r != nil && r.Intn(2) == 0 {
+			next := randomAdjacent(from, r)
+			if m.CanOccupy(uid, next.X, next.Y) {
+				return next, true
+			}
+		}
+		return Point{}, false
+	}
+
+	// 缓存后续路径（含最后一步），先走第一步
+	ai.CachePath(path, m.NowMS)
+	if next, ok := ai.NextStep(); ok {
+		return next, true
+	}
+	return Point{}, false
+}
+
+// maxAStarVisited 是单次 A* 的节点上限。
+//
+// 600×600 地图最坏 36 万格，全展开要几十毫秒。设 2 万可以让
+// 「同一张图上几十只怪同时寻路」的总耗时控制在可接受范围；
+// 超限就放弃这条路径（怪这轮不动，下轮再试）。
+const maxAStarVisited = 20000
+
+// findApproachGrid 找一个「贴着目标、当前可站」的格作为寻路终点。
+//
+// 优先选离怪物最近的相邻格，避免绕远路。
+func (m *MapState) findApproachGrid(uid uint64, target Point) (Point, bool) {
+	best := Point{}
+	bestDist := int(^uint(0) >> 1)
+	found := false
+	for _, off := range directionOffsets[DirUp:DirEnd] {
+		p := Point{X: target.X + off.X, Y: target.Y + off.Y}
+		if !m.CanOccupy(uid, p.X, p.Y) {
+			continue
+		}
+		// 用怪物当前位置算距离需要实体，这里拿一下
+		e, ok := m.Entities[uid]
+		if !ok {
+			continue
+		}
+		dist := ChebyshevDistance(e.Point(), p)
+		if dist < bestDist {
+			bestDist = dist
+			best = p
+			found = true
+		}
+	}
+	return best, found
 }
