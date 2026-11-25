@@ -2011,3 +2011,123 @@ Go 侧**没有** per-actor Lua state（几千玩家各起一个 gopher-lua 内�
 | 任务脚本 | 0 / 42 | **42 / 42 加载** |
 | 登录态下发 | 0 / 5 | **5 / 5** |
 | 测试 | 364 | **512** |
+
+---
+
+# B6 第十九批：任务系统真正跑通（B 方案落地）
+
+**42/42 任务在真实服务端成功激活。测试全绿。零 error。**
+
+## 一、方案决策的修正
+
+上一轮我推荐「A：42 个任务共用一个 Lua 状态」，**那是错的**，且不是「有后患」而是**根本跑不通**。
+
+证据：quest.lua 有 10 处模块级 `local` 状态，全部是扁平键、没有任务维度：
+
+```
+_RSVD_NAME_questFSMTable      ← 键是 fsmName，42 个任务都写 SYS_QSTFSM
+_RSVD_NAME_questStateRunners  ← 键是 uid + fsm
+_RSVD_NAME_triggers           ← 键是 triggerType
+_RSVD_NAME_questContexts      ← 键是 uid
+_RSVD_NAME_questRuntimeVars   ← 键是 uid
+```
+
+`setQuestFSMTable` 不带名字时默认用 `SYS_QSTFSM`，42 个任务全写同一格 →
+**只有最后加载的那个能工作**，其余 41 个会跑到别人的状态机上。这种失效不报错、不崩溃。
+
+正确做法是 B（每任务一个独立 actor），原版 `Quest::onActivate` 就是这么干的：
+独立 UID、独立 `m_luaRunner`、独立库表、靠 `AM_REMOTECALL` 通信。
+
+## 二、B 方案的硬阻塞：Lua 5.1 浮点精度
+
+gopher-lua 是 Lua 5.1，`number` 就是 float64，精确整数上限 2^53。
+而本项目所有 UID 都超：
+
+| | 值 | 超 2^53 |
+|---|---|---|
+| 玩家 PLY_1 | 2882303761517117441 | 是 |
+| 任务 QST_1 | 4035225266123964417 | 是 |
+| 地图 MAP_1 | 1152921538966585345 | 是 |
+
+实测：Lua 里写 `1152921538966585345` 得到 `1152921538966585344`（差 1）。
+差 1 → `uidRemoteCall` 找到「另一个不存在的 actor」→ 报 target not found，
+而这个报错完全不提精度问题。
+
+**解法：短 ID 映射**（`internal/script/shortid.go`）
+
+Lua 只见 1..N 的小整数，Go 边界做 短ID↔真实UID 双向转换。
+原版脚本里 UID 只是不透明句柄、从不解析位结构，所以**脚本一行都不用改**。
+选它而不选「UID 走字符串」的原因：脚本里到处 `assertType(uid, 'integer')`，
+字符串会全线断言失败，小整数仍是 integer。
+
+## 三、六个必须踩过的坑（都已修）
+
+### 1. `loadBaseMap` 返回裸 mapID 而不是 mapUID
+
+原版返回 `uidf::getBaseMapUID(mapID)`（带类型前缀的完整编码）。
+返回裸 mapID 时 `uidRemoteCall(1, ...)` 会去找 UID=1 的 actor。
+报错「target 1 not found」看起来像「地图 actor 没注册」，排查方向完全错。
+
+### 2. NPC UID 不含 mapID → 大量静默覆盖
+
+`buildNPCUID(lookID, x, y)` 不带地图，不同地图上坐标相同的 NPC 算出同一个 UID。
+实测 340 个 NPC 只存活 91 个，249 个被静默覆盖。
+修复：seq 段揉进 mapID。
+
+### 3. 空脚本 NPC 被跳过 → 任务挂不上
+
+`npc/` 目录有 **179 个 0 字节脚本**（原版占位，NPC 该站着但没对话）。
+最初 `if isZeroSizeFile { continue }` 直接跳过。
+后果：边境城市_01 的 21 个 NPC 只剩 11 个，`上官小姐_1` 消失，
+依赖它的「战士初出江湖」等任务全部加载失败。
+修复：空脚本也建实例，只是不加载 Lua。
+
+### 4. 空脚本 NPC 没注册 RPC → 28 个任务失败
+
+任务要往所有相关 NPC 上写 `setQuestHandler`，包括空脚本的那些。
+不注册就报「target not found」。
+修复：给空脚本 NPC 一个 `silentNPCTarget`（接受但不执行）。
+
+### 5. NPC 懒加载 → 任务启动时找不到 NPC
+
+任务脚本顶层就 `getNPCharUID`，而 NPC 是玩家进图才加载。
+修复：启动时 `WorldService.PreloadAllNPCs` 全量预加载（339 个，约 34MB，原版同等开销）。
+
+### 6. 预加载用 nil host → setNPCSell 空指针崩
+
+host 缺字段时 NPC 脚本执行 `setNPCSell` 直接空指针，该 NPC 被跳过。
+表现为「340 个只成功 91 个」。修复：抽出 `buildNPCHost` 让预加载与进图共用。
+
+## 四、新增/修改的文件
+
+| 文件 | 作用 |
+|---|---|
+| `internal/script/rpc.go` | 跨状态 RPC 总线（等价 AM_REMOTECALL）+ uidRemoteCall |
+| `internal/script/shortid.go` | 短 ID 映射（解决 Lua 5.1 精度） |
+| `internal/script/quest_runtime.go` | 任务独立 actor 化、延迟激活、loadBaseMap 修正 |
+| `internal/game/map_rpc.go` | 地图 actor（回答 getNPCharUID / addQuestGridTrigger） |
+| `internal/game/quest.go` | QuestService、ActivateAfterWorldLoaded |
+| `internal/game/world_service.go` | PreloadAllNPCs、buildNPCHost |
+| `internal/game/npc_manager.go` | NPC UID 含 mapID、空脚本建实例、全量注册 |
+
+## 五、仍然存在的降级（诚实标注）
+
+| 项 | 现状 |
+|---|---|
+| 格子触发器 | `addQuestGridTrigger` 返回句柄表示登记成功，但**玩家踩到格子不会触发任务** |
+| 空脚本 NPC 的任务入口 | `silentNPCTarget` 只确认收到，不存 handler → 这类 NPC 不会主动弹任务对话 |
+| 跨 actor 通知队列 | `waitNotify`/`pickNotify` 立即返回 nil |
+| 任务 FSM 边界情形 | 状态切换竞态、SYS_DONE 清理、上下文回滚未逐一验证 |
+| GM 命令 / 运营后台 | `internal/admin` 仍是空包 |
+
+## 六、验证
+
+| 项 | 结果 |
+|---|---|
+| 编译 / 全量测试 | 全通过 |
+| NPC 预加载 | 339 个，0 失败 |
+| 地图 actor | 603 张 |
+| NPC RPC 注册 | 339 个 |
+| **任务激活** | **42 成功 / 0 失败 / 0 待定** |
+| 任务表 | 42 张 |
+| 服务端 error/panic | 0 |

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/lff2116788383/godot-mir2/server-go/internal/protocol"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/script"
@@ -156,6 +157,8 @@ func shortHash(s string) string {
 //   - 暴露「玩家上线/下线/死亡/升级」等触发点
 type QuestService struct {
 	Scripts *script.QuestManager
+	// Bus 跨状态 RPC 总线（NPC 要靠它找到任务）
+	Bus *script.RPCBus
 	Host    *QuestHost
 	Repo    *storage.QuestRepository
 	Logger  *slog.Logger
@@ -169,18 +172,26 @@ func NewQuestService(frameworkDir, scriptRoot string,
 	host *QuestHost, repo *storage.QuestRepository,
 	mapNames *script.NameTable, logger *slog.Logger) *QuestService {
 
-	mgr := script.NewQuestManager(frameworkDir, scriptRoot, host, mapNames)
-	loaded, failed, errs := mgr.LoadAll()
+	// ★ RPCBus 是 B 方案的核心：任务之间、任务与 NPC 之间靠它互相寻址。
+	bus := script.NewRPCBus(5*time.Second, func(format string, args ...any) {
+		if logger != nil {
+			logger.Warn(fmt.Sprintf(format, args...))
+		}
+	})
+	mgr := script.NewQuestManager(frameworkDir, scriptRoot, host, mapNames, bus)
+	registered, errs := mgr.LoadAll()
 
 	if logger != nil {
-		logger.Info("quest scripts loaded", "loaded", loaded, "failed", failed)
+		logger.Info("quest scripts registered", "count", registered,
+			"note", "waiting for NPC load to activate")
 		for _, err := range errs {
-			logger.Warn("quest load failed", "error", err)
+			logger.Warn("quest scan failed", "error", err)
 		}
 	}
 
 	svc := &QuestService{
 		Scripts: mgr,
+		Bus:     bus,
 		Host:    host,
 		Repo:    repo,
 		Logger:  logger,
@@ -246,4 +257,44 @@ func (s *QuestService) Close() {
 	if s.Scripts != nil {
 		s.Scripts.Close()
 	}
+}
+
+// ActivateAfterWorldLoaded 在地图与 NPC 加载完成之后激活全部任务。
+//
+// ★ 调用时机是整个 B 方案的关键。
+//
+//	顺序必须是：
+//	  1. 加载地图脚本（刷怪/守卫）
+//	  2. 加载该图全部 NPC（任务要往 NPC 上挂 handler）
+//	  3. 注册地图 actor + NPC 到 RPC 总线
+//	  4. **然后**才执行任务脚本
+//
+//	任何一步提前，任务脚本顶层的 getNPCharUID 就会返回 nil，
+//	任务无法挂到 NPC 上 —— 玩家点 NPC 看不到任务入口。
+func (s *QuestService) ActivateAfterWorldLoaded(npcManager *NPCManager) {
+	if s == nil || s.Scripts == nil {
+		return
+	}
+
+	// 先把「全部地图」的 actor 注册进总线
+	//
+	// ★ 必须注册**所有**地图，不只是已加载的：
+	//
+	//	任务脚本会 getNPCharUID('道馆_1', '大悲善僧_1')，
+	//	不管玩家有没有去过道馆_1。原版所有地图在启动时全部 activate，
+	//	所以任务能找到任何一张图的 NPC。
+	//
+	//	Go 侧地图是懒加载的，但「回答某个 NPC 在哪张图/UID 多少」
+	//	只需要名字表 + NPC 定义，不需要地图数据文件加载。
+	//	所以这里注册全部 603 张图的 actor。
+	s.registerAllMapRPC(npcManager)
+
+	activated, failed := s.Scripts.ActivateLazy()
+	if s.Logger != nil {
+		s.Logger.Info("quest scripts activated", "activated", activated, "failed", failed,
+			"pending", s.Scripts.PendingLazy())
+	}
+
+	// 为激活的任务建表
+	s.ensureTables()
 }

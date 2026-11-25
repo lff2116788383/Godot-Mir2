@@ -6,9 +6,11 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/lff2116788383/godot-mir2/server-go/internal/common"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/protocol"
+	"github.com/lff2116788383/godot-mir2/server-go/internal/script"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/storage"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/world"
 )
@@ -87,6 +89,8 @@ type WorldService struct {
 	Golds GoldRepository
 	// Quests 任务系统（玩家登录时要重放任务状态）
 	Quests *QuestService
+	// questActivateOnce 保证任务只激活一次（首张地图就绪时）
+	questActivateOnce sync.Once
 
 	// mapCache mapID -> *world.MapData，避免每次进场都读文件
 	mapCache map[uint32]*world.MapData
@@ -186,6 +190,17 @@ func (s *WorldService) LoadMap(ctx context.Context, mapID uint32) error {
 	if err := s.loadMapScript(ctx, mapID); err != nil {
 		s.Logger.Warn("load map script failed", "map", mapID, "error", err)
 	}
+
+	// ★ 首张地图就绪后激活任务。
+	//
+	//	任务脚本顶层要 getNPCharUID，而 NPC 是按图懒加载的。
+	//	等第一张图（玩家要进的那张）的 NPC 建好，才第一次执行任务脚本。
+	//	用 sync.Once 保证只做一次：后续进别的地图不再重复激活。
+	if s.Quests != nil && s.NPCs != nil {
+		s.questActivateOnce.Do(func() {
+			s.Quests.ActivateAfterWorldLoaded(s.NPCs)
+		})
+	}
 	return nil
 }
 
@@ -204,6 +219,33 @@ func (s *WorldService) loadMapScript(ctx context.Context, mapID uint32) error {
 	}
 	_, err := s.MapScripts.LoadMap(ctx, mapID, mapName, s.Worlds, s.Players)
 	return err
+}
+
+// buildNPCHost 构造一个 NPC 的宿主适配器。
+//
+// ★ 抽成独立方法是为了让「启动预加载」和「进图加载」共用同一套依赖：
+//
+//	预加载时如果 host 缺字段，NPC 脚本一执行 setNPCSell 就空指针崩，
+//	这个 NPC 直接被跳过 —— 而任务要靠它挂 handler，于是任务也挂不上。
+//
+//	实测踩过：host 传 nil 时 340 个 NPC 只成功 91 个，
+//	表现为「任务激活只有 12 个」。
+func (s *WorldService) buildNPCHost(npcUID uint64) *npcHostAdapter {
+	return &npcHostAdapter{
+		NPCUID:     npcUID,
+		Players:    s.Players,
+		Worlds:     s.Worlds,
+		Broadcast:  s.Broadcast,
+		Items:      s.Items,
+		Logger:     s.Logger,
+		Durability: s.Durability,
+		Secured:    s.Secured,
+		Guilds:     s.Guilds,
+		GuildWars:  s.GuildWars,
+		Magics:     s.Magics,
+		Shops:      s.Shops,
+		Golds:      s.Golds,
+	}
 }
 
 // loadMapNPCs 为本图加载 NPC 脚本并在世界层生成实体。
@@ -225,31 +267,7 @@ func (s *WorldService) loadMapNPCs(ctx context.Context, mapID uint32) error {
 		return nil
 	}
 
-	loaded, err := s.NPCs.LoadMap(ctx, mapID, mapName, func(npcUID uint64) *npcHostAdapter {
-		return &npcHostAdapter{
-			NPCUID:    npcUID,
-			MapID:     mapID,
-			Players:   s.Players,
-			Worlds:    s.Worlds,
-			Broadcast: s.Broadcast,
-			Items:     s.Items,
-			Logger:    s.Logger,
-			// 修理 / 仓库：NPC 脚本的 uidRepairItem / uidSecureItem 要用
-			Durability: s.Durability,
-			Secured:    s.Secured,
-			// ★ 公会/公会战/魔法/商店：uidRemoteCall 要用
-			//
-			//	比奇县行政官员的「申请创建行会」「申请行会战争」全靠
-			//	server.player.createGuild / declareGuildWar，
-			//	那两个走 uidRemoteCall → executeRemoteCall，
-			//	里面读的正是这几个字段。留空会变成「永远返回 NOGUILD」。
-			Guilds:    s.Guilds,
-			GuildWars: s.GuildWars,
-			Magics:    s.Magics,
-			Shops:     s.Shops,
-			Golds:     s.Golds,
-		}
-	})
+	loaded, err := s.NPCs.LoadMap(ctx, mapID, mapName, s.buildNPCHost)
 	if err != nil {
 		return err
 	}
@@ -860,4 +878,59 @@ func (s *WorldService) loadPlayerItems(ctx context.Context, p *Player) {
 		s.Logger.Info("player items loaded", "dbid", p.DBID,
 			"inventory", len(p.Inventory), "wear", len(p.Wear))
 	}
+}
+
+// PreloadAllNPCs 启动时预加载**全部**地图的 NPC 脚本。
+//
+// ★★ 这是任务系统能工作的前提 ★★
+//
+//	任务脚本顶层会 getNPCharUID(mapName, npcName)，
+//	而 getNPCharUID 通过地图 actor 查 NPC。
+//	NPC 没加载 → 查不到 → 任务无法挂 handler → 玩家点 NPC 看不到任务。
+//
+//	原版启动时所有地图 activate、所有 NPC 建好，正是这个道理。
+//	代价约 34MB（339 个 NPC × 一个 Lua 状态），原版同等开销。
+//
+// ★ 只用真实 host，不能用 nil：
+//
+//	host 为 nil 时 NPC 脚本里的 setNPCSell 会空指针崩，
+//	340 个 NPC 只能成功 91 个，任务跟着大批失败。
+func (s *WorldService) PreloadAllNPCs(ctx context.Context) (loaded int, failed int) {
+	if s.NPCs == nil {
+		return 0, 0
+	}
+
+	byMap, err := script.ScanNPCDir(filepath.Join(s.NPCs.ScriptRoot, "npc"))
+	if err != nil {
+		if s.Logger != nil {
+			s.Logger.Warn("preload scan failed", "error", err)
+		}
+		return 0, 0
+	}
+
+	mapNameToID := make(map[string]uint32, 700)
+	for id := uint32(1); id < 2000; id++ {
+		if name := world.MapNameOf(id); name != "" {
+			mapNameToID[name] = id
+		}
+	}
+
+	for mapName, defs := range byMap {
+		mapID, ok := mapNameToID[mapName]
+		if !ok {
+			continue
+		}
+		// ★ 复用 LoadMap：它会建 host、加载脚本、注册到 npcs 表。
+		//	差别是不 AddEntity（预加载时地图可能还没建）。
+		insts, err := s.NPCs.LoadMap(ctx, mapID, mapName, s.buildNPCHost)
+		if err != nil {
+			failed += len(defs)
+			continue
+		}
+		loaded += len(insts)
+	}
+	if s.Logger != nil {
+		s.Logger.Info("npc preloaded", "loaded", loaded, "failed", failed)
+	}
+	return loaded, failed
 }

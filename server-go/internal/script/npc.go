@@ -2,8 +2,11 @@ package script
 
 import (
 	"fmt"
+	"sync"
 
 	lua "github.com/yuin/gopher-lua"
+
+	"github.com/lff2116788383/godot-mir2/server-go/internal/protocol"
 )
 
 // ==================== NPC 脚本的 C 函数绑定 ====================
@@ -161,6 +164,9 @@ type NPCScript struct {
 	ScriptPath string
 
 	host NPCHost
+
+	// runtimeMu 保护 LState（同一时刻只允许一个 goroutine 执行）
+	runtimeMu sync.Mutex
 }
 
 // LoadNPC 加载一个 NPC 脚本。
@@ -684,4 +690,56 @@ func (s *NPCScript) luaPostSecuredItemList(l *lua.LState) int {
 	uid := uint64(l.CheckInt64(1))
 	_ = s.host.PostSecuredItemList(uid)
 	return 0
+}
+
+// ==================== NPC 的 RPC 接入（B 方案）====================
+
+// ExecRemote 实现 rpcTarget：在自己的 Lua 状态里执行远程代码串。
+//
+// ★ 这是任务与 NPC 互通的关键。
+//
+//	任务脚本顶层会调
+//	  uidRemoteCall(npcUID, playerUID, questName, ..., code)
+//	把「任务对话处理器」注册到 NPC 上。原版 NPC 在自己的状态里
+//	执行那段 code，setQuestHandler 存进 NPC 的
+//	_RSVD_NAME_EPQST_eventHandlers —— 之后玩家点 NPC 才能看到任务入口。
+//
+//	没有 ExecRemote，这段 code 只能被丢弃或错误地在本任务状态执行，
+//	NPC 永远看不到任务入口。
+func (s *NPCScript) ExecRemote(code string, args []protocol.LuaVar) RPCResult {
+	if s.Runtime == nil || s.Runtime.L == nil {
+		return RPCResult{Err: &RPCError{Message: "npc runtime closed"}}
+	}
+	s.runtimeMu.Lock()
+	defer s.runtimeMu.Unlock()
+
+	patched, _ := patchIntDiv(code)
+	patched, _ = patchToBeClosed(patched)
+
+	fn, err := s.Runtime.L.LoadString(patched)
+	if err != nil {
+		return RPCResult{Err: &RPCError{Message: err.Error()}}
+	}
+
+	luaArgs := make([]lua.LValue, 0, len(args))
+	for _, arg := range args {
+		luaArgs = append(luaArgs, luaVarToLua(s.Runtime.L, arg))
+	}
+
+	base := s.Runtime.L.GetTop()
+	if err := s.Runtime.L.CallByParam(lua.P{
+		Fn:      fn,
+		NRet:    lua.MultRet,
+		Protect: true,
+	}, luaArgs...); err != nil {
+		return RPCResult{Err: &RPCError{Message: err.Error()}}
+	}
+
+	n := s.Runtime.L.GetTop() - base
+	values := make([]protocol.LuaVar, 0, n)
+	for i := base + 1; i <= base+n; i++ {
+		values = append(values, luaToLuaVar(s.Runtime.L.Get(i)))
+	}
+	s.Runtime.L.SetTop(base)
+	return RPCResult{Values: values}
 }

@@ -284,6 +284,23 @@ func main() {
 	)
 	defer questService.Close()
 	worldService.Quests = questService
+
+	// ★★ 启动时就把 NPC 全部预加载、并把任务全部激活 ★★
+	//
+	//	原版启动时所有地图 activate、所有 NPC 建好、任务注册完，
+	//	玩家一进来就能点 NPC 接到任务。
+	//
+	//	之前 Go 侧是「玩家进图才加载 NPC」，导致任务在启动时
+	//	getNPCharUID 全部返回 nil（NPC 还不存在），42 个任务一个都挂不上。
+	//
+	//	代价：339 个 NPC 各一个 Lua 状态，约 34MB 内存。
+	//	这是原版就有的开销，且换来「任务开箱可用」。
+	// ★ WorldService.NPCs 必须先赋值，否则 PreloadAllNPCs 直接 return
+	worldService.NPCs = npcManager
+	worldService.PreloadAllNPCs(context.Background())
+
+	// 注册全部地图 actor + 全部 NPC 到 RPC 总线，然后激活任务
+	questService.ActivateAfterWorldLoaded(npcManager)
 	defer npcManager.Close()
 
 	npcHandler := &game.NPCHandler{
@@ -293,8 +310,6 @@ func main() {
 		Broadcast: broadcaster,
 		Logger:    slog.Default(),
 	}
-	worldService.NPCs = npcManager
-
 	// 聊天：私聊/群聊走 DB，原地说话走 AOI。
 	chatHandler := &game.ChatHandler{
 		Players:   players,

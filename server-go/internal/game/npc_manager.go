@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/lff2116788383/godot-mir2/server-go/internal/common"
@@ -113,12 +114,34 @@ func (m *NPCManager) LoadMap(ctx context.Context, mapID uint32, mapName string,
 
 	var loaded []npcInstance
 	for _, def := range defs {
-		// 空脚本是原版占位，跳过（没有实体也没意义）
+		npcUID := buildNPCUID(mapID, def.LookID, def.X, def.Y)
+
+		// ★ 空脚本也要建 NPC 实体。
+		//
+		//	原版 npc/ 目录里有 179 个 0 字节脚本（占位）。
+		//	它们是「在地图上站着但没有任何对话」的 NPC。
+		//
+		//	最初的做法是 `if isZeroSizeFile { continue }` —— 直接跳过。
+		//	后果：
+		//	  1. 玩家看不到这些 NPC（本该站着的人消失了）
+		//	  2. 任务要 getNPCharUID('边境城市_01','上官小姐_1') 时查不到
+		//	     → 该任务整个加载失败
+		//
+		//	实测：边境城市_01 有 21 个 NPC，跳过 10 个空脚本后只剩 11 个，
+		//	「战士初出江湖」等多个任务因此挂不上。
+		//
+		//	正确做法：照样建实例，只是不加载 Lua 脚本（Script 为 nil）。
 		if isZeroSizeFile(def.ScriptPath) {
+			m.mu.Lock()
+			if _, exists := m.npcs[npcUID]; !exists {
+				m.npcs[npcUID] = &npcInstance{
+					Def: def, NPCUID: npcUID, MapID: mapID,
+				}
+				m.byMap[mapID] = append(m.byMap[mapID], npcUID)
+			}
+			m.mu.Unlock()
 			continue
 		}
-
-		npcUID := buildNPCUID(def.LookID, def.X, def.Y)
 		host := hostFactory(npcUID)
 
 		inst, err := script.LoadNPC(script.Options{
@@ -133,7 +156,7 @@ func (m *NPCManager) LoadMap(ctx context.Context, mapID uint32, mapName string,
 		}, host)
 		if err != nil {
 			if m.Logger != nil {
-				m.Logger.Warn("load npc failed", "npc", def.Name, "error", err)
+				m.Logger.Warn("load npc failed", "map", mapName, "npc", def.Name, "error", err)
 			}
 			continue
 		}
@@ -211,11 +234,28 @@ func (m *NPCManager) Close() {
 //
 // 正确做法：id=lookID，peerIndex=0，seq 用坐标算出的唯一序号。
 // 坐标 (x,y) 在 600x600 地图里 → seq = x*1024+y+1，不会重复。
-func buildNPCUID(lookID uint32, x, y int) uint64 {
+// ★★ 必须带 mapID ★★
+//
+//	最初的实现是 buildNPCUID(lookID, x, y) —— 只用外观+坐标，
+//	**不含地图**。后果：不同地图上相同坐标、相同外观的 NPC
+//	会算出完全相同的 UID，后加载的直接覆盖先加载的。
+//
+//	实测：340 个 NPC 只存活 91 个，另外 249 个被静默覆盖。
+//	表现是「某些地图的 NPC 点不动 / 任务挂不上」，
+//	而且日志里看不到任何错误（map[npcUID] = ... 只是覆盖）。
+//
+//	修复：把 mapID 揉进 id 段，保证全局唯一。
+func buildNPCUID(mapID uint32, lookID uint32, x, y int) uint64 {
 	if lookID == 0 {
 		lookID = 1 // id 不能为 0
 	}
-	seq := uint32(x)*1024 + uint32(y) + 1
+	// ★ seq 用 mapID 打散：
+	//	seq 是 31 位，x/y 各占 10 位（0..1023），
+	//	剩下的高位放 mapID，避免跨图冲突。
+	seq := (mapID&0x7FF)<<20 | (uint32(x)&0x3FF)<<10 | (uint32(y) & 0x3FF)
+	if seq == 0 {
+		seq = 1
+	}
 	uid, err := common.BuildNPCUID(lookID, 0, seq)
 	if err == nil {
 		return uid
@@ -606,4 +646,175 @@ func isZeroSizeFile(path string) bool {
 		return true
 	}
 	return info.Size() == 0
+}
+
+// FindByMapIDAndName 按地图 ID + NPC 名找 UID（地图 actor 的回答）。
+func (m *NPCManager) FindByMapIDAndName(mapID uint32, npcName string) (uint64, bool) {
+	if m.Logger != nil {
+		m.Logger.Debug("find npc", "mapID", mapID, "name", npcName, "total", len(m.npcs))
+	}
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	for uid, inst := range m.npcs {
+		if inst.MapID == mapID && inst.Def.Name == npcName {
+			return uid, true
+		}
+	}
+	return 0, false
+}
+
+// MapsWithNPCs 返回有 NPC 的地图 ID 列表。
+func (m *NPCManager) MapsWithNPCs() []uint32 {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	seen := make(map[uint32]bool, len(m.byMap))
+	out := make([]uint32, 0, len(m.byMap))
+	for mapID := range m.byMap {
+		if !seen[mapID] {
+			seen[mapID] = true
+			out = append(out, mapID)
+		}
+	}
+	return out
+}
+
+// ForEach 遍历全部 NPC。
+func (m *NPCManager) ForEach(fn func(uid uint64, npc *npcInstance)) {
+	m.mu.RLock()
+	snapshot := make(map[uint64]*npcInstance, len(m.npcs))
+	for k, v := range m.npcs {
+		snapshot[k] = v
+	}
+	m.mu.RUnlock()
+	for uid, npc := range snapshot {
+		fn(uid, npc)
+	}
+}
+
+
+// AllMapIDs 返回全部已知地图 ID（来自地图名表）。
+//
+// ★ 为什么需要「全部」而不只是「已加载」：
+//
+//	任务脚本会在启动时 getNPCharUID('道馆_1', ...)，
+//	不管玩家是否去过道馆_1。所以每一张图的 actor 都得能应答。
+func (m *NPCManager) AllMapIDs() []uint32 {
+	ids := make([]uint32, 0, 700)
+	for id := uint32(1); id < 2000; id++ {
+		if world.MapNameOf(id) != "" {
+			ids = append(ids, id)
+		}
+	}
+	return ids
+}
+
+// loadMapDefs 按已解析的 NPC 定义加载脚本（预加载用，不生成世界实体）。
+//
+// ★ 与 LoadMap 的差别：不需要 hostFactory，用一个空 host 即可。
+//
+//	预加载的目的是「让任务能找到 NPC 并挂 handler」，
+//	此时玩家还没进图，NPC 的所有 uidXXX 回调都不会被调用。
+//	等玩家真的进图时，LoadMap 会重新走一遍并换成真正的 host。
+func (m *NPCManager) loadMapDefs(ctx context.Context, mapID uint32, mapName string,
+	defs []script.NPCDef) (loaded int, failed int) {
+
+	itemTbl := m.itemsNameTable()
+	monsterTbl := m.monsterNameTable()
+	mapTbl := m.mapNameTable()
+
+	commonBindings := script.CommonBindings(itemTbl, monsterTbl, mapTbl,
+		func(level int, msg string) {})
+
+	for _, def := range defs {
+		npcUID := buildNPCUID(mapID, def.LookID, def.X, def.Y)
+
+		// 空脚本：只登记实体，不加载 Lua
+		if isZeroSizeFile(def.ScriptPath) {
+			m.mu.Lock()
+			if _, exists := m.npcs[npcUID]; !exists {
+				m.npcs[npcUID] = &npcInstance{Def: def, NPCUID: npcUID, MapID: mapID}
+				m.byMap[mapID] = append(m.byMap[mapID], npcUID)
+			}
+			m.mu.Unlock()
+			loaded++
+			continue
+		}
+
+		// 已加载过就跳过（玩家进图时会再 LoadMap 一次）
+		m.mu.RLock()
+		_, exists := m.npcs[npcUID]
+		m.mu.RUnlock()
+		if exists {
+			continue
+		}
+
+		inst, err := script.LoadNPC(script.Options{
+			FrameworkDir: m.FrameworkDir,
+			ScriptRoot:   m.ScriptRoot,
+			Consts:       script.DefaultConsts(),
+			Bindings:     commonBindings,
+		}, script.NPCInfo{
+			UID: npcUID, Name: def.Name, MapName: def.MapName,
+			ScriptPath: def.ScriptPath, MapID: mapID,
+			X: def.X, Y: def.Y, LookID: def.LookID, GfxDir: uint8(def.GfxDir),
+		}, nil)
+		if err != nil {
+			// ★ 不能静默 continue：预加载失败会让任务挂不上 NPC，
+			//	而且「loaded=339 但内存里只有 91」这种矛盾极难排查。
+			failed++
+			if m.Logger != nil && failed <= 3 {
+				m.Logger.Warn("preload npc failed", "map", mapName, "npc", def.Name, "error", err)
+			}
+			continue
+		}
+
+		m.mu.Lock()
+		m.npcs[npcUID] = &npcInstance{
+			Def: def, NPCUID: npcUID, MapID: mapID, Script: inst,
+		}
+		m.byMap[mapID] = append(m.byMap[mapID], npcUID)
+		m.mu.Unlock()
+		loaded++
+	}
+	return loaded, failed
+}
+
+// PreloadAll 预加载全部地图的 NPC 脚本（不生成实体）。
+//
+// ★★ 这是让任务系统能在启动时工作的前提 ★★
+//
+//	任务脚本顶层会 getNPCharUID(mapName, npcName)，
+//	而 getNPCharUID 是通过地图 actor 查 NPC 的。
+//	如果 NPC 是玩家进图才加载，启动时任务一个都挂不上。
+//
+//	原版启动时所有地图 activate、所有 NPC 建好，就是这个道理。
+//
+//	代价：339 个 NPC × 一个 Lua 状态 ≈ 每个约 100KB，
+//	总共约 34MB。可以接受（原版也是全量加载）。
+func (m *NPCManager) PreloadAll(ctx context.Context) (loaded int, failed int) {
+	byMap, err := script.ScanNPCDir(filepath.Join(m.ScriptRoot, "npc"))
+	if err != nil {
+		if m.Logger != nil {
+			m.Logger.Warn("preload npc scan failed", "error", err)
+		}
+		return 0, 0
+	}
+
+	mapNameToID := make(map[string]uint32, 700)
+	for id := uint32(1); id < 2000; id++ {
+		if name := world.MapNameOf(id); name != "" {
+			mapNameToID[name] = id
+		}
+	}
+
+	for mapName, defs := range byMap {
+		mapID, ok := mapNameToID[mapName]
+		if !ok {
+			continue
+		}
+		l, f := m.loadMapDefs(ctx, mapID, mapName, defs)
+		loaded += l
+		failed += f
+	}
+	return loaded, failed
 }

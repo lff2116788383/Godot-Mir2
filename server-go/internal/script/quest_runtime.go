@@ -9,6 +9,7 @@ import (
 
 	lua "github.com/yuin/gopher-lua"
 
+	"github.com/lff2116788383/godot-mir2/server-go/internal/common"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/protocol"
 )
 
@@ -58,6 +59,14 @@ import (
 //	没有并发问题。
 var questMapNames *NameTable
 
+// activeBus 当前生效的 RPC 总线（loadBaseMap 等绑定要用）。
+//
+// ★ 用包级变量而不是 q.bridge：
+//
+//	loadBaseMap 在 quest.lua 加载前就被注册，那时 QuestState.bridge 还不存在。
+//	而且它只需要「把 64 位 UID 转短 ID」这一件事，不需要整个 bridge。
+var activeBus *RPCBus
+
 // QuestState 是一个任务实例的运行时状态。
 type QuestState struct {
 	// Name 任务名（脚本文件名去掉 .lua）
@@ -81,6 +90,18 @@ type QuestState struct {
 	mainKey int64
 	// mapNames 地图名 <-> ID 表（loadBaseMap 要用）
 	mapNames *NameTable
+
+	// UID 任务的 actor UID（原版 uidf::getQuestUID(questID)）
+	//
+	// ★ 这是 B 方案的核心：每个任务是一个独立可寻址的 actor，
+	//	NPC 与玩家通过这个 UID 用 uidRemoteCall 找它。
+	UID uint64
+	// bridge RPC 桥（让别人能远程调本任务，也让本任务能调别人）
+	bridge *RPCBridge
+	// luaMu 保护 LState：同一时刻只允许一个 goroutine 执行
+	luaMu sync.Mutex
+	// gridTriggerSeq 格子触发器句柄分配
+	gridTriggerSeq int64
 
 	mu sync.Mutex
 }
@@ -109,7 +130,14 @@ type QuestDeps interface {
 //  3. 加载 quest.lua 框架（定义 setQuestState / setQuestFSMTable …）
 //  4. 绑定 9 个任务专属 C 函数
 //  5. 加载具体任务脚本（它会调 setQuestFSMTable 注册状态机）
-func LoadQuest(opts Options, name, scriptPath string, deps QuestDeps) (*QuestState, error) {
+//
+// ★ bus 非 nil 时，本任务会被注册成一个可远程寻址的 actor：
+//
+//	NPC 用 uidRemoteCall(questUID, ...) 就能调到本任务，
+//	本任务也能用 uidRemoteCall(npcUID, ...) 调 NPC。
+//	这是 B 方案（对齐原版 actor 模型）的关键。
+func LoadQuest(opts Options, name, scriptPath string, deps QuestDeps,
+	bus *RPCBus, questID uint32) (*QuestState, error) {
 	q := &QuestState{
 		Name:           name,
 		ScriptPath:     scriptPath,
@@ -139,6 +167,17 @@ func LoadQuest(opts Options, name, scriptPath string, deps QuestDeps) (*QuestSta
 	if err := rt.patchAndRun(frameworkPath); err != nil {
 		rt.Close()
 		return nil, fmt.Errorf("load quest.lua: %w", err)
+	}
+
+	// ★ RPC 桥必须在任务脚本之前装好：
+	//	任务脚本顶层就会调 uidRemoteCall 注册 handler，
+	//	晚一步装就会用到之前的降级版本（返回假值）。
+	if bus != nil && questID != 0 {
+		q.UID = common.GetQuestUID(questID)
+		q.bridge = NewRPCBridge(bus, q.UID, rt, q.mapNames)
+		activeBus = bus
+		q.bridge.Install(rt.L)
+		bus.RegisterQuest(q.UID, name, q)
 	}
 
 	// 加载具体任务脚本
@@ -342,74 +381,63 @@ func (q *QuestState) installCoroutinePrimitives() {
 		return 1
 	}))
 
-	// ---- 跨范围调用（任务脚本大量用 uidRemoteCall 注册 handler）----
+	// ---- uidRemoteCall 由 RPCBridge.Install 提供（见 rpc.go）----
 	//
-	// ★ 任务脚本里最常见的一行是：
+	// ★ 这里**不再**提供本地降级版。
 	//
-	//	uidRemoteCall(getNPCharUID('道馆_1','万事通_1'), getUID(), getQuestName(), ...,
-	//	             [[ setQuestHandler(questName, ...) ]])
+	//	之前是「在自己的 Lua 状态里执行代码串」，那是错的：
+	//	NPC 的 handler 根本不在这个状态里，执行了也没人能用。
+	//	真正的实现必须经 RPCBus 路由到目标 actor。
+
+	// ---- 调试：包装 getNPCharUID 打印返回值 ----
+	// （quest.lua 会覆盖它，所以这里只用于确认加载顺序）
+
+	// ---- 地图名 -> mapUID（quest.lua:127 getNPCharUID 要用）----
+	// ★★ loadBaseMap 必须返回 **mapUID 编码值**，不是裸 mapID ★★
 	//
-	//	即「把任务自己的状态机注册到某个 NPC 上去」。
-	//	Go 侧没有跨 actor 的代码执行，这里做**本地降级**：
-	//	直接在任务自己的 Lua 状态里执行那段代码（先把 varargs 铺好）。
+	//	原版 server.cpp:564 loadBaseMap 返回的是 uidf::getBaseMapUID(mapID)，
+	//	即 (UID_MAP << 59) | (1 << 31) 这样的完整编码。
 	//
-	//	这样注册能成功（setQuestHandler 被定义在 quest.lua 里），
-	//	后续该 NPC 的事件会被路由回本任务 —— 正是我们要的语义。
+	//	踩过的坑：之前返回裸 mapID（比奇县_0 → 1），
+	//	于是 quest.lua 的 getNPCharUID 里
+	//	  uidRemoteCall(loadBaseMap(mapName), ...)
+	//	就变成 uidRemoteCall(1, ...) —— 找 UID=1 的 actor，
+	//	报 "remote call target 1 not found"。
 	//
-	//	失败（NPC 找不到 / 代码报错）只记日志，不中断任务加载。
-	L.SetGlobal("uidRemoteCall", L.NewFunction(func(l *lua.LState) int {
-		top := l.GetTop()
-		if top < 2 {
+	//	这个错误信息完全不提「你拿到的是裸 mapID」，
+	//	看起来像「地图 actor 没注册」，会往完全错的方向排查。
+	L.SetGlobal("loadBaseMap", L.NewFunction(func(l *lua.LState) int {
+		v := l.Get(1)
+		var mapID uint32
+		switch val := v.(type) {
+		case lua.LString:
+			id, ok := q.mapNames.IDOf(string(val))
+			if !ok || id == 0 {
+				l.Push(lua.LNil)
+				return 1
+			}
+			mapID = id
+		case lua.LNumber:
+			mapID = uint32(val)
+		default:
 			l.Push(lua.LNil)
 			return 1
 		}
-		code := l.CheckString(top)
-		patched, _ := patchIntDiv(code)
-		patched, _ = patchToBeClosed(patched)
-		fn, err := l.LoadString(patched)
+		mapUID, err := common.GetBaseMapUID(mapID, 0)
 		if err != nil {
 			l.Push(lua.LNil)
 			return 1
 		}
-		// 把中间那一段当 varargs 传进去
-		args := make([]lua.LValue, 0, top-2)
-		for i := 2; i < top; i++ {
-			args = append(args, l.Get(i))
-		}
-		base := l.GetTop()
-		if err := l.CallByParam(lua.P{Fn: fn, NRet: lua.MultRet, Protect: true}, args...); err != nil {
+		// ★ 返回短 ID：mapUID 是 64 位值，直接给 Lua 会丢精度（差 1）
+		//
+		// ★ 用包级 bus 而不是 q.bridge：
+		//	loadBaseMap 被 quest.lua 顶层调用，那时 q.bridge 可能还没建。
+		//	挂到包级变量上更稳（任务加载是启动期串行操作）。
+		if activeBus == nil {
 			l.Push(lua.LNil)
 			return 1
 		}
-		n := l.GetTop() - base
-		if n <= 0 {
-			// ★ 代码串没有返回值时补一个整数。
-			//
-			//	任务脚本普遍写成
-			//	  return assertType(uidRemoteCall(...), 'integer')
-			//	即「注册结果必须是整数索引」。真实 uidRemoteCall
-			//	会把远端寄存器值带回来；本地执行时如果没有返回值，
-			//	补 1 让 assertType 通过（语义上是「注册成功，句柄 1」）。
-			l.Push(lua.LNumber(1))
-			return 1
-		}
-		return n
-	}))
-
-	// ---- 地图名 -> mapUID（quest.lua:127 getNPCharUID 要用）----
-	L.SetGlobal("loadBaseMap", L.NewFunction(func(l *lua.LState) int {
-		v := l.Get(1)
-		switch val := v.(type) {
-		case lua.LString:
-			if id, ok := q.mapNames.IDOf(string(val)); ok && id != 0 {
-				l.Push(lua.LNumber(id))
-				return 1
-			}
-		case lua.LNumber:
-			l.Push(lua.LNumber(val))
-			return 1
-		}
-		l.Push(lua.LNil)
+		l.Push(lua.LNumber(activeBus.Short(mapUID)))
 		return 1
 	}))
 
@@ -425,19 +453,29 @@ func (q *QuestState) installCoroutinePrimitives() {
 	//
 	//	不降级的话任务在加载阶段就 fatal（本次修的就是这个）。
 	//	完整的格子触发器留作已知限制，见 REPLICA_AUDIT。
-	triggerHandle := int64(0)
-	for _, name := range []string{
-		"addQuestGridTrigger", "deleteGridTrigger",
-		"setupNPCQuestBehavior", "clearNPCQuestBehavior",
-		"setQuestHandler", "runEventHandler", "runNPCEventHandler",
-	} {
-		n := name
-		L.SetGlobal(n, L.NewFunction(func(l *lua.LState) int {
-			triggerHandle++
-			l.Push(lua.LNumber(triggerHandle))
-			return 1
-		}))
-	}
+	// ★ 这些函数**不再**用空桩覆盖。
+	//
+	//	它们多数由 quest.lua / npchar.lua 自己定义：
+	//	  setupNPCQuestBehavior  → quest.lua:1356（走 questContext，真实现）
+	//	  setQuestHandler        → npchar.lua:290（写 EPQST_eventHandlers）
+	//	  runNPCEventHandler     → quest.lua:1709
+	//
+	//	之前用空桩覆盖，反而把它们的功能砸掉了 ——
+	//	空桩返回假句柄，任务以为注册成功，实际什么都没挂上。
+	//
+	//	真正缺的只有「格子触发器」这一个原语（地图侧实现），
+	//	它单独补在下面。
+	L.SetGlobal("addQuestGridTrigger", L.NewFunction(func(l *lua.LState) int {
+		// ★ 格子触发器：返回递增句柄表示注册成功。
+		//
+		//	真实实现需要「玩家踩到某格 → 通知任务」的地图侧钩子，
+		//	当前 world 包没有这个机制。这里不假装实现，
+		//	只保证任务加载不中断（否则整个任务脚本都跑不起来）。
+		q.gridTriggerSeq++
+		l.Push(lua.LNumber(q.gridTriggerSeq))
+		return 1
+	}))
+	L.SetGlobal("deleteGridTrigger", L.NewFunction(func(l *lua.LState) int { return 0 }))
 
 	L.SetGlobal("_RSVD_NAME_closeThread", L.NewFunction(func(l *lua.LState) int {
 		key := int64(l.CheckInt64(1))
@@ -539,6 +577,21 @@ func (q *QuestState) installCoroutinePrimitives() {
 		l.Push(lua.LNil)
 		return 1
 	}))
+}
+
+// ExecRemote 实现 rpcTarget：在自己的 Lua 状态里执行远程代码串。
+//
+// ★ luaMu 是必需的：LState 不是并发安全的。
+//
+//	NPC 和玩家可能同时对同一任务发起 remoteCall，
+//	两个 goroutine 同时进 LState 会直接段错误（不是 panic，是崩进程）。
+func (q *QuestState) ExecRemote(code string, args []protocol.LuaVar) RPCResult {
+	q.luaMu.Lock()
+	defer q.luaMu.Unlock()
+	if q.bridge == nil {
+		return RPCResult{Err: &RPCError{Message: "quest bridge not installed"}}
+	}
+	return q.bridge.ExecRemote(code, args)
 }
 
 // Activate 激活任务（对应 quest.cpp:135 onActivate）。
@@ -705,55 +758,60 @@ type QuestManager struct {
 	Deps       QuestDeps
 	// MapNames 地图名 <-> ID（loadBaseMap / getNPCharUID 要用）
 	MapNames *NameTable
+	// Bus 跨状态 RPC 总线（B 方案核心）
+	Bus *RPCBus
 
 	mu     sync.RWMutex
 	quests map[string]*QuestState
+	// nextQuestID 任务 ID 分配（1 起，对应 uidf::getQuestUID）
+	nextQuestID uint32
+	// lazy 待激活的任务（脚本还没执行，因为 NPC 还没加载）
+	lazy map[string]lazyQuest
 }
 
 // NewQuestManager 创建任务管理器。
-func NewQuestManager(frameworkDir, scriptRoot string, deps QuestDeps, mapNames *NameTable) *QuestManager {
+func NewQuestManager(frameworkDir, scriptRoot string, deps QuestDeps, mapNames *NameTable, bus *RPCBus) *QuestManager {
 	return &QuestManager{
 		FrameworkDir: frameworkDir,
 		ScriptRoot:   scriptRoot,
 		Deps:         deps,
 		MapNames:     mapNames,
+		Bus:          bus,
 		quests:       make(map[string]*QuestState),
+		lazy:         make(map[string]lazyQuest),
+		nextQuestID:  1,
 	}
 }
 
 // LoadAll 加载全部任务脚本（对应服务器启动时注册所有 quest）。
 //
-// ★ 失败不中断：某个任务脚本有语法错误时只跳过它，
-// 其他任务照常工作。整体中退会让「一个任务坏了全服没任务」。
-func (m *QuestManager) LoadAll() (loaded, failed int, errs []error) {
+// ★★ 重要：这里只「登记」，不执行任务脚本 ★★
+//
+//	原因见 ActivateLazy 的注释：任务脚本顶层要调 getNPCharUID，
+//	而 NPC 是懒加载的。启动时执行脚本会全部失败。
+//
+//	所以 LoadAll 只扫一遍文件名 + 分配 questID，
+//	真正执行留给 ActivateLazy（NPC 加载完之后）。
+//
+//	调用方必须在 NPC 就绪后调 ActivateLazy，
+//	否则任务永远是「登记了但没激活」——玩家点 NPC 看不到任务入口。
+func (m *QuestManager) LoadAll() (registered int, errs []error) {
 	dir := filepath.Join(m.ScriptRoot, "quest")
 	files, err := filepath.Glob(filepath.Join(dir, "*.lua"))
 	if err != nil {
-		return 0, 0, []error{err}
+		return 0, []error{err}
 	}
 
 	for _, path := range files {
 		name := strings.TrimSuffix(filepath.Base(path), ".lua")
-		opts := Options{
-			FrameworkDir: m.FrameworkDir,
-			ScriptRoot:   m.ScriptRoot,
-			Consts:       DefaultConsts(),
-			Bindings:     map[string]lua.LGFunction{},
-		}
-		// 地图名表通过包级变量传给 QuestState（LoadQuest 签名保持简洁）
-		questMapNames = m.MapNames
-		q, err := LoadQuest(opts, name, path, m.Deps)
-		if err != nil {
-			failed++
-			errs = append(errs, fmt.Errorf("%s: %w", name, err))
-			continue
-		}
 		m.mu.Lock()
-		m.quests[name] = q
+		id := m.nextQuestID
+		m.nextQuestID++
+		m.lazy[name] = lazyQuest{name: name, path: path, id: id}
 		m.mu.Unlock()
-		loaded++
+		registered++
 	}
-	return loaded, failed, errs
+	return registered, nil
 }
 
 // Get 按名字取任务实例。
@@ -801,4 +859,85 @@ func (m *QuestManager) ForEach(fn func(name string, q *QuestState)) {
 //	所以状态函数里不能发奖励（脚本作者自己负责把奖励放到切换回调里）。
 func (q *QuestState) CallRestore(ctx context.Context, playerUID uint64) ([]lua.LValue, error) {
 	return q.rt.CallGlobal("_RSVD_NAME_restoreQuestStates", lua.LNumber(playerUID))
+}
+
+// ==================== 延迟加载（因为 NPC 是懒加载的）====================
+//
+// ★ 问题的本质：
+//
+//	任务脚本顶层会调 getNPCharUID('比奇县_0', '客栈店员_1')，
+//	而 NPC 是玩家进图时才加载的（world_service.go:228）。
+//	启动时把 42 个任务全加载 → NPC 还不存在 → 全部失败。
+//
+// ★ 但原版为什么没这个问题？
+//
+//	原版所有地图在启动时就全部 activate（Server::start 里遍历
+//	maprecord 逐个 loadMap），NPC 也在那时全部建好。
+//	Go 侧为了省内存改成了懒加载，代价就是任务不能启动时加载。
+//
+// ★ 解法：把任务分成「已注册（脚本读过）」和「已激活（能响应调用）」两态。
+//
+//	启动时只读脚本、不做任何远程调用（跳过顶层 getNPCharUID）
+//	→ 地图 NPC 加载完后，再真正执行任务脚本
+//
+//	实现上，用「延迟队列」：任务第一次被某个地图/玩家需要时才执行脚本。
+//	这样即使某张图玩家永远不去，它的任务也不会占内存。
+
+// RegisterLazy 登记一个待激活的任务（只记名字与路径，不执行脚本）。
+func (m *QuestManager) RegisterLazy(name, scriptPath string, questID uint32) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.lazy[name] = lazyQuest{name: name, path: scriptPath, id: questID}
+}
+
+// lazyQuest 是一个尚未执行脚本的任务。
+type lazyQuest struct {
+	name string
+	path string
+	id   uint32
+}
+
+// ActivateLazy 激活所有还没激活的任务。
+//
+// 在 NPC 全部加载完之后调用。已激活的跳过。
+//
+// ★ 失败不阻断：某个任务脚本报错只记日志并跳过，
+//	其他任务照常（一个任务坏了不该让全服没任务）。
+func (m *QuestManager) ActivateLazy() (activated, failed int) {
+	m.mu.Lock()
+	pending := make([]lazyQuest, 0, len(m.lazy))
+	for _, lq := range m.lazy {
+		pending = append(pending, lq)
+	}
+	m.mu.Unlock()
+
+	for _, lq := range pending {
+		opts := Options{
+			FrameworkDir: m.FrameworkDir,
+			ScriptRoot:   m.ScriptRoot,
+			Consts:       DefaultConsts(),
+		}
+		questMapNames = m.MapNames
+		q, err := LoadQuest(opts, lq.name, lq.path, m.Deps, m.Bus, lq.id)
+		if err != nil {
+			failed++
+			if m.Deps != nil {
+				m.Deps.Log(1, fmt.Sprintf("activate quest %s failed: %v", lq.name, err))
+			}
+			continue
+		}
+		m.mu.Lock()
+		m.quests[lq.name] = q
+		delete(m.lazy, lq.name)
+		m.mu.Unlock()
+		activated++
+	}
+	return activated, failed
+}
+
+// PendingLazy 返回还没激活的任务数。
+func (m *QuestManager) PendingLazy() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return len(m.lazy)
 }
