@@ -327,22 +327,210 @@ func scanShortString(src string, i int) int {
 	return i
 }
 
+// patchToBeClosed 把 Lua 5.4 的 `<close>` 属性降级成「显式 close」写法。
+//
+// ★★ 为什么必须处理 ★★
+//
+//	gopher-lua 是 Lua 5.1 语法，`local x <close> = f()` 是 **5.4** 的特性，
+//	直接编译就是 `near '<': syntax error`。
+//
+//	quest.lua（1819 行）里 `<close>` 出现在 6 处关键位置：
+//
+//		do
+//		    local section <close> = _RSVD_NAME_criticalSection()
+//		    ... 临界区代码，不允许 yield
+//		end
+//
+//	语义是「离开这个 do 块时自动调 __close」。降级方式：
+//
+//		local section = _RSVD_NAME_criticalSection()
+//		... 
+//		section:close()   -- 插在 end 之前
+//
+// ★ 为什么不直接删掉：`<close>` 在这里不是装饰。
+//
+//	criticalSection 会往 `_RSVD_NAME_criticalSections[co]` 里计数，
+//	并在 `coroutine.yield` 被包过的版本里检查「临界区内禁止 yield」。
+//	只删不调 close 的话，计数只增不减 → **第一次进临界区之后，
+//	这个协程永远不能再 yield** → 只要有一次 pause 就报
+//	"yield in a critical section"。
+//
+//	这个 bug 的隐蔽程度：任务能正常开始、正常对话，
+//	直到某个需要等待（pause）的步骤才炸，而且报错信息完全不指向这里。
+//
+// 实现：逐行扫描，找到 `local NAME <close> = EXPR` 就地改写，
+// 并记住 NAME + 缩进，在**同一缩进层的 `end`** 之前插入 close 调用。
+func patchToBeClosed(src string) (string, int) {
+	if !strings.Contains(src, "<close>") {
+		return src, 0
+	}
+
+	lines := strings.Split(src, "\n")
+	out := make([]string, 0, len(lines)+16)
+	type pending struct {
+		name string
+		// depth 声明时所在的块深度（do/function/if 计入）
+		depth int
+		// depthIndent 声明行的缩进，用于对齐插入的 close 调用
+		depthIndent int
+	}
+	var stack []pending
+	depth := 0
+	count := 0
+
+	// blockOpeners / blockClosers 用于粗略估计块深度。
+	//
+	// ★ 不追求完整 Lua 解析，只要「声明所在块」与「结束该块的 end」
+	//   能对上即可。quest.lua 的缩进规范，加上对
+	//   then/do/function/end 的识别已经足够。
+	//
+	//	踩过的坑：最初只按「缩进 ≥」找 end，结果声明在
+	//	`if ... then return end` 这种单行块里时，
+	//	插入点跑到了 if 内部 —— 语法直接炸。
+	openBlock := func(t string) bool {
+		if strings.HasSuffix(t, " then") || t == "then" ||
+			strings.HasSuffix(t, " do") || t == "do" ||
+			strings.HasPrefix(t, "function ") || strings.HasSuffix(t, "function") ||
+			strings.HasSuffix(t, "function()") {
+			return true
+		}
+		return false
+	}
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		isComment := strings.HasPrefix(trimmed, "--") || trimmed == ""
+
+		if !isComment {
+			// 先处理 end（闭合块），再判断声明
+			if trimmed == "end" || strings.HasPrefix(trimmed, "end)") || strings.HasPrefix(trimmed, "end,") {
+				depth--
+				// 该 end 之前，把「声明深度 > 当前深度」的全部 close 掉
+				for len(stack) > 0 && stack[len(stack)-1].depth > depth {
+					p := stack[len(stack)-1]
+					stack = stack[:len(stack)-1]
+					pad := strings.Repeat(" ", p.depthIndent)
+					call := pad + patchCloseCall(p.name)
+					// ★ Lua 要求 return/break 必须是块里最后一条语句。
+					//   如果上一行是 return/break，close 必须插在它**之前** ——
+					//   插在后面就是 "near 'do': syntax error"（报错行还指着 end，极难定位）。
+					if n := len(out); n > 0 && isBlockTerminator(strings.TrimSpace(out[n-1])) {
+						out = append(out[:n-1], call, out[n-1])
+					} else {
+						out = append(out, call)
+					}
+				}
+			}
+
+			if idx := strings.Index(line, "<close>"); idx >= 0 {
+				if localIdx := strings.Index(line, "local "); localIdx >= 0 {
+					rest := line[localIdx+len("local "):]
+					eq := strings.Index(rest, "=")
+					closeAt := strings.Index(rest, "<close>")
+					if eq > 0 && closeAt > 0 && closeAt < eq {
+						name := strings.TrimSpace(rest[:closeAt])
+						newLine := line[:localIdx] + "local " + strings.TrimSpace(rest[:closeAt]) + rest[closeAt+len("<close>"):]
+						out = append(out, newLine)
+						stack = append(stack, pending{
+							name:        name,
+							depth:       depth,
+							depthIndent: leadingSpaces(line),
+						})
+						count++
+						// 声明行本身也可能开块（罕见），保守地按下方规则处理
+						if openBlock(trimmed) {
+							depth++
+						}
+						continue
+					}
+				}
+			}
+
+			if openBlock(trimmed) {
+				depth++
+			}
+		}
+		out = append(out, line)
+	}
+
+	// 文件末尾还没闭合的
+	for len(stack) > 0 {
+		p := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		out = append(out, strings.Repeat(" ", p.depthIndent)+patchCloseCall(p.name))
+	}
+
+	return strings.Join(out, "\n"), count
+}
+
+// isBlockTerminator 判断某行是否是「必须是块中最后一条」的语句。
+//
+// Lua 语法规定 return / break 只能在块的末尾（后面只能是 end）。
+// 往它们后面插任何语句都会让整个 block 编译失败。
+func isBlockTerminator(line string) bool {
+	return line == "return" || strings.HasPrefix(line, "return ") ||
+		line == "break" || strings.HasPrefix(line, "break ")
+}
+
+// patchCloseCall 生成「等价于 <close> 退出作用域」的调用。
+//
+// ★ 必须调 `getmetatable(x).__close(x, nil)` 而不是 `x:close()`：
+//
+//	Lua 5.4 的 `<close>` 语义是「作用域结束时调用 `__close` 元方法」，
+//	**不是**调用一个叫 close 的普通方法。
+//
+//	quest.lua 里两种对象都没有 `close()` 方法：
+//	  section（criticalSection）只有 `__close`
+//	  mark（switchMark）也只有 `__close`，另有一个 `drop()`
+//
+//	写成 `mark:close()` 会直接报 "attempt to call a nil value (method 'close')"。
+//	最初的实现就是这么写的，结果 42 个任务全部加载失败。
+func patchCloseCall(name string) string {
+	n := strings.TrimSpace(name)
+	return "do local _o = " + n + "; local _m = getmetatable(_o); " +
+		"if _m and _m.__close then _m.__close(_o) end end"
+}
+
+// leadingSpaces 返回一行的前导空格数。
+func leadingSpaces(line string) int {
+	n := 0
+	for _, r := range line {
+		if r != ' ' {
+			break
+		}
+		n++
+	}
+	return n
+}
+
 // patchAndRun 读文件 → 语法降级 → 执行。
 //
-// 与 DoFile 的差别只在中间多一步改写。行数不变，
-// 所以脚本报错时的行号仍对应原文件。
+// 与 DoFile 的差别只在中间多一步改写。行数基本不变，
+// 所以脚本报错时的行号仍能对应原文件。
 func (rt *Runtime) patchAndRun(path string) error {
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
 	src := string(raw)
-	patched, count := patchIntDiv(src)
-	if count == 0 {
+
+	patched, divCount := patchIntDiv(src)
+	// ★ 顺序：先降级 // 再处理 <close>。
+	//   反过来也行（两者互不影响），但 <close> 的改写会插入行，
+	//   放在后面能让行号偏移只出现在文件后半段。
+	patched, closeCount := patchToBeClosed(patched)
+
+	if divCount == 0 && closeCount == 0 {
 		return rt.L.DoFile(path)
 	}
-	// 加一行 shebang 注释说明被降级过，方便排查
-	patched = "-- [mir2x-go] " + fmt.Sprint(count) + " 处 `//` 已降级为 math.floor\n" + patched
+	header := "-- [mir2x-go] 语法降级："
+	if divCount > 0 {
+		header += fmt.Sprintf("%d 处 `//`→math.floor ", divCount)
+	}
+	if closeCount > 0 {
+		header += fmt.Sprintf("%d 处 `<close>`→显式 close ", closeCount)
+	}
+	patched = header + "\n" + patched
 	if err := rt.L.DoString(patched); err != nil {
 		return fmt.Errorf("%s: %w", path, err)
 	}

@@ -51,6 +51,10 @@ type NPCManager struct {
 	Items        *ItemDB
 	Magics       *MagicDB
 	Logger       *slog.Logger
+	// Monsters 怪物表（getMonsterName / getMonsterID 要用）
+	//
+	// nil 时退化成空表（脚本里的名字判断全部为 false，但不崩）。
+	Monsters *world.MonsterDB
 }
 
 // npcInstance 是一个 NPC 的运行时。
@@ -152,6 +156,21 @@ func (m *NPCManager) LoadMap(ctx context.Context, mapID uint32, mapName string,
 }
 
 // Get 按 UID 取 NPC。
+// FindByMapAndName 按地图名 + NPC 名找 UID（任务系统的 getNPCharUID 用）。
+//
+// ★ 遍历而不是建索引：NPC 总数 340 个、只在任务加载/注册时查，
+//	建二级索引的复杂度不值得。真成瓶颈再加。
+func (m *NPCManager) FindByMapAndName(mapName, npcName string) (uint64, bool) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	for uid, inst := range m.npcs {
+		if inst.Def.MapName == mapName && inst.Def.Name == npcName {
+			return uid, true
+		}
+	}
+	return 0, false
+}
+
 func (m *NPCManager) Get(npcUID uint64) (*npcInstance, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -220,14 +239,38 @@ func (m *NPCManager) itemsNameTable() *script.NameTable {
 }
 
 func (m *NPCManager) monsterNameTable() *script.NameTable {
-	// 怪物表当前没在 game 层加载（怪物数据在 world.MonsterRecord）
-	// 先返回空表：getMonsterName 返回 nil，脚本里的 hasChar(nil) 为 false，
-	// 「怪物召唤商人」这类 NPC 会走 else 分支不会崩。
-	return script.NewNameTable(nil)
+	// ★ 从怪物表反查名字（之前返回空表，是个真实缺陷）
+	//
+	//	空表的后果：脚本里 getMonsterName(id) 恒为 nil，
+	//	`if getMonsterName(id) == '半兽人'` 这类判断全部走 else 分支 ——
+	//	任务/召唤类 NPC 静默不工作，且**没有任何报错**。
+	//
+	//	现在从 world.MonsterDB 反查（它在启动时已加载 364 条）。
+	if m.Monsters == nil {
+		return script.NewNameTable(nil)
+	}
+	return script.NewNameTable(m.Monsters.NameTable())
 }
 
+// mapNameTable 返回地图名 <-> ID 表。
+//
+// ★ 之前返回空表，是个真实缺陷：
+//
+//	quest.lua:127 getNPCharUID 第一句就是 `loadBaseMap(mapName)`，
+//	空表让所有「按地图名找 NPC」的调用返回 nil →
+//	任务无法把状态机挂到 NPC 上 → 42 个任务里有 2 个直接加载失败，
+//	其余任务在运行期也找不到 NPC。
+//
+//	数据源是 world 包的全局表（启动时 SetMapNames 注入，603 条）。
 func (m *NPCManager) mapNameTable() *script.NameTable {
-	return script.NewNameTable(nil)
+	// world 包的全局表是 1..N 连续 ID，反查一遍
+	records := make(map[uint32]string, 700)
+	for id := uint32(1); id < 2000; id++ {
+		if name := world.MapNameOf(id); name != "" {
+			records[id] = name
+		}
+	}
+	return script.NewNameTable(records)
 }
 
 // ==================== 宿主适配（script.NPCHost 的实现）====================

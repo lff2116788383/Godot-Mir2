@@ -181,6 +181,15 @@ type AIState struct {
 	// 用于 Boss 的远程技能冷却（祖玛教主每 5 秒一次火墙）。
 	// 只有 LastAttackMS 不够 —— 普通攻击和特殊技能的冷却不同频。
 	LastSpecialMS int64
+	// LastSelfHealMS 上次自愈的时刻（蚁后）
+	//
+	// ★ 必须单独计时，不能复用 LastSpecialMS：
+	//
+	//	自愈和攻击是两条独立节奏，共用计时会让「刚奶完就不能攻击」
+	//	或反过来「刚攻击完就不奶」。
+	LastSelfHealMS int64
+	// LastAllyHealMS 上次治疗友军的时刻（蚁后）
+	LastAllyHealMS int64
 	// MasterUID 主人 UID（宠物/召唤兽跟随用，0 表示无主）
 	MasterUID uint64
 	// IdleSinceMS 进入空闲的时刻（神兽 30 秒后回站立姿态）
@@ -225,6 +234,34 @@ type AIProfile struct {
 	//
 	// Boss 常用：视野 10 但索敌 15，玩家还没看到它就已经被盯上。
 	AggroRangeOverride int
+
+	// ---- 自愈 / 治疗（serveranthealer.cpp）----
+	// SelfHealHP 血量未满时每次自愈回复的 HP（0 = 不自愈）
+	//
+	// 原版蚁后：hp < maxHP 时 updateHealth(20) 并等 1 秒。
+	SelfHealHP int32
+	// SelfHealMP 自愈同时回的 MP
+	SelfHealMP int32
+	// SelfHealIntervalMS 自愈间隔（原版 1000ms）
+	SelfHealIntervalMS int64
+	// HealAllyHP 治疗周围友军的 HP（0 = 不治疗）
+	//
+	// 原版蚁后 sendHeal：视野内每个友军 +10 HP / +5 MP，
+	// 前提是目标在治疗技能的 castRange 内。
+	HealAllyHP int32
+	// HealAllyMP 治疗友军同时回的 MP
+	HealAllyMP int32
+	// HealAllyMagicID 治疗技能 ID（用于广播动作，客户端据此播特效）
+	HealAllyMagicID int
+	// HealAllyRange 治疗生效距离（格）
+	HealAllyRange int
+
+	// ---- 召唤（serverwoomataurus.cpp 的雷霆之类）----
+	// SummonOnAttack 每次成功攻击后触发的「召唤/连锁」技能
+	//
+	// 原版沃玛教主：雷霆一击命中后，对目标周围**其他友军**
+	// 也各打一发雷霆（300ms 延迟）。字段留成技能 ID 列表即可。
+	ChainOnHit []SpellAbility
 }
 
 // AStarCacheRefreshMS 对应 monster.hpp:33 的 m_refresh = 2000。

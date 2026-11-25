@@ -539,6 +539,22 @@ func (w *World) AddSafeZoneCircle(ctx context.Context, mapID uint32, x, y, radiu
 	return err
 }
 
+// SafeZone 返回某张地图的安全区副本（玩家进图时要下发给客户端）。
+//
+// ★ 返回**副本**而不是指针：调用方（game 层）会把它转成协议结构发出去，
+// 若返回内部引用，后续地图脚本再 AddSafeZoneCircle 改的就是
+// 已经发出去的那份数据 —— 客户端和服务端从此不一致。
+func (w *World) SafeZone(ctx context.Context, mapID uint32) (SafeZone, error) {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return state.Zone.Clone(), nil
+	}))
+	if err != nil {
+		return SafeZone{}, err
+	}
+	zone, _ := value.(SafeZone)
+	return zone, nil
+}
+
 // CountWalkable 统计矩形区域内可走格数。
 //
 // 一次 actor 调用算完整块。
@@ -720,4 +736,27 @@ func (w *World) RecalcAllStats(ctx context.Context, mapID uint32, uids []uint64)
 		}
 		return nil, nil
 	}))
+}
+
+// EntitiesByMaster 返回某张图上主人是指定 UID 的实体（召唤物/宠物）。
+//
+// ★ 用途：CM_REQUESTKILLPETS（玩家一键清宠，playernet.cpp:209）。
+//
+//	宠物卡在地图角落时玩家没法自己解散，只能自杀或等它死 ——
+//	原版专门给了这条命令，所以必须有办法列出「我的宠物」。
+func (w *World) EntitiesByMaster(ctx context.Context, mapID uint32, masterUID uint64) ([]uint64, error) {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		var out []uint64
+		for uid, entity := range state.Entities {
+			if entity.AI.MasterUID != 0 && entity.AI.MasterUID == masterUID {
+				out = append(out, uid)
+			}
+		}
+		return out, nil
+	}))
+	if err != nil {
+		return nil, err
+	}
+	uids, _ := value.([]uint64)
+	return uids, nil
 }

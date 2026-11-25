@@ -12,6 +12,7 @@ import (
 	"github.com/lff2116788383/godot-mir2/server-go/internal/actor"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/config"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/game"
+	"github.com/lff2116788383/godot-mir2/server-go/internal/script"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/storage"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/transport"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/version"
@@ -254,6 +255,35 @@ func main() {
 
 	// NPC：加载原版 Lua 脚本（每个 NPC 一个独立 Lua state）
 	npcManager := game.NewNPCManager(itemDB, magicDB, slog.Default())
+	// 怪物表：getMonsterName / getMonsterID 要用。
+	// 不接的话脚本里所有「按怪物名判断」都恒 false（静默不工作）。
+	npcManager.Monsters = monsterDB
+
+	// ---- 任务系统 ----
+	//
+	// ★ 42 个任务脚本（20,819 行）**零翻译复用**：
+	//   quest.lua 框架 + 任务脚本都由 script 包直接加载，
+	//   game 层只提供存储与推送能力（QuestHost）。
+	//
+	//   装不上的后果：所有 NPC 对话里的「任务」入口点了没反应，
+	//   而且不报错（任务脚本根本没注册）。
+	questHost := &game.QuestHost{
+		Players:   players,
+		Broadcast: broadcaster,
+		Repo:      storage.NewQuestRepository(store),
+		NPCs:      npcManager,
+		Logger:    slog.Default(),
+	}
+	questService := game.NewQuestService(
+		script.ResolveFrameworkDir(),
+		script.ResolveScriptRoot(),
+		questHost,
+		questHost.Repo,
+		script.NewNameTable(mapNames),
+		slog.Default(),
+	)
+	defer questService.Close()
+	worldService.Quests = questService
 	defer npcManager.Close()
 
 	npcHandler := &game.NPCHandler{
@@ -370,10 +400,26 @@ func main() {
 	// 所以 GuildHandler 需要 chat 仓储
 	guildHandler.Chat = chatRepo
 
+	// 查询类与杂项路由（悬停看名字/看装备/排行榜/聊天记录/腰带吃药/登出）
+	queryHandler := &game.QueryHandler{
+		Players:   players,
+		Worlds:    worldService,
+		Broadcast: broadcaster,
+		Logger:    slog.Default(),
+		Items:     itemDB,
+		Chars:     storage.NewCharacterRepository(store),
+		Chat:      chatRepo,
+		ItemRepo:  storage.NewItemRepository(store),
+		Teams:     teamManager,
+		Inventory: inventoryHandler,
+		Sessions:  loginHandler.Sessions,
+		Guilds:    storage.NewGuildRepository(store),
+	}
+
 	if err := game.RegisterAllRoutes(dispatcher, loginHandler, actionHandler,
 		inventoryHandler, spellHandler, deathHandler, shopHandler, npcHandler, chatHandler,
 		teamManager, securedHandler, tradeManager, guildHandler, stallHandler,
-		auctionHandler, deliveryHandler, friendHandler); err != nil {
+		auctionHandler, deliveryHandler, friendHandler, queryHandler); err != nil {
 		slog.Error("register routes", "error", err)
 		os.Exit(1)
 	}

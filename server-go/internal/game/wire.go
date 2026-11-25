@@ -822,3 +822,170 @@ func RegisterFriendRoutes(dispatcher *transport.Dispatcher, friends *FriendHandl
 	}
 	return nil
 }
+
+// RegisterQueryRoutes 注册查询类与杂项路由（补齐剩余 CM）。
+//
+// 【依据】playernet.cpp 的 net_CM_QUERY* / net_CM_REQUEST*
+//
+// ★ 这一批之前全部缺失，但客户端 main.gd 已经实现了解析，
+// 所以每一条都是玩家能直接感知的功能空白（悬停看名字、看别人装备、
+// 排行榜、聊天记录、腰带吃药、主动登出……）。
+func RegisterQueryRoutes(dispatcher *transport.Dispatcher, q *QueryHandler) error {
+	if q == nil {
+		return nil
+	}
+	routes := []struct {
+		id protocol.CMType
+		fn transport.HandlerFunc
+	}{
+		{protocol.CM_QUERYPLAYERNAME, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMQueryPlayerName
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.QueryPlayerName(ctx, s.ID(), req.UID)
+		}},
+		{protocol.CM_QUERYNPCNAME, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMQueryNPCName
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.QueryNPCName(ctx, s.ID(), req.UID)
+		}},
+		{protocol.CM_QUERYPLAYERWLDESP, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMQueryPlayerWLDesp
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.QueryPlayerWLDesp(ctx, s.ID(), req.UID)
+		}},
+		{protocol.CM_QUERYGOLD, func(ctx context.Context, s *transport.Session, _ protocol.Packet) error {
+			// CM_QUERYGOLD 是 MessageEmpty（不带 uid），查的就是自己
+			pl, ok := q.Players.ByChannel(s.ID())
+			if !ok {
+				return nil
+			}
+			return q.QueryGold(ctx, s.ID(), pl.UID)
+		}},
+		{protocol.CM_QUERYUIDBUFF, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMQueryUIDBuff
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.QueryUIDBuff(ctx, s.ID(), req.UID)
+		}},
+		{protocol.CM_QUERYBASEMAPUID, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMQueryBaseMapUID
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.QueryBaseMapUID(ctx, s.ID(), req.MapID)
+		}},
+		{protocol.CM_QUERYRANKING, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMQueryRanking
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.QueryRanking(ctx, s.ID(), req.Type)
+		}},
+		{protocol.CM_REQUESTLATESTCHATMESSAGE, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRequestLatestChatMessage
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.RequestLatestChatMessage(ctx, s.ID(), req)
+		}},
+		{protocol.CM_QUERYCHATMESSAGE, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMQueryChatMessage
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.QueryChatMessage(ctx, s.ID(), req.MsgID)
+		}},
+		{protocol.CM_QUERYCHATPEERLIST, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMQueryChatPeerList
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.QueryChatPeerList(ctx, s.ID(), trimCString([]byte(req.Input.String())))
+		}},
+		{protocol.CM_CREATECHATGROUP, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMCreateChatGroup
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.CreateChatGroup(ctx, s.ID(), req)
+		}},
+		{protocol.CM_BLOCKPLAYER, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMBlockPlayer
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.BlockPlayer(ctx, s.ID(), req.CPID)
+		}},
+		{protocol.CM_SETFOLLOWTEAMLEADER, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMSetFollowTeamLeader
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.SetFollowTeamLeader(ctx, s.ID(), req.Follow)
+		}},
+		{protocol.CM_REQUESTSPACEMOVE, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRequestSpaceMove
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.RequestSpaceMove(ctx, s.ID(), req)
+		}},
+		{protocol.CM_REQUESTLOGOUT, func(ctx context.Context, s *transport.Session, _ protocol.Packet) error {
+			return q.RequestLogout(ctx, s.ID())
+		}},
+		{protocol.CM_REQUESTCONSUMEBELT, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRequestConsumeBelt
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.RequestConsumeBelt(ctx, s.ID(), req.Slot)
+		}},
+		{protocol.CM_QUERYCORECORD, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMQueryCORecord
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.QueryCORecord(ctx, s.ID(), req.AimUID)
+		}},
+		{protocol.CM_REQUESTMAGICDAMAGE, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRequestMagicDamage
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.RequestMagicDamage(ctx, s.ID(), req.MagicID, req.AimUID)
+		}},
+		{protocol.CM_MAKEITEM, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMMakeItem
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.MakeItem(ctx, s.ID(), req.ItemID, req.Count)
+		}},
+		{protocol.CM_REQUESTKILLPETS, func(ctx context.Context, s *transport.Session, _ protocol.Packet) error {
+			return q.RequestKillPets(ctx, s.ID())
+		}},
+		{protocol.CM_REQUESTHOSTOFFLINE, func(ctx context.Context, s *transport.Session, _ protocol.Packet) error {
+			return q.RequestHostOffline(ctx, s.ID())
+		}},
+		{protocol.CM_SETRUNTIMECONFIG, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMSetRuntimeConfig
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return q.SetRuntimeConfig(ctx, s.ID(), req)
+		}},
+	}
+	for _, r := range routes {
+		if err := dispatcher.Register(r.id, r.fn); err != nil {
+			return fmt.Errorf("register %v: %w", r.id, err)
+		}
+	}
+	return nil
+}

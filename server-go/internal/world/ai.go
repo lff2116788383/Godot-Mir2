@@ -107,6 +107,25 @@ func (m *MapState) runOneAI(uid uint64, e *Entity, r *rand.Rand) (AIAction, bool
 		}
 	}
 
+	// ★ 1.5 自愈 / 治疗友军（蚁后）
+	//
+	// 【依据】serveranthealer.cpp:39-60：
+	//
+	//	while(!dead){
+	//	    if(hp < maxHP){ dispatchAction(治疗动作); updateHealth(20); wait(1000); continue; }
+	//	    // 否则遍历视野内友军，逐个 sendHeal（+10HP/+5MP）
+	//	    wait(1000);
+	//	}
+	//
+	// ★ 位置必须在「找目标」之前：
+	//
+	//	蚁后被打时也在自愈，不能因为「有目标了」就不奶自己。
+	//	原版的循环是「先自愈，再看有没有事做」，顺序反了会出现
+	//	「被围殴时蚁后完全不回血」——这是最不该发生的。
+	if act, healed := m.tryHeal(uid, e, rec, ai); healed {
+		return act, true
+	}
+
 	// 2. 没目标就找
 	if ai.TargetUID == 0 {
 		ai.TargetUID = m.pickTarget(uid, e, rec)
@@ -137,6 +156,98 @@ func (m *MapState) runOneAI(uid uint64, e *Entity, r *rand.Rand) (AIAction, bool
 	}
 	if act, ok := m.randomMove(uid, e, rec, ai, r); ok {
 		return act, true
+	}
+	return AIAction{}, false
+}
+
+
+// tryHeal 处理自愈与治疗友军（蚁后的核心行为）。
+//
+// 【依据】serveranthealer.cpp:5-60
+//
+//	hp < maxHP        → 治疗自己 +20HP，等 1 秒
+//	否则遍历视野友军   → 在治疗技能射程内的各 +10HP/+5MP
+//
+// ★ 两张独立计时：
+//
+//	自愈和治友军是两条并行节奏。共用计时会让「刚给自己奶一口」
+//	导致「这一秒内不给队友奶」（反之亦然）。
+//
+// ★ 只在「真的做了治疗」时返回 true：
+//
+//	返回 true 意味着本 tick 消耗掉了这个怪的 AI 机会，
+//	如果治疗没生效（满血且周围无伤员）继续往下走追击逻辑 ——
+//	否则满血的蚁后会站着不动。
+func (m *MapState) tryHeal(uid uint64, e *Entity, rec MonsterRecord, ai *AIState) (AIAction, bool) {
+	if rec.Profile == nil {
+		return AIAction{}, false
+	}
+	prof := rec.Profile
+	interval := prof.SelfHealIntervalMS
+	if interval <= 0 {
+		interval = 1000
+	}
+
+	// ---- 1. 自愈 ----
+	if prof.SelfHealHP > 0 && e.HP > 0 && e.HP < e.MaxHP {
+		if ai.LastSelfHealMS == 0 || m.NowMS-ai.LastSelfHealMS >= interval {
+			e.HP += prof.SelfHealHP
+			if e.HP > e.MaxHP {
+				e.HP = e.MaxHP
+			}
+			if prof.SelfHealMP > 0 {
+				e.MP += prof.SelfHealMP
+				if e.MP > e.MaxMP {
+					e.MP = e.MaxMP
+				}
+			}
+			ai.LastSelfHealMS = m.NowMS
+			// 自愈要广播成「对自己施法」，客户端才播特效
+			return AIAction{
+				Kind:      "attack",
+				UID:       uid,
+				Target:    uid,
+				Hit:       true,
+				SpellName: "蚂蚁道士_治疗",
+			}, true
+		}
+		// 冷却中也不该丢下追击 —— 继续往下走
+	}
+
+	// ---- 2. 治疗友军 ----
+	if prof.HealAllyHP > 0 && prof.HealAllyRange > 0 {
+		if ai.LastAllyHealMS == 0 || m.NowMS-ai.LastAllyHealMS >= interval {
+			for otherUID, other := range m.Entities {
+				if otherUID == uid || other.Dead() || other.HP >= other.MaxHP {
+					continue
+				}
+				// 只奶友军（同阵营），不奶玩家
+				if other.Type == EntityPlayer {
+					continue
+				}
+				if ChebyshevDistance(e.Point(), other.Point()) > prof.HealAllyRange {
+					continue
+				}
+				other.HP += prof.HealAllyHP
+				if other.HP > other.MaxHP {
+					other.HP = other.MaxHP
+				}
+				if prof.HealAllyMP > 0 {
+					other.MP += prof.HealAllyMP
+					if other.MP > other.MaxMP {
+						other.MP = other.MaxMP
+					}
+				}
+				ai.LastAllyHealMS = m.NowMS
+				return AIAction{
+					Kind:      "attack",
+					UID:       uid,
+					Target:    otherUID,
+					Hit:       true,
+					SpellName: "蚂蚁道士_治疗",
+				}, true
+			}
+		}
 	}
 	return AIAction{}, false
 }

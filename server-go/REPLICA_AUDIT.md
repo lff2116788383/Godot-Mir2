@@ -1876,3 +1876,138 @@ Go 侧**没有** per-actor Lua state（几千玩家各起一个 gopher-lua 内�
 44 个任务、20,819 行，依赖 `uidRemoteCall` 254 处（现在能跑了）、
 12 个 quest 绑定、每任务独立 Lua state。
 **本轮把地基（`uidRemoteCall` + `server` 表）打通了，任务系统可以在这上面做。**
+
+---
+
+# B5 第十八批：补齐剩余系统（本轮）
+
+**服务端测试 512 项全通过。客户端 c9c8 15/15。42 个任务脚本全部加载。**
+
+## 一、登录态数据下发（5 条 SM 消息，之前一条都没发）
+
+客户端 main.gd 早已实现解析，服务端从不推 → 每次重登都是「新客户端」状态：
+
+| 消息 | 缺它的表现 |
+|---|---|
+| `SM_LEARNEDMAGICLIST` | 技能栏空白，玩家以为技能丢了 |
+| `SM_BUFFIDLIST` | buff 图标不显示，不知道身上有幽灵盾 |
+| `SM_VIEWRANGE` | 视野用客户端默认值，与服务端不一致 |
+| `SM_PLAYERCONFIG` | 快捷键/自动喝药全丢，每次要重设 |
+| `SM_SAFEZONELIST` | 安全区不显示，站里面还以为会被打 |
+
+新增 `WorldService.pushLoginStates` + `world.World.SafeZone`，
+顺序照抄原版 `player.cpp:2410-2460 postRebindOK`。
+
+## 二、CM 路由：62 → 85 条（协议表 88 条，剩 3 条非业务）
+
+新增 `internal/game/query.go`（520 行）+ `RegisterQueryRoutes`：
+
+| 系统 | 新增路由 |
+|---|---|
+| 查询 | 玩家名 / NPC 名 / 外观(WLDesp) / 金币 / buff / 地图UID / CORecord |
+| 排行榜 | `CM_QUERYRANKING`（金/经验两榜，SQL + 白名单防注入） |
+| 聊天 | 最近记录 / 单条查询 / 搜对象 / 建群 / 拉黑 |
+| 组队 | `CM_SETFOLLOWTEAMLEADER`（跟随开关） |
+| 其他 | 主动传送 / 主动登出 / 断线下线 / 腰带吃药 / 运行时配置 / 杀宠物 / GM 造物 |
+
+★ `CM_REQUESTLATESTCHATMESSAGE` 之前 `RetrieveLatest` 有实现但**没有任何路由调用**，
+  也没在登录推 → 玩家重登后聊天窗口完全空白，寄送通知/公会邀请/私聊全看不到。
+
+★ `CM_MAKEITEM` 原版不校验 GM（任何客户端都能刷物品），
+  Go 侧加了 `MIR2X_GM_NAMES` 环境变量白名单，默认为空即全部拒绝。
+
+## 三、怪物子类 AI：4 → 22 个（完整覆盖）
+
+原版 `enableaddco.cpp:addMonster` 的 22 个 case 全部对齐。
+
+★★ 这里踩了一个「静默失效」的大坑，值得记录 ★★
+
+最初凭「感觉」写了 24 个配置（牛魔守卫 / 沉船领主 / 根须蜘蛛 / 红月恶魔…），
+**其中 11 个在怪物表里根本不存在**。`ProfileByMonsterName` 返回 nil，
+静默退化成普通怪，**没有任何报错**。表现为「Boss 不放技能」，排查时完全想不到是名字错。
+
+正确做法：从 `enableaddco.cpp` 里 `DBCOM_MONSTERID(u8"...")` 逐个抄，
+得到真实名：变异骷髅 / 超强骷髅 / 神兽 / 食人花 / 角蝇 / 栗子树 / 沙漠树魔 /
+掷斧骷髅 / 触角神魔 / 沙鬼 / 僵尸_1 / 蚂蚁道士 / 沃玛教主 / 触龙神 / 祖玛雕像 /
+祖玛教主 / 爆裂蜘蛛 / 幻影蜘蛛 / 赤月恶魔 / 霸王教主 / 潘夜左护卫 / 潘夜右护卫。
+
+（注意 `潘夜左护卫`/`右护卫` 对应 `ServerMinotaurGuardian`、
+`霸王教主` 才是 `ServerShipwreckLord` —— 名字与语义完全不对应。）
+
+新增 AIProfile 能力：
+- `SelfHealHP/MP + IntervalMS`：蚁后自愈（hp<maxHP 时 +20/+10，1 秒）
+- `HealAllyHP/MP + MagicID + Range`：蚁后治疗友军（+10/+5，6 格内）
+- `ChainOnHit`：沃玛教主雷电术命中后对周围补一发
+
+★ 自愈/治疗必须在「找目标」**之前**执行（原版循环顺序），
+  反了会出现「被围殴时蚁后完全不回血」。
+★ 自愈与治友军是**两条独立计时**，共用计时会让「刚奶完自己就不奶队友」。
+
+## 四、任务系统：42 个脚本 / 20,819 行，零翻译复用
+
+### 核心思路
+
+42 个任务脚本全部写在 `quest.lua` 的 API 之上。只要补齐 C++ 侧的
+9 个绑定 + 协程原语，**2 万行原版脚本直接可用**，一行都不用翻译。
+
+新增 `internal/script/quest_runtime.go`（690 行）+ `internal/game/quest.go`（250 行）。
+
+### 四个必须解决的语法/语义障碍
+
+1. **`<close>` 属性（Lua 5.4）** —— gopher-lua 是 5.1，直接编译报
+   `near '<': syntax error`。quest.lua 里有 13 处真实用法。
+   降级为「作用域结束调 `getmetatable(x).__close(x)`」。
+
+   ★ 不能写成 `x:close()` —— 两种对象（criticalSection / switchMark）
+     都只有 `__close` 元方法，没有 `close` 普通方法。
+     写成 `:close()` 会报 "attempt to call a nil value"。
+
+   ★ 不能只删不调 —— criticalSection 是**计数器**，只增不减会让
+     该协程**永远不能再 yield**，第一次 pause 就炸。
+
+2. **`return` 后插入语句** —— Lua 要求 return 必须是块内最后一条。
+   close 调用必须插在 return **之前**，否则 `near 'do': syntax error`
+   而且报错行指向 `end`，极难定位。
+
+3. **`load(string)`** —— Lua 5.1 的 load 只接受函数。补兼容层包成 reader 闭包。
+
+4. **`getThreadKey() ~= getMainScriptThreadKey()`** —— setQuestFSMTable 用它
+   防止「非主线程改状态机表」。Go 侧用 `_RSVD_NAME_currentThreadKey` 全局。
+
+### 顺带修掉的两个真实缺陷
+
+| 缺陷 | 后果 |
+|---|---|
+| `NPCManager.mapNameTable()` 返回**空表** | `getNPCharUID` 全返回 nil，任务挂不到 NPC 上；2 个任务加载直接失败 |
+| `NPCManager.monsterNameTable()` 返回**空表** | `getMonsterName` 恒 nil，脚本里所有按怪物名判断都走 else |
+
+两者现在都从真实数据源反查（`world.MapNameOf` 603 条 / `MonsterDB.NameTable` 364 条）。
+
+### 有意的降级（诚实标注）
+
+| 项 | 现状 |
+|---|---|
+| `uidRemoteCall` | 从「返回 nil 占位」改成**在本地 Lua 执行代码串**。任务注册 handler 能成功；跨 actor 的真实远程执行仍不支持 |
+| `addQuestGridTrigger` / `setupNPCQuestBehavior` | 返回递增句柄表示「注册成功」，但**格子踩上去不会触发任务**（缺格子触发器系统） |
+| `waitNotify` / `pickNotify` | 立即返回 nil（跨 actor 通知队列未实现） |
+| 任务状态持久化 | 表已建（42 张），字段读写通了；但 FSM 状态机的大量边界情形未逐一验证 |
+
+## 验证
+
+| 项 | 结果 |
+|---|---|
+| 编译 / vet / 全量测试 | 全通过（512 项） |
+| 任务脚本加载 | **42/42 成功** |
+| 任务表创建 | **42 张** |
+| 服务端实跑 | 比奇县 1106 怪 / 27 守卫 / 25 NPC / 3 安全区，**零 error** |
+| 客户端 c9c8 | **15 项全过** |
+
+## 当前覆盖率总览
+
+| 维度 | 之前 | 现在 |
+|---|---|---|
+| CM 路由 | 62 / 88 | **85 / 88**（剩 BEGIN/END/PICKUP，均非缺失） |
+| 怪物子类 | 4 / 22 | **22 / 22** |
+| 任务脚本 | 0 / 42 | **42 / 42 加载** |
+| 登录态下发 | 0 / 5 | **5 / 5** |
+| 测试 | 364 | **512** |

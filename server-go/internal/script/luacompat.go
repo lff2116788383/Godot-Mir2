@@ -34,6 +34,68 @@ func installCompat(L *lua.LState) {
 	installMathType(L)
 	installUTF8Stub(L)
 	installCoroutineCompat(L)
+	installLoadCompat(L)
+}
+
+// installLoadCompat 让 Lua 5.1 的 load() 也接受字符串。
+//
+// ★ Lua 5.2+ 的 load(chunk) 可以直接吃字符串，5.1 只接受**函数**。
+//
+//	quest.lua 与任务脚本里大量用
+//
+//		local f = load(config.code)     -- config.code 是字符串
+//		f(...)
+//
+//	5.1 下会报 "bad argument #1 to 'load' (function expected, got string)"。
+//	这个错误信息完全不提「版本差异」，极易误判成脚本自己写错了。
+//
+// 实现：包一层，字符串参数先包成「只返回一次该串」的闭包再交给原 load。
+func installLoadCompat(L *lua.LState) {
+	orig, ok := L.GetGlobal("load").(*lua.LFunction)
+	if !ok {
+		return
+	}
+	L.SetGlobal("load", L.NewFunction(func(l *lua.LState) int {
+		top := l.GetTop()
+		chunk := l.Get(1)
+
+		// 把字符串包成「只返回一次」的 reader 函数
+		var reader lua.LValue = chunk
+		if str, isStr := chunk.(lua.LString); isStr {
+			delivered := false
+			reader = l.NewFunction(func(inner *lua.LState) int {
+				if delivered {
+					inner.Push(lua.LNil)
+					return 1
+				}
+				delivered = true
+				inner.Push(str)
+				return 1
+			})
+		}
+
+		// 直接调用原 load：参数 = reader + 其余原参数
+		l.Push(orig)
+		l.Push(reader)
+		extra := 0
+		for i := 2; i <= top; i++ {
+			l.Push(l.Get(i))
+			extra++
+		}
+		l.Call(1+extra, lua.MultRet) // 原 load 返回 1~2 个值
+		// 归一：确保至少返回一个值（失败时补 nil + 错误串）
+		n := l.GetTop() - top
+		if n <= 0 {
+			l.Push(lua.LNil)
+			l.Push(lua.LString("load failed"))
+			return 2
+		}
+		if n == 1 && l.Get(-1) == lua.LNil {
+			l.Push(lua.LString("load failed"))
+			return 2
+		}
+		return n
+	}))
 }
 
 // installTablePack 补 table.pack / table.unpack。

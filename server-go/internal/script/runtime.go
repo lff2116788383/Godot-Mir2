@@ -245,6 +245,14 @@ const (
 	SysAllowRedName = "_RSVD_NAME_ALLOW_REDNAME_761479946"
 	SysSpaceMove    = "_RSVD_NAME_SPACE_MOVE_683761479946"
 	SysGoldName     = "金币（小）"
+
+	// SysDone 任务完成状态（sysconst.hpp:172 SYS_DONE）
+	//
+	// ★ 这是**状态名**不是触发器：任务走到这个状态就结束了，
+	//	quest.lua 会关掉该玩家所有 fsm 的状态运行器并清空状态。
+	SysDone = "_RSVD_NAME_DONE__06562813788"
+	// SysQuestFSM 主状态机名（sysconst.hpp:203 SYS_QSTFSM）
+	SysQuestFSM = "_RSVD_NAME_QST_FSM_4194347313"
 )
 
 // MaxNPCDistance 是玩家与 NPC 的最大交互格距（sysconst.hpp:128）。
@@ -265,6 +273,39 @@ func DefaultConsts() map[string]lua.LValue {
 		"SYS_SPACEMOVE":      lua.LString(SysSpaceMove),
 		"SYS_GOLDNAME":       lua.LString(SysGoldName),
 		"SYS_MAXNPCDISTANCE": lua.LNumber(MaxNPCDistance),
+
+		// ---- 任务系统常量（sysconst.hpp:18-40, 171-203）----
+		//
+		// ★ SYS_QSTFSM 是**主状态机名**。任务脚本里
+		//   `setQuestFSMTable{...}` 不带名字时默认用它。
+		//   缺这个常量，quest.lua 的 dbGetQuestState 里
+		//   `states[SYS_QSTFSM]` 就是 nil 索引 —— 42 个任务全部加载失败，
+		//   报错还是 "table index is nil"，完全看不出是缺常量。
+		"SYS_QSTFSM": lua.LString(SysQuestFSM),
+		"SYS_DONE":   lua.LString(SysDone),
+
+		// 任务触发器类型（sysconst.hpp:18-40 SYS_ON_*）
+		"SYS_ON_BEGIN":    lua.LNumber(0),
+		"SYS_ON_GAINEXP":  lua.LNumber(0),
+		"SYS_ON_GAINITEM": lua.LNumber(1),
+		"SYS_ON_GAINGOLD": lua.LNumber(2),
+		"SYS_ON_ONLINE":   lua.LNumber(3),
+		"SYS_ON_OFFLINE":  lua.LNumber(4),
+		"SYS_ON_DIE":      lua.LNumber(5),
+		"SYS_ON_REVIVE":   lua.LNumber(6),
+		"SYS_ON_LEVELUP":  lua.LNumber(7),
+		"SYS_ON_KILL":     lua.LNumber(8),
+		"SYS_ON_TEAMUP":   lua.LNumber(9),
+		"SYS_ON_TEAMDOWN": lua.LNumber(10),
+		"SYS_ON_APPEAR":   lua.LNumber(11),
+		"SYS_ON_DISAPPEAR": lua.LNumber(12),
+		"SYS_ON_END":      lua.LNumber(13),
+
+		// 执行结果码（luaf / coop 返回值）
+		"SYS_EXECDONE":   lua.LNumber(0),
+		"SYS_EXECERROR":  lua.LNumber(1),
+		"SYS_EXECBADUID": lua.LNumber(2),
+		"SYS_POSINF":     lua.LNumber(1 << 30),
 		// 日志级别（server.hpp LOGTYPE_*）
 		"LOGTYPE_INFO":    lua.LNumber(0),
 		"LOGTYPE_WARNING": lua.LNumber(1),

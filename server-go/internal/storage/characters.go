@@ -232,3 +232,43 @@ func (r *CharacterRepository) execUpdate(ctx context.Context, query string, args
 	}
 	return nil
 }
+
+// RankingEntry 是排行榜的一条记录。
+type RankingEntry struct {
+	DBID uint32
+	Name string
+	Exp  uint64
+	Gold uint64
+}
+
+// Ranking 取排行榜前 limit 名（playernet.cpp:1614 net_CM_QUERYRANKING）。
+//
+// orderBy 只接受 "fld_exp" 或 "fld_gold" —— 必须白名单校验：
+// 这个值会直接拼进 SQL，不过滤就是注入点。
+func (r *CharacterRepository) Ranking(ctx context.Context, orderBy string, limit int) ([]RankingEntry, error) {
+	switch orderBy {
+	case "fld_exp", "fld_gold":
+	default:
+		return nil, fmt.Errorf("invalid ranking order: %q", orderBy)
+	}
+	if limit <= 0 || limit > 500 {
+		limit = 100
+	}
+	rows, err := r.store.db.QueryContext(ctx,
+		`select fld_dbid, fld_name, fld_exp, fld_gold from tbl_char order by `+orderBy+` desc limit ?`,
+		limit)
+	if err != nil {
+		return nil, fmt.Errorf("query ranking: %w", err)
+	}
+	defer rows.Close()
+
+	var result []RankingEntry
+	for rows.Next() {
+		var entry RankingEntry
+		if err := rows.Scan(&entry.DBID, &entry.Name, &entry.Exp, &entry.Gold); err != nil {
+			return nil, err
+		}
+		result = append(result, entry)
+	}
+	return result, rows.Err()
+}

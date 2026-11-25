@@ -85,6 +85,8 @@ type WorldService struct {
 	Shops *ShopHandler
 	// Golds 金币落库（createGuild 扣建会费要用）
 	Golds GoldRepository
+	// Quests 任务系统（玩家登录时要重放任务状态）
+	Quests *QuestService
 
 	// mapCache mapID -> *world.MapData，避免每次进场都读文件
 	mapCache map[uint32]*world.MapData
@@ -398,10 +400,142 @@ func (s *WorldService) Enter(ctx context.Context, ch storage.Character, channelI
 // 两件事都在同一个地方做，因为它们共享一个性质：
 // **只在登录时需要，且都靠系统聊天 / SM_GUILDWARLIST 走**。
 func (s *WorldService) pushLoginExtras(ctx context.Context, p *Player) {
+	s.pushLoginStates(ctx, p)
 	if s.GuildWars != nil {
 		s.GuildWars.OnPlayerLogin(ctx, p.DBID)
 	}
 	s.repushUnclaimedDeliveries(ctx, p)
+	// 任务状态重放（原版 _RSVD_NAME_restoreQuestStates）
+	//
+	// ★ 必须在「地图/NPC 都就绪」之后：
+	//	任务状态函数会调 setupNPCQuestBehavior / setupMapGridTrigger，
+	//	那些要按地图名+NPC名找对象。地图没加载就全部找不到。
+	if s.Quests != nil {
+		s.Quests.OnPlayerLogin(ctx, p)
+	}
+}
+
+// pushLoginStates 推送「重登后客户端才有的状态」（原版 player.cpp:2426-2460）。
+//
+// ★★ 这一组之前**一条都没发**，是实打实的功能缺失 ★★
+//
+// 客户端的 main.gd 已经实现了这 5 条消息的解析，服务端从来不推，
+// 后果是每次重登都是「新客户端」状态：
+//
+//	SM_LEARNEDMAGICLIST  技能栏空白 → 玩家以为技能丢了
+//	SM_BUFFIDLIST        buff 图标不显示 → 不知道自己身上有幽灵盾
+//	SM_VIEWRANGE         视野用客户端默认值 → 与服务器实际视野不一致，
+//	                     会出现「看得见但打不到」或反之
+//	SM_PLAYERCONFIG      自动喝药/魔法快捷键全丢 → 每次重登要重设
+//	SM_SAFEZONELIST      安全区不显示 → 站在安全区里还以为会被打
+//
+// 顺序照抄原版 postRebindOK：外观/属性 → 背包 → 魔法 → 配置 → buff → 视野。
+// 反了不会崩，但客户端 UI 会闪（先画空背包再填内容）。
+func (s *WorldService) pushLoginStates(ctx context.Context, p *Player) {
+	if s.Broadcast == nil || p == nil || p.ChannelID == 0 {
+		return
+	}
+
+	// 1. 已学魔法（原版 player.cpp:2426）
+	if s.ItemRepo != nil {
+		if list, err := s.ItemRepo.LoadLearnedMagic(ctx, p.DBID); err == nil {
+			if payload, err := protocol.CerealSerialize(protocol.SDLearnedMagicList{MagicList: list}); err == nil {
+				_ = s.Broadcast.SendTo(p.ChannelID, protocol.SM_LEARNEDMAGICLIST, payload, 0)
+			}
+			// 顺带把 MagicTrain 填上：施法伤害与耗蓝要用修炼等级
+			for _, m := range list {
+				if p.MagicTrain == nil {
+					p.MagicTrain = make(map[uint32]int)
+				}
+				p.MagicTrain[m.MagicID] = int(m.Exp)
+			}
+		} else if s.Logger != nil {
+			s.Logger.Warn("load learned magic failed", "dbid", p.DBID, "error", err)
+		}
+
+		// 2. 玩家配置（快捷键 + 运行时配置，原版 player.cpp:2427）
+		if cfg, err := s.ItemRepo.LoadPlayerConfig(ctx, p.DBID); err == nil {
+			if payload, err := protocol.CerealSerialize(cfg); err == nil {
+				_ = s.Broadcast.SendTo(p.ChannelID, protocol.SM_PLAYERCONFIG, payload, 0)
+			}
+			// 快捷键回填，否则 SM_SETMAGICKEY 改过的绑定重登就没了
+			if p.MagicKeys == nil {
+				p.MagicKeys = make(map[uint32]uint8)
+			}
+			for magicID, key := range cfg.MagicKeyList.KeyList {
+				if magicID != 0 {
+					p.MagicKeys[magicID] = key
+				}
+			}
+		}
+	}
+
+	// 3. buff 列表（原版 player.cpp:2453）
+	//
+	// ★ UID 必须是**自己**的：客户端据此判断「这个 buff 列表是谁的」。
+	//   传 0 会让客户端把图标挂到空实体上。
+	if payload, err := protocol.CerealSerialize(protocol.SDBuffIDList{
+		UID:    p.UID,
+		IDList: p.Buffs,
+	}); err == nil {
+		_ = s.Broadcast.SendTo(p.ChannelID, protocol.SM_BUFFIDLIST, payload, 0)
+	}
+
+	// 4. 视野范围（原版 player.cpp:2829 SMViewRange 是定长消息）
+	if payload, err := protocol.AppendWirePayload(nil, protocol.SMViewRange{
+		ViewRange: uint8(p.ViewRange),
+	}); err == nil {
+		_ = s.Broadcast.SendTo(p.ChannelID, protocol.SM_VIEWRANGE, payload, 0)
+	}
+
+	// 5. 安全区（原版 servermapop.cpp 在新玩家进图时逐个下发）
+	s.pushSafeZones(ctx, p)
+}
+
+// pushSafeZones 把当前地图的安全区推给玩家（SDSafeZoneList）。
+//
+// ★ 为什么是「一条消息一个区域」而不是「一个列表」：
+//
+//	协议结构 SDSafeZoneList 里是 MapUID + **单个** Zone
+//	（见 serdes_second_batch.go:444），不是数组。
+//	原版也是每条消息带一整张地图的合并结果 ——
+//	一张图的所有矩形/圆形都在**同一个 Zone** 里，所以只发一条。
+//
+// ★ 单位转换：world.SafeZone 用 int（内部算法方便），
+//   协议 SDSafeZone 用 int32。必须逐项转换，不能强转切片
+//   （[]  int 和 []int32 内存布局不同）。
+func (s *WorldService) pushSafeZones(ctx context.Context, p *Player) {
+	if s.Worlds == nil || s.Broadcast == nil || p.ChannelID == 0 {
+		return
+	}
+	zone, err := s.Worlds.SafeZone(ctx, p.MapID)
+	if err != nil || zone.Empty() {
+		return
+	}
+
+	proto := protocol.SDSafeZone{
+		RectList:   make([][4]int32, 0, len(zone.Rects)),
+		CircleList: make([][3]int32, 0, len(zone.Circles)),
+	}
+	for _, r := range zone.Rects {
+		proto.RectList = append(proto.RectList, [4]int32{
+			int32(r[0]), int32(r[1]), int32(r[2]), int32(r[3]),
+		})
+	}
+	for _, c := range zone.Circles {
+		proto.CircleList = append(proto.CircleList, [3]int32{
+			int32(c[0]), int32(c[1]), int32(c[2]),
+		})
+	}
+
+	payload, err := protocol.CerealSerialize(protocol.SDSafeZoneList{
+		MapUID: p.MapUID,
+		Zone:   proto,
+	})
+	if err != nil {
+		return
+	}
+	_ = s.Broadcast.SendTo(p.ChannelID, protocol.SM_SAFEZONELIST, payload, 0)
 }
 
 // repushUnclaimedDeliveries 把未领取的投递重新推给玩家。

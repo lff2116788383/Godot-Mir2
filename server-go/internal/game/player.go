@@ -71,6 +71,14 @@ type Player struct {
 
 	// 掉落/拾取节流（原版 m_pickUpLock）
 	PickUpLock bool
+
+	// FollowTeamLeader 组队跟随开关（原版 m_followTeamLeader）。
+	//
+	// ★ 只影响**客户端自动跑位**，服务端不做任何逻辑 ——
+	//	原版也只是记住这个标志位（player.hpp:104）。
+	//	但它必须记住：不存的话客户端每次重登都恢复默认，
+	//	玩家会以为「跟随功能坏了」。
+	FollowTeamLeader bool
 }
 
 // MagicTrainLevel 返回某技能的修炼等级（未学/未练都返回 0）。

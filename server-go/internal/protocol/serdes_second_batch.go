@@ -996,3 +996,4 @@ func (v *SDUIDList) UnmarshalPortable(reader *PortableReader) error {
 	}
 	return reader.Err()
 }
+
