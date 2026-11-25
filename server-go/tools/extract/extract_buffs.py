@@ -148,6 +148,108 @@ def find_str(pattern, block, default=""):
     return m.group(1) if m else default
 
 
+def parse_acts(block):
+    """提取 actList 里的三类 act：attributeModifier / trigger / aura。
+
+    返回 dict：
+      attrs     [{"attr","value","percentage"}]
+      triggers  [{"name","duration","on","tps","value","percentage"}]
+      auras     [{"name","radius","lingerIn","lingerOut"}]
+      attackMods[{"name","prob"}]
+
+    【依据】buffrecord.hpp:215-260 BuffActRecordRef：
+
+        .attributeModifier { .arg }           属性修正
+        .trigger { .on, .tps, .arg }          定时/事件触发
+        .aura    { .radius, .linger{in,out} } 光环
+        .attackModifier { .prob }             攻击概率触发
+
+    ★ trigger 的 .arg 语义容易搞错：
+
+        .arg = buffArgWrapper<BuffValuePercentage>(20, 5)
+
+    第一个数是**固定值**，第二个是**百分比**。而 attributeModifier 里
+    单个参数时是百分比（见「治愈术」的 .arg = (20) → +20%）。
+
+    两种 act 的参数个数不同，共用一个解析函数会算错。
+    """
+    out = {"attrs": [], "triggers": [], "auras": [], "attackMods": []}
+    m = re.search(r"\.actList\s*\{", block)
+    if not m:
+        return out
+
+    start = block.index("{", m.start())
+    depth, j, n = 0, start, len(block)
+    while j < n:
+        c = block[j]
+        if c == '"':
+            j = skip_string(block, j)
+            continue
+        if c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            if depth == 0:
+                break
+        j += 1
+    body = block[start + 1:j]
+
+    for act in top_level_blocks(body):
+        name = find_str(r'\.name\s*=\s*u8"([^"]*)"', act)
+        if not name:
+            continue
+
+        if "attributeModifier" in act:
+            args = re.search(r"buffArgWrapper<\s*\w+\s*>\s*\(([^)]*)\)", act)
+            value, percentage = 0, 0
+            if args:
+                parts = [p.strip() for p in args.group(1).split(",") if p.strip()]
+                try:
+                    if len(parts) == 1:
+                        percentage = int(parts[0])
+                    elif len(parts) >= 2:
+                        value, percentage = int(parts[0]), int(parts[1])
+                except ValueError:
+                    pass
+            out["attrs"].append({"attr": name, "value": value, "percentage": percentage})
+
+        if ".trigger" in act or re.search(r"\btrigger\b", act):
+            args = re.search(r"buffArgWrapper<\s*\w+\s*>\s*\(([^)]*)\)", act)
+            value, percentage = 0, 0
+            if args:
+                parts = [p.strip() for p in args.group(1).split(",") if p.strip()]
+                try:
+                    if len(parts) == 1:
+                        value = int(parts[0])
+                    elif len(parts) >= 2:
+                        value, percentage = int(parts[0]), int(parts[1])
+                except ValueError:
+                    pass
+            out["triggers"].append({
+                "name": name,
+                "duration": find_int(r"\.duration\s*=\s*(-?\d+)", act),
+                "on": find_str(r"\.on\s*=\s*(\w+)", act, "BATGR_NONE"),
+                "tps": find_int(r"\.tps\s*=\s*(-?\d+)", act),
+                "value": value,
+                "percentage": percentage,
+            })
+
+        if re.search(r"\baura\b", act):
+            out["auras"].append({
+                "name": name,
+                "radius": find_int(r"\.radius\s*=\s*(-?\d+)", act),
+                "lingerIn": find_int(r"\.in\s*=\s*(-?\d+)", act),
+                "lingerOut": find_int(r"\.out\s*=\s*(-?\d+)", act),
+            })
+
+        if "attackModifier" in act:
+            out["attackMods"].append({
+                "name": name,
+                "prob": find_int(r"\.prob\s*=\s*(-?\d+)", act),
+            })
+    return out
+
+
 def parse_attrs(block):
     """提取 actList 里所有 attributeModifier 的 (attr, value, percentage)。
 
@@ -228,7 +330,7 @@ def main():
             "favor": int(fav) if fav.lstrip("-").isdigit() else 0,
             "dispellable": find_int(r"\.dispellable\s*=\s*(-?\d+)", block) != 0,
             "stackCount": find_int(r"\.stackCount\s*=\s*(-?\d+)", block),
-            "attrs": parse_attrs(block),
+            **parse_acts(block),
         }
 
     # buffrecord.inc 里 buffID 从 1 开始（第 0 块是空占位）
@@ -242,9 +344,18 @@ def main():
         json.dump(payload, f, ensure_ascii=False, indent=2)
 
     with_attrs = sum(1 for r in records.values() if r["attrs"])
-    print(f"buff {len(records)} 条，其中 {with_attrs} 条有属性修正")
-    for rec in list(records.values())[:5]:
-        print(f"  {rec['buffID']:3d} {rec['name']:<10s} attrs={rec['attrs']}")
+    with_trig = sum(1 for r in records.values() if r["triggers"])
+    with_aura = sum(1 for r in records.values() if r["auras"])
+    with_atk = sum(1 for r in records.values() if r["attackMods"])
+    print(f"buff {len(records)} 条：属性修正 {with_attrs} / 触发 {with_trig} / 光环 {with_aura} / 攻击修正 {with_atk}")
+    for rec in list(records.values())[:4]:
+        print(f"  {rec['buffID']:3d} {rec['name']:<10s}")
+        if rec["attrs"]:
+            print(f"      attrs={rec['attrs']}")
+        if rec["triggers"]:
+            print(f"      triggers={rec['triggers']}")
+        if rec["auras"]:
+            print(f"      auras={rec['auras']}")
 
 
 if __name__ == "__main__":

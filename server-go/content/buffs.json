@@ -14,7 +14,19 @@
           "value": 0,
           "percentage": 20
         }
-      ]
+      ],
+      "triggers": [
+        {
+          "name": "HP持续",
+          "duration": 6000,
+          "on": "BATGR_TIME",
+          "tps": 2,
+          "value": 20,
+          "percentage": 5
+        }
+      ],
+      "auras": [],
+      "attackMods": []
     },
     "2": {
       "buffID": 2,
@@ -28,7 +40,19 @@
           "value": 0,
           "percentage": -20
         }
-      ]
+      ],
+      "triggers": [
+        {
+          "name": "HP持续",
+          "duration": 6000,
+          "on": "BATGR_TIME",
+          "tps": 2,
+          "value": 0,
+          "percentage": -5
+        }
+      ],
+      "auras": [],
+      "attackMods": []
     },
     "3": {
       "buffID": 3,
@@ -36,7 +60,17 @@
       "favor": 1,
       "dispellable": false,
       "stackCount": 0,
-      "attrs": []
+      "attrs": [],
+      "triggers": [],
+      "auras": [
+        {
+          "name": "恢复光环使能",
+          "radius": 10,
+          "lingerIn": 500,
+          "lingerOut": 500
+        }
+      ],
+      "attackMods": []
     },
     "4": {
       "buffID": 4,
@@ -50,7 +84,10 @@
           "value": 1,
           "percentage": 5
         }
-      ]
+      ],
+      "triggers": [],
+      "auras": [],
+      "attackMods": []
     },
     "5": {
       "buffID": 5,
@@ -58,7 +95,15 @@
       "favor": 1,
       "dispellable": false,
       "stackCount": 0,
-      "attrs": []
+      "attrs": [],
+      "triggers": [],
+      "auras": [],
+      "attackMods": [
+        {
+          "name": "战栗使能",
+          "prob": 100
+        }
+      ]
     },
     "6": {
       "buffID": 6,
@@ -66,7 +111,19 @@
       "favor": 0,
       "dispellable": false,
       "stackCount": 0,
-      "attrs": []
+      "attrs": [],
+      "triggers": [
+        {
+          "name": "HP移动伤害",
+          "duration": 6000,
+          "on": "BATGR_MOVE",
+          "tps": 0,
+          "value": 20,
+          "percentage": 0
+        }
+      ],
+      "auras": [],
+      "attackMods": []
     },
     "7": {
       "buffID": 7,
@@ -74,7 +131,17 @@
       "favor": 1,
       "dispellable": false,
       "stackCount": 0,
-      "attrs": []
+      "attrs": [],
+      "triggers": [],
+      "auras": [
+        {
+          "name": "吸血光环使能",
+          "radius": 5,
+          "lingerIn": 500,
+          "lingerOut": 500
+        }
+      ],
+      "attackMods": []
     },
     "8": {
       "buffID": 8,
@@ -82,7 +149,15 @@
       "favor": 1,
       "dispellable": false,
       "stackCount": 0,
-      "attrs": []
+      "attrs": [],
+      "triggers": [],
+      "auras": [],
+      "attackMods": [
+        {
+          "name": "吸血",
+          "prob": 100
+        }
+      ]
     },
     "9": {
       "buffID": 9,
@@ -101,7 +176,10 @@
           "value": 2,
           "percentage": 5
         }
-      ]
+      ],
+      "triggers": [],
+      "auras": [],
+      "attackMods": []
     },
     "10": {
       "buffID": 10,
@@ -120,7 +198,10 @@
           "value": 2,
           "percentage": 5
         }
-      ]
+      ],
+      "triggers": [],
+      "auras": [],
+      "attackMods": []
     },
     "11": {
       "buffID": 11,
@@ -134,7 +215,19 @@
           "value": 0,
           "percentage": 10
         }
-      ]
+      ],
+      "triggers": [
+        {
+          "name": "HP持续",
+          "duration": 3000,
+          "on": "BATGR_TIME",
+          "tps": 2,
+          "value": 20,
+          "percentage": 1
+        }
+      ],
+      "auras": [],
+      "attackMods": []
     },
     "12": {
       "buffID": 12,
@@ -148,7 +241,19 @@
           "value": 0,
           "percentage": 20
         }
-      ]
+      ],
+      "triggers": [
+        {
+          "name": "HP持续",
+          "duration": 4000,
+          "on": "BATGR_TIME",
+          "tps": 2,
+          "value": 20,
+          "percentage": 1
+        }
+      ],
+      "auras": [],
+      "attackMods": []
     },
     "13": {
       "buffID": 13,
@@ -162,7 +267,19 @@
           "value": 0,
           "percentage": 40
         }
-      ]
+      ],
+      "triggers": [
+        {
+          "name": "HP持续",
+          "duration": 4000,
+          "on": "BATGR_TIME",
+          "tps": 2,
+          "value": 20,
+          "percentage": 1
+        }
+      ],
+      "auras": [],
+      "attackMods": []
     },
     "14": {
       "buffID": 14,
@@ -176,7 +293,19 @@
           "value": 0,
           "percentage": 60
         }
-      ]
+      ],
+      "triggers": [
+        {
+          "name": "HP持续",
+          "duration": 6000,
+          "on": "BATGR_TIME",
+          "tps": 2,
+          "value": 20,
+          "percentage": 1
+        }
+      ],
+      "auras": [],
+      "attackMods": []
     },
     "15": {
       "buffID": 15,
@@ -190,7 +319,19 @@
           "value": 0,
           "percentage": 10
         }
-      ]
+      ],
+      "triggers": [
+        {
+          "name": "MP持续",
+          "duration": 3000,
+          "on": "BATGR_TIME",
+          "tps": 2,
+          "value": 20,
+          "percentage": 1
+        }
+      ],
+      "auras": [],
+      "attackMods": []
     },
     "16": {
       "buffID": 16,
@@ -204,7 +345,19 @@
           "value": 0,
           "percentage": 20
         }
-      ]
+      ],
+      "triggers": [
+        {
+          "name": "MP持续",
+          "duration": 4000,
+          "on": "BATGR_TIME",
+          "tps": 2,
+          "value": 20,
+          "percentage": 1
+        }
+      ],
+      "auras": [],
+      "attackMods": []
     },
     "17": {
       "buffID": 17,
@@ -218,7 +371,19 @@
           "value": 0,
           "percentage": 40
         }
-      ]
+      ],
+      "triggers": [
+        {
+          "name": "MP持续",
+          "duration": 4000,
+          "on": "BATGR_TIME",
+          "tps": 2,
+          "value": 20,
+          "percentage": 1
+        }
+      ],
+      "auras": [],
+      "attackMods": []
     },
     "18": {
       "buffID": 18,
@@ -232,7 +397,19 @@
           "value": 0,
           "percentage": 60
         }
-      ]
+      ],
+      "triggers": [
+        {
+          "name": "MP持续",
+          "duration": 6000,
+          "on": "BATGR_TIME",
+          "tps": 2,
+          "value": 20,
+          "percentage": 1
+        }
+      ],
+      "auras": [],
+      "attackMods": []
     },
     "19": {
       "buffID": 19,
@@ -251,7 +428,10 @@
           "value": 0,
           "percentage": 110
         }
-      ]
+      ],
+      "triggers": [],
+      "auras": [],
+      "attackMods": []
     },
     "20": {
       "buffID": 20,
@@ -270,7 +450,10 @@
           "value": 0,
           "percentage": 110
         }
-      ]
+      ],
+      "triggers": [],
+      "auras": [],
+      "attackMods": []
     },
     "21": {
       "buffID": 21,
@@ -289,7 +472,10 @@
           "value": 0,
           "percentage": 210
         }
-      ]
+      ],
+      "triggers": [],
+      "auras": [],
+      "attackMods": []
     }
   }
 }

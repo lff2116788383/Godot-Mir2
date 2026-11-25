@@ -374,6 +374,8 @@ func (w *World) DropItem(ctx context.Context, mapID uint32, x, y int, itemIDs []
 func (w *World) RefreshStats(ctx context.Context, mapID uint32, uid uint64, base CombatStats) error {
 	_, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
 		return nil, state.MutateEntity(uid, func(e *Entity) error {
+			// 记下基线，buff 到期时从这里重算
+			e.BaseStats = base
 			e.Stats = base
 			ApplyAttributeModifiers(&e.Stats, e.Buffs)
 			return nil
@@ -677,4 +679,45 @@ func (w *World) RemoveBuff(ctx context.Context, mapID uint32, uid uint64, buffID
 		})
 	}))
 	return err
+}
+
+// RecalcStats 从 BaseStats 重算 Stats（叠加当前 buff）。
+//
+// ★ 用在两个地方：
+//
+//  1. buff 到期 —— 必须回退属性，否则「上 buff 涨上去的数值永远不落」
+//  2. buff 被驱散/手动移除
+//
+// 从 BaseStats 重算而不是「反算」：百分比修正反算会漂移
+// （33 × 1.15 = 38，38 / 1.15 = 33.04 回不到 33）。
+func (w *World) RecalcStats(ctx context.Context, mapID uint32, uid uint64) error {
+	_, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return nil, state.MutateEntity(uid, func(e *Entity) error {
+			e.Stats = e.BaseStats
+			ApplyAttributeModifiers(&e.Stats, e.Buffs)
+			return nil
+		})
+	}))
+	return err
+}
+
+// RecalcAllStats 对一张图上所有实体重算属性。
+//
+// 用于 buff 批量到期（一个 tick 可能掉好几个）。
+func (w *World) RecalcAllStats(ctx context.Context, mapID uint32, uids []uint64) {
+	if len(uids) == 0 {
+		return
+	}
+	_, _ = w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		for _, uid := range uids {
+			if err := state.MutateEntity(uid, func(e *Entity) error {
+				e.Stats = e.BaseStats
+				ApplyAttributeModifiers(&e.Stats, e.Buffs)
+				return nil
+			}); err != nil {
+				continue
+			}
+		}
+		return nil, nil
+	}))
 }

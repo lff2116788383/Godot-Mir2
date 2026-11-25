@@ -2,6 +2,7 @@ package world
 
 import (
 	"math"
+	"math/rand"
 	"sort"
 )
 
@@ -36,7 +37,88 @@ type BuffRecord struct {
 	//	buff 的实际效果不是「加一个数字」而是「按属性名 + 百分比修正」。
 	//	同一个 buff 可能同时改 HP/AC/MAC 好几项（见 buffrecord.inc 的「HP」act）。
 	Acts []BuffAttributeModifier
+
+	// Triggers 定时触发列表（buffrecord.hpp:237-245 的 trigger）
+	//
+	// 用途：治愈术的「HP持续」每 500ms 回一次血、施毒术每 500ms 掉一次血。
+	// 没有这一项，治愈术就只是「上限涨 20% 但一点血都不回」。
+	Triggers []BuffTrigger
+
+	// AttackMods 攻击时概率触发的修正（buffrecord.hpp:246-250）
+	AttackMods []AttackModifier
+
+	// Auras 光环列表（buffrecord.hpp:220-231 的 aura）
+	//
+	// 用途：龙纹圣光/恢复光环 —— 半径内所有友方获得 buff。
+	// 没有这一项，「光环」就只是个图标，范围内的人毫无感觉。
+	Auras []BuffAura
 }
+
+// BuffAura 是一条光环（buffrecord.hpp:220-231）。
+//
+// 【依据】
+//
+//	.aura { .radius = 10, .linger { .in = 500, .out = 500 } }
+//
+//	radius     生效半径（格）
+//	lingerIn   进入光环后延迟多久生效（毫秒）—— 防止「一闪而过也吃到 buff」
+//	lingerOut  离开光环后延迟多久失效（毫秒）—— 防止「走一步就掉 buff」
+type BuffAura struct {
+	Name      string
+	Radius    int
+	LingerIn  int64
+	LingerOut int64
+}
+
+// BuffTrigger 是一条定时触发（buffrecord.hpp:237-245）。
+//
+// 【依据】buffacttrigger.cpp:9-43：
+//
+//	on = BATGR_TIME 时按 tps 频率触发，共 duration*tps/1000 次
+//	每次触发执行 arg（BuffValuePercentage）
+type BuffTrigger struct {
+	// Name act 名（"HP持续" / "MP持续" / "HP恢复" ...）
+	Name string
+	// Duration 持续时长（毫秒）。BADUR_UNLIMITED 表示无限制
+	Duration int64
+	// On 触发时机（BATGR_TIME / BATGR_ATTACK / BATGR_HITTED / BATGR_MOVE）
+	On string
+	// TPS 每秒触发次数（tps=2 表示每 500ms 一次）
+	TPS int
+	// Value / Percentage 每次触发的量（BuffValuePercentage 的两段）
+	Value      int
+	Percentage int
+}
+
+// TriggerIntervalMS 返回两次触发之间的间隔（毫秒）。
+//
+// tps<=0 时返回 0 表示「不按时间触发」——
+// 不能让调用方拿到 0 去做除法。
+func (t BuffTrigger) TriggerIntervalMS() int64 {
+	if t.TPS <= 0 {
+		return 0
+	}
+	return 1000 / int64(t.TPS)
+}
+
+// TriggerCount 返回这条 trigger 总共触发几次（-1 表示无限制）。
+func (t BuffTrigger) TriggerCount() int {
+	if t.Duration == BadurUnlimited {
+		return -1
+	}
+	if t.Duration <= 0 || t.TPS <= 0 {
+		return 0
+	}
+	return int(t.Duration * int64(t.TPS) / 1000)
+}
+
+// BATGR_* 触发时机（buffrecord.hpp:62-71）。
+const (
+	BATGRTime   = "BATGR_TIME"
+	BATGRMove   = "BATGR_MOVE"
+	BATGRAttack = "BATGR_ATTACK"
+	BATGRHitted = "BATGR_HITTED"
+)
 
 // BuffAttributeModifier 是一条属性修正（对应 buffrecord.hpp:255 attributeModifier）。
 //
@@ -103,6 +185,15 @@ type Buff struct {
 
 	// 由哪个 act 触发（对应 activeActList 的简化表达）
 	ActiveActs int
+
+	// TriggerRemainMS 距离下一次 trigger 触发的剩余毫秒
+	//
+	// 单独一个字段而不是复用 RemainMS：RemainMS 管的是「buff 整体还剩多久」，
+	// TriggerRemainMS 管「下次回血还有多久」。治愈术的 trigger 是
+	// 500ms 一次、buff 本身 6000ms，两者不同频。
+	TriggerRemainMS int64
+	// TriggeredCount 已触发次数（用于 TriggerCount 上限判定）
+	TriggeredCount int
 
 	// 记录（若上层注入了查表函数则从中取）
 	Record BuffRecord
@@ -411,4 +502,199 @@ func MaxMPDelta(base int32, buffs *BuffList) int32 {
 		}
 	}
 	return int32(cur - int(base))
+}
+
+// TickTriggers 推进所有 buff 的定时触发，返回本 tick 要执行的效果。
+//
+// 【依据】buffacttrigger.cpp:9-43 的 BATGR_TIME 分支。
+//
+// 返回值是「这条 trigger 应该作用于谁、生效什么」的列表，
+// 由上层转成扣血/回血/回蓝，world 层不直接改 HP（HP 属于 BattleObject）。
+//
+// ★ 为什么不在 Tick 里直接改 HP：
+//
+//	BuffList 挂在 Entity 上，但 Entity 的 HP 变更要经过
+//	「死亡判定 + 广播 + 仇恨处理」一整条链路。
+//	让 buff 直接改 HP 会绕过这些，出现「毒死了但不掉经验」。
+type BuffTriggerEffect struct {
+	// OwnerUID 受影响实体
+	OwnerUID uint64
+	// BuffID / BuffSeq 来源 buff
+	BuffID  uint32
+	BuffSeq uint64
+	// Name act 名（"HP持续" / "MP持续"）
+	Name string
+	// Amount 变动量（正数回、负数掉）
+	Amount int32
+	// IsMP 作用于 MP（否则作用于 HP）
+	IsMP bool
+}
+
+// TickTriggers 推进 trigger 计时并返回本 tick 的效果列表。
+//
+// 按 deltaMS 累进，而不是「每 tick 触发一次」：
+// tick 是 100ms、trigger 是 500ms，必须攒够 500ms 才触发一次，
+// 否则治愈术会变成「每 100ms 回一次」——10 倍速度。
+func (l *BuffList) TickTriggers(ownerUID uint64, deltaMS int64) []BuffTriggerEffect {
+	if l == nil || deltaMS <= 0 {
+		return nil
+	}
+	var out []BuffTriggerEffect
+	for _, b := range l.active {
+		for i := range b.Record.Triggers {
+			trig := &b.Record.Triggers[i]
+			if trig.On != BATGRTime {
+				continue // 只处理按时间触发的
+			}
+			interval := trig.TriggerIntervalMS()
+			if interval <= 0 {
+				continue
+			}
+			total := trig.TriggerCount()
+			if total == 0 {
+				continue
+			}
+
+			// ★ 首次触发要等满一个间隔，不能「一挂上就触发」。
+			//
+			//	TriggerRemainMS 初值 0 会让第一个 tick 就命中，
+			//	于是「duration 6000 / tps 2」实际触发 13 次而不是 12 次，
+			//	而且治愈术挂上瞬间立刻回一次血 —— 玩家会觉得回血快了一倍。
+			if b.TriggerRemainMS <= 0 && b.TriggeredCount == 0 {
+				b.TriggerRemainMS = interval
+			}
+			b.TriggerRemainMS -= deltaMS
+			// 可能一个 tick 跨过多个触发点（tick 200ms、interval 100ms）
+			for b.TriggerRemainMS <= 0 {
+				if total > 0 && b.TriggeredCount >= total {
+					break
+				}
+				b.TriggeredCount++
+				b.TriggerRemainMS += interval
+
+				isMP := trig.Name == "MP持续" || trig.Name == "MP恢复"
+				// 每次的变动量按「当前上限」算百分比部分；
+				// 这里拿不到上限，交给上层按实际 MaxHP/MaxMP 结算。
+				out = append(out, BuffTriggerEffect{
+					OwnerUID: ownerUID,
+					BuffID:   b.ID,
+					BuffSeq:  b.BuffSeq(),
+					Name:     trig.Name,
+					// Amount 先存「固定值」，百分比由上层补
+					Amount: int32(trig.Value),
+					IsMP:   isMP,
+				})
+			}
+		}
+	}
+	return out
+}
+
+// PendingTriggerPercentage 返回某条目 trigger 的百分比部分。
+//
+// 上层拿到 BuffTriggerEffect 后，按实体的 MaxHP/MaxMP 算百分比量，
+// 与 Amount（固定值）相加得到最终变动量。
+func PendingTriggerPercentage(buffs *BuffList, buffSeq uint64, name string) int {
+	if buffs == nil {
+		return 0
+	}
+	for _, b := range buffs.active {
+		if b.BuffSeq() != buffSeq {
+			continue
+		}
+		for _, t := range b.Record.Triggers {
+			if t.Name == name {
+				return t.Percentage
+			}
+		}
+	}
+	return 0
+}
+
+// AuraCandidate 是光环范围内的一个候选目标。
+type AuraCandidate struct {
+	UID uint64
+	X   int
+	Y   int
+}
+
+// AuraTargets 返回某条光环覆盖到的目标。
+//
+// 【依据】buffactaura.cpp 的 onActivate：按 radius 扫描周围格，
+// 对每个范围内的友方挂上「使能」类 buff。
+//
+// ★ linger（进出延迟）由上层实现：
+//
+//	world 层只负责「这一帧谁在范围内」，延迟逻辑需要跨 tick 记状态，
+//	放在地图 actor 的 AuraState 里更合适（这里是纯函数，好测）。
+func AuraTargets(cx, cy int, aura BuffAura, candidates []AuraCandidate) []uint64 {
+	if aura.Radius <= 0 || len(candidates) == 0 {
+		return nil
+	}
+	var out []uint64
+	for _, c := range candidates {
+		dx := c.X - cx
+		if dx < 0 {
+			dx = -dx
+		}
+		dy := c.Y - cy
+		if dy < 0 {
+			dy = -dy
+		}
+		d := dx
+		if dy > d {
+			d = dy
+		}
+		if d <= aura.Radius {
+			out = append(out, c.UID)
+		}
+	}
+	return out
+}
+
+// HasAura 判断 buff 是否带某条光环。
+func (r BuffRecord) HasAura(name string) bool {
+	for _, a := range r.Auras {
+		if a.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+// ==================== attackModifier（攻击概率修正）====================
+
+// AttackModifier 是一条攻击时概率触发的效果（buffrecord.hpp:246-250）。
+//
+// 【依据】
+//
+//	.attackModifier { .prob = 100 }
+//
+// prob 是「万分比」概率（100 = 1%）。原版用它实现「死亡威慑」这类
+// 攻击时附带额外效果（恐惧/吸血）的 buff。
+type AttackModifier struct {
+	Name string
+	Prob int
+}
+
+// RollAttackModifiers 在攻击时掷骰，返回本次触发的 modifier 名列表。
+//
+// ★ prob 是万分比而不是百分比：
+//
+//	buffrecord.inc 里「战栗使能」写的是 prob=100，
+//	如果当成 100% 那就是每次都触发，实际上它只是 1% 概率。
+func RollAttackModifiers(rec BuffRecord, r *rand.Rand) []string {
+	var out []string
+	if r == nil || len(rec.AttackMods) == 0 {
+		return nil
+	}
+	for _, m := range rec.AttackMods {
+		if m.Prob <= 0 {
+			continue
+		}
+		if m.Prob >= 10000 || r.Intn(10000) < m.Prob {
+			out = append(out, m.Name)
+		}
+	}
+	return out
 }

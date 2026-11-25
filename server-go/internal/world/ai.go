@@ -53,6 +53,8 @@ type AIAction struct {
 	Damage int32
 	Hit    bool
 	Dead   bool
+	// SpellName 本次攻击用的技能名（空 = 普通物理攻击）
+	SpellName string
 }
 
 // RunAI 推进地图上所有怪物的 AI。
@@ -110,19 +112,137 @@ func (m *MapState) runOneAI(uid uint64, e *Entity, r *rand.Rand) (AIAction, bool
 		ai.TargetUID = m.pickTarget(uid, e, rec)
 	}
 
-	// 3. 有目标：追 + 打
+	// 3. 有目标：先试特殊技能（Boss 的远程法术），再普通追击
 	if ai.TargetUID != 0 {
+		ai.IdleSinceMS = 0
+		if act, ok := m.trySpecialSpell(uid, e, rec, ai, r); ok {
+			return act, true
+		}
 		if act, ok := m.trackAndAttack(uid, e, rec, ai, r); ok {
 			return act, true
 		}
 		return AIAction{}, false
 	}
 
-	// 4. 没目标：随机游荡
+	// 4. 没目标：跟随主人（宠物/召唤兽）
+	if rec.Profile != nil && rec.Profile.FollowMaster && ai.MasterUID != 0 {
+		if act, ok := m.followMaster(uid, e, rec, ai, r); ok {
+			return act, true
+		}
+	}
+
+	// 5. 完全空闲：随机游荡
+	if ai.IdleSinceMS == 0 {
+		ai.IdleSinceMS = m.NowMS
+	}
 	if act, ok := m.randomMove(uid, e, rec, ai, r); ok {
 		return act, true
 	}
 	return AIAction{}, false
+}
+
+// trySpecialSpell 尝试施放特殊技能（Boss 的远程法术）。
+//
+// 【依据】serverzumataurus.cpp:7-56 的 runAICoro：
+//
+//	if(inDCCastRange(target, hellFire.castRange))       attackUID(target, 地狱火);
+//	else if(fireWall 冷却已过 && inRange(target, 火墙.castRange)) attackUID(target, 火墙);
+//	else                                                trackUID(target);
+//
+// 三个要点：
+//
+//  1. **按顺序尝试**，先命中先生效（地狱火优先于火墙）
+//  2. **每个技能有自己的冷却**，只记 LastAttackMS 不够
+//  3. **距离不满足就跳过**，落到普通追击
+func (m *MapState) trySpecialSpell(uid uint64, e *Entity, rec MonsterRecord,
+	ai *AIState, r *rand.Rand) (AIAction, bool) {
+	if rec.Profile == nil || len(rec.Profile.Specials) == 0 {
+		return AIAction{}, false
+	}
+	target, ok := m.Entities[ai.TargetUID]
+	if !ok || target.Dead() {
+		return AIAction{}, false
+	}
+	dist := ChebyshevDistance(e.Point(), target.Point())
+
+	for _, sp := range rec.Profile.Specials {
+		// 冷却
+		if ai.LastSpecialMS != 0 && m.NowMS-ai.LastSpecialMS < sp.CoolDownMS {
+			continue
+		}
+		// 距离（0 表示不限）
+		if sp.CastRange > 0 && dist > sp.CastRange {
+			continue
+		}
+		// 概率
+		if sp.ChancePercent > 0 && sp.ChancePercent < 100 {
+			if r == nil || r.Intn(100) >= sp.ChancePercent {
+				continue
+			}
+		}
+
+		result, err := m.Combat(uid, ai.TargetUID, sp.MagicID, r)
+		if err != nil {
+			continue
+		}
+		ai.LastSpecialMS = m.NowMS
+		ai.MarkAttack(m.NowMS)
+		return AIAction{
+			Kind:   "attack",
+			UID:    uid,
+			Target: ai.TargetUID,
+			Damage: result.Damage,
+			Hit:    result.Hit,
+			Dead:   result.Dead,
+			// 记录用的技能名，上层可据此选特效
+			SpellName: sp.Name,
+		}, true
+	}
+	return AIAction{}, false
+}
+
+// followMaster 跟随主人（宠物/召唤兽）。
+//
+// 【依据】servertaodog.cpp:37-43：
+//
+//	if(queryDead(masterUID)) goDie();
+//	else                     followMaster();
+func (m *MapState) followMaster(uid uint64, e *Entity, rec MonsterRecord,
+	ai *AIState, r *rand.Rand) (AIAction, bool) {
+	master, ok := m.Entities[ai.MasterUID]
+	if !ok {
+		return AIAction{}, false
+	}
+
+	// 主人死了 → 自己也死（神兽的设定）
+	if master.Dead() {
+		if rec.Profile != nil && rec.Profile.DieWithMaster {
+			e.HP = 0
+			if e.DieAtMS == 0 {
+				e.DieAtMS = m.NowMS
+			}
+		}
+		return AIAction{}, false
+	}
+
+	// 已经在主人身边（3 格内）就不动，避免「一直原地抖」
+	if ChebyshevDistance(e.Point(), master.Point()) <= 3 {
+		return AIAction{}, false
+	}
+
+	if !ai.CanMoveNow(m.NowMS, rec) {
+		return AIAction{}, false
+	}
+	from := e.Point()
+	next, ok := m.chaseStep(uid, from, master.Point(), ai, r)
+	if !ok {
+		return AIAction{}, false
+	}
+	if _, err, _ := m.MoveEntity(uid, next.X, next.Y, 1); err != nil {
+		return AIAction{}, false
+	}
+	ai.MarkMove(m.NowMS)
+	return AIAction{Kind: "move", UID: uid, From: from, To: next}, true
 }
 
 // pickTarget 选目标（monster.cpp:972 searchNearestTarget）。

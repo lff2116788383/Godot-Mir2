@@ -239,6 +239,8 @@ func (p *Player) WorldEntity(mapUID uint64, items *ItemDB) world.Entity {
 		MaxMP:     p.MaxMP,
 		ViewRange: p.ViewRange,
 		Stats:     p.CombatStatsFor(items),
+		// BaseStats 是 buff 到期时重算的基线
+		BaseStats: p.CombatStatsFor(items),
 	}
 }
 

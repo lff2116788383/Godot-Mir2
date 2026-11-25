@@ -188,7 +188,7 @@ func (d MonsterDef) ToRecord() MonsterRecord {
 		}
 	}
 
-	return MonsterRecord{
+	rec := MonsterRecord{
 		Name:        d.Name,
 		LookID:      d.LookID,
 		HP:          d.HP,
@@ -211,6 +211,10 @@ func (d MonsterDef) ToRecord() MonsterRecord {
 		DropItems:   groups,
 		Elem:        d.elementResist(),
 	}
+
+	// 应用子类 AI 差异（Boss 远程技能 / 宠物跟随 / 炮台怪不能动）
+	ApplyProfile(&rec, d.Name)
+	return rec
 }
 
 // elementResist 把 acElem 映射转成 ElementResist。

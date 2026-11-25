@@ -1399,3 +1399,162 @@ buff 必须挂在 `world.Entity` 上而不是 `Player` 字段上：
 | `attackModifier` | 攻击时的概率触发（buffrecord.inc 里有 2 条） |
 | buff 到期后的属性回退 | 到期推 `SM_BUFF off`，但 `Stats` 不会自动重算 |
 | 药品 buff | 金创药/太阳水走的是 buff 表，现在还是瞬时回血 |
+
+### B5 第十四批：P1 收尾（buff trigger/aura/attackMod + 怪物子类 AI）（本轮）
+
+**P1 全部完成。服务端测试 356 → 364 项。**
+
+#### 1. 修掉「buff 到期属性不回落」（本轮最重要）
+
+之前 buff 到期只推 `SM_BUFF off`，**属性不会回落** ——
+玩家上过一次幽灵盾，之后**永久**带着 +MAC。
+
+这个 bug 比「buff 没效果」更严重：
+
+| 状态 | 表现 |
+|---|---|
+| buff 没效果 | 玩家以为技能坏了，但数值是对的 |
+| **buff 不回落** | **数值只涨不落，永久白嫖加成** |
+
+**为什么不能「反算」：**
+
+百分比修正反算会漂移。`100 × 1.2 = 120`，`120 / 1.2 = 100` 看似没问题，
+但 `33 × 1.15 = 38`，`38 / 1.15 = 33.04` —— 回不到 33。
+
+**修法：`Entity.BaseStats` 存一份不含 buff 的基础属性**，
+到期时从 `BaseStats` 重算，既精确又简单。
+
+新增 `World.RecalcStats` / `RecalcAllStats`，tick 在 `buff_expired`
+时先重算属性、再推 `SM_BUFF off`。
+
+★ 顺序不能反：反了的话客户端收到「buff 消失」但服务端属性还没回落，
+中间那一刻的伤害结算用的是带 buff 的数值 —— 表现是「图标没了但还多抗了一下」。
+
+#### 2. buff trigger（HP持续 / MP持续）
+
+治愈术的「HP持续」在 `buffrecord.inc` 里是这样：
+
+```c
+{   .name = u8"HP持续",
+    .duration = 6000,
+    .trigger {
+        .on  = BATGR_TIME,
+        .tps = 2,                              // 每秒 2 次 = 500ms 一次
+        .arg = buffArgWrapper<BuffValuePercentage>(20, 5),   // 固定 20 + 5%
+    },
+}
+```
+
+没有它，治愈术就只是「上限涨 20% 但一点血都不回」。
+
+**★ trigger 的 `.arg` 语义与 attributeModifier 不同：**
+
+```
+attributeModifier(x)      → x 是百分比       （治愈术 +20%）
+trigger(x, y)             → x 固定, y 百分比 （HP持续 +20 且 +5%）
+```
+
+两种 act 参数个数不同，共用一个解析函数会算错。
+
+**★ 首次触发要等满一个间隔：**
+
+`TriggerRemainMS` 初值 0 会让第一个 tick 就命中，于是
+「duration 6000 / tps 2」实际触发 **13 次**而不是 12 次，
+而且治愈术挂上瞬间立刻回一次血 —— 玩家会觉得回血快了一倍。
+
+**★ 按 deltaMS 累进而不是「每 tick 触发一次」：**
+
+tick 是 100ms、trigger 是 500ms，必须攒够 500ms 才触发。
+直接每 tick 触发会让治愈术变成 10 倍速度。
+
+#### 3. buff aura / attackModifier
+
+| act | 结构 | 用途 |
+|---|---|---|
+| `aura` | `{radius, linger{in,out}}` | 龙纹圣光/恢复光环：半径内友方获得 buff |
+| `attackModifier` | `{prob}` | 死亡威慑：攻击时概率触发额外效果 |
+
+**★ `attackModifier.prob` 是万分比不是百分比：**
+`prob=100` 是 **1%** 概率，不是 100%。当成百分比就是「每次都触发」。
+
+`linger.in/out` 的作用：防止「一闪而过也吃到 buff」和「走一步就掉 buff」。
+跨 tick 的延迟状态需要单独存，本轮实现了 `AuraTargets` 纯函数
+（判定这一帧谁在范围内），延迟逻辑留给地图 actor。
+
+#### 4. 怪物子类 AI（803 行 C++ → 数据驱动 profile）
+
+原版用 C++ 继承，19 个文件 803 行。Go 侧没有继承，改成
+**数据驱动的 `AIProfile`**：
+
+```go
+type AIProfile struct {
+    Specials           []SpellAbility  // 远程技能（按序尝试，各有冷却）
+    FollowMaster       bool            // 无目标时跟随主人
+    DieWithMaster      bool            // 主人死则自己死
+    IdleStandAfterMS   int64           // 空闲多久回站立姿态
+    AggroRangeOverride int             // 强制索敌半径
+}
+```
+
+**为什么砍掉继承层次：**
+
+子类之间的差异其实只有「有没有远程技能」「冷却多久」「要不要跟随主人」
+这几点。数据驱动反而更容易看出「这个 Boss 和普通怪到底差在哪」。
+
+已配置的 profile：
+
+| 怪物 | 差异 |
+|---|---|
+| **祖玛教主** | 地狱火（ID 102，射程 6，1s CD）+ 火墙（ID 101，射程 6，5s CD）；索敌 12 格（视野 10） |
+| 祖玛弓箭手 | 射箭（ID 99，射程 8，1.5s CD） |
+| **神兽** | 喷火（ID 77，射程 2）；跟随主人；主人死则死；空闲 30s 回站立 |
+| 食人花 | 炮台怪：`WalkWait` 改成 1 小时 ≈ 不能移动 |
+
+**★ 食人花为什么用 `WalkWait` 而不是加 `CanMove` 字段：**
+
+加字段的话要在 `chaseStep` / `followMaster` 每一处都判一次，
+**漏一处就又能走了**。用超长 `WalkWait` 是「在一次判定里解决」，
+而且行为与「走得极慢」完全一致，不需要额外代码路径。
+
+**★ Boss 技能顺序不能反：**
+
+`serverzumataurus.cpp:37-46` 的顺序是「地狱火 → 火墙 → 追击」。
+地狱火是主力输出，火墙是「够不到时补一发」。反过来的话
+Boss 会一直放火墙而不放主力技能。
+
+**新增/修改文件**
+
+| 文件 | 行数 | 内容 |
+|---|---|---|
+| `internal/world/aiprofile.go` | 150 | profile 表 + `ApplyProfile` |
+| `internal/world/buff.go` 补 | +220 | `BuffTrigger` / `BuffAura` / `AttackModifier` / `TickTriggers` |
+| `internal/world/map_state.go` 补 | +50 | `BaseStats`、Advance 接 trigger |
+| `internal/world/monster.go` 补 | +50 | `AIProfile` / `SpellAbility` / `AIState` 扩展 |
+| `internal/world/ai.go` 补 | +130 | `trySpecialSpell` / `followMaster` |
+| `internal/world/world.go` 补 | +45 | `RecalcStats` / `RecalcAllStats` |
+| `internal/game/tick.go` 补 | +40 | buff trigger 同步、到期重算 |
+| `tools/extract/extract_buffs.py` 扩 | +110 | 三类 act 提取 |
+
+**验证**
+
+| 测试 | 结果 |
+|---|---|
+| `TestBuffExpiryRestoresStats` | 幽灵盾到期：MAC **44 → 40** 已回落 |
+| `TestHPTriggerHeals` | 治愈术 1 秒：HP 10 → **60**（2 次 × 25） |
+| `TestPoisonTriggerDamages` | 施毒术 1 秒：HP 100 → **90** |
+| `TestTriggerCountLimited` | 10 秒内触发 12 次（上限 12，不超发） |
+| `TestBossUsesRangedSpell` | 祖玛教主 15 秒：**攻击 15 次、移动 0 次**，玩家 HP 500→13 |
+| `TestCannibalPlantCannotMove` | 食人花 20 秒内移动 **0 次** |
+| `TestPetFollowsMaster` | 神兽从 (10,10) 跟到 (37,37)，距主人 3 格 |
+| `TestPetDiesWithMaster` | 主人死亡 → 神兽跟随死亡 |
+| 服务端实跑 | buff db 21 条，零 error |
+| 客户端 c9c8 | **15 项全过** |
+
+**P1 剩余未做**
+
+| 项目 | 影响 |
+|---|---|
+| aura 的 linger 延迟 | 只有「谁在范围内」的判定，进出延迟未实现 |
+| attackModifier 的实际效果 | 掷骰有了，但「触发后做什么」要具体 boss 脚本 |
+| 其余 15 个怪物子类 | 只配了 4 个最典型的（Boss/宠物/炮台） |
+| 药品走 buff 表 | 金创药/太阳水还是瞬时回血，没走 buff 的 HP+10~210% |

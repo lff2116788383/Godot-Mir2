@@ -238,6 +238,8 @@ func (h *mapScriptHost) AddMonster(name string, x, y int, strictLoc bool) uint64
 		Speed:     600,
 		ViewRange: def.View,
 		Stats:     def.CombatStatsFor(),
+		// BaseStats 是 buff 到期时重算的基线，不给的话回退会归零
+		BaseStats: def.CombatStatsFor(),
 	}
 	rec := def.ToRecord()
 	if _, err := h.Worlds.SpawnMonster(h.ctx, h.mapID, entity, rec); err != nil {
@@ -273,6 +275,8 @@ func (h *mapScriptHost) AddGuard(name string, x, y, direction int) uint64 {
 		Speed:     600,
 		ViewRange: def.View,
 		Stats:     def.CombatStatsFor(),
+		// BaseStats 是 buff 到期时重算的基线，不给的话回退会归零
+		BaseStats: def.CombatStatsFor(),
 	}
 	rec := def.ToRecord()
 	if _, err := h.Worlds.SpawnMonster(h.ctx, h.mapID, entity, rec); err != nil {

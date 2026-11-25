@@ -3,6 +3,7 @@ package world
 import (
 	"container/heap"
 	"errors"
+	"math"
 	"math/rand"
 	"strconv"
 )
@@ -64,7 +65,22 @@ type Entity struct {
 	ViewRange int
 
 	// 受击/攻击用的属性（由怪物/玩家记录填充）
+	//
+	// ★ 这是**叠加了 buff 修正之后**的最终值。
+	//	要拿「无 buff 的基础值」请用 BaseStats。
 	Stats CombatStats
+
+	// BaseStats 是**不含 buff 修正**的基础属性。
+	//
+	// ★ 必须单独存一份，否则 buff 到期时无法回退：
+	//
+	//	buff 的属性修正是直接改在 Stats 上的（+20% AC 之类）。
+	//	如果只存 Stats，到期时只能「反算」——而百分比修正反算会漂移
+	//	（100 × 1.2 = 120，120 / 1.2 = 100 看似没问题，
+	//	 但 33 × 1.15 = 38，38 / 1.15 = 33.04 就回不去了）。
+	//
+	//	存一份原值，到期时「从 BaseStats 重算」既精确又简单。
+	BaseStats CombatStats
 
 	// PKPoint PK 值（>=100 红名）。守卫只打红名，NPC 脚本也用它判红名。
 	PKPoint int32
@@ -605,12 +621,50 @@ func (m *MapState) Advance(nowMS int64) []TickEvent {
 
 	var events []TickEvent
 
-	// 1. buff 过期
+	// 1. buff 过期 + 定时触发（治愈术回血 / 施毒术掉血）
 	if deltaMS > 0 {
 		for uid, e := range m.Entities {
 			if e.Buffs == nil || e.Buffs.Len() == 0 {
 				continue
 			}
+
+			// 1a. 定时触发（HP持续 / MP持续）
+			for _, eff := range e.Buffs.TickTriggers(uid, deltaMS) {
+				pct := PendingTriggerPercentage(e.Buffs, eff.BuffSeq, eff.Name)
+				base := e.MaxHP
+				if eff.IsMP {
+					base = e.MaxMP
+				}
+				// 总量 = 固定值 + round(上限 * 百分比 / 100)
+				amount := eff.Amount + int32(math.Round(float64(base)*float64(pct)/100.0))
+				if amount == 0 {
+					continue
+				}
+				if eff.IsMP {
+					e.MP += amount
+					if e.MP < 0 {
+						e.MP = 0
+					}
+					if e.MaxMP > 0 && e.MP > e.MaxMP {
+						e.MP = e.MaxMP
+					}
+				} else {
+					e.HP += amount
+					// 掉血不能低于 0（死亡判定交给后续步骤）
+					if e.HP < 0 {
+						e.HP = 0
+					}
+					if e.MaxHP > 0 && e.HP > e.MaxHP {
+						e.HP = e.MaxHP
+					}
+				}
+				events = append(events, TickEvent{
+					Kind: "buff_trigger", UID: uid, Amount: amount,
+					Monster: eff.Name,
+				})
+			}
+
+			// 1b. buff 到期
 			for _, seq := range e.Buffs.Tick(deltaMS) {
 				events = append(events, TickEvent{Kind: "buff_expired", UID: uid, BuffSeq: seq})
 			}

@@ -205,7 +205,17 @@ func (t *MapTicker) dispatch(mapID uint32, events []world.TickEvent) {
 		switch ev.Kind {
 		case "ground_item_expire":
 			t.logGroundExpired(mapID, ev)
+		case "buff_trigger":
+			// buff 的定时效果（治愈术回血 / 施毒术掉血）已经由 world 层
+			// 落到 Entity.HP 上了，这里只负责把新血量同步给客户端。
+			t.syncAfterBuffTick(mapID, ev)
 		case "buff_expired":
+			// ★ 先重算属性，再推 SM_BUFF off。
+			//
+			//	顺序反了的话，客户端收到「buff 消失」但服务端属性还没回落，
+			//	中间那一刻的伤害结算用的是带 buff 的数值 ——
+			//	表现为「buff 图标没了但还多抗了一下」。
+			t.recalcStatsFor(mapID, ev.UID)
 			t.broadcastBuffOff(mapID, ev)
 		case "ai_move":
 			t.broadcastAIMove(mapID, ev)
@@ -469,4 +479,46 @@ func (t *MapTicker) broadcastCorpseFade(mapID uint32, ev world.TickEvent) {
 		return
 	}
 	t.broadcastMap(mapID, protocol.SM_CODISAPPEAR, payload)
+}
+
+// recalcStatsFor 重算某个实体的属性（buff 变化后调用）。
+//
+// 玩家要走 Player 那条路（世界实体的 BaseStats 由 RefreshStats 维护）；
+// 怪物没有 Player 对象，直接让 world 层从 BaseStats 重算。
+func (t *MapTicker) recalcStatsFor(mapID uint32, uid uint64) {
+	if t.Worlds == nil || uid == 0 {
+		return
+	}
+	if p, ok := t.Players.Get(uid); ok && t.WorldSvc != nil && t.WorldSvc.Items != nil {
+		// 玩家：基础属性由职业/等级/装备决定，重新算一遍更准
+		_ = t.Worlds.RefreshStats(context.Background(), mapID, uid,
+			p.CombatStatsFor(t.WorldSvc.Items))
+		return
+	}
+	_ = t.Worlds.RecalcStats(context.Background(), mapID, uid)
+}
+
+// syncAfterBuffTick 把 buff 效果改过的血量同步给客户端。
+//
+// 玩家：走 Player.SyncFromWorld + SM_HEALTH
+// 怪物：只推 SM_STRIKE 的打击格（客户端据此播受击）
+func (t *MapTicker) syncAfterBuffTick(mapID uint32, ev world.TickEvent) {
+	entity, ok, err := t.Worlds.Entity(context.Background(), mapID, ev.UID)
+	if err != nil || !ok {
+		return
+	}
+	if p, exists := t.Players.Get(ev.UID); exists {
+		p.SyncFromWorld(entity)
+		t.syncPlayerHealth(mapID, p)
+		return
+	}
+	// 怪物掉血：推打击格（回血不发，客户端只看血条）
+	if ev.Amount < 0 && t.Broadcast != nil {
+		payload, err := protocol.AppendWirePayload(nil, protocol.SMStrikeGrid{
+			X: uint32(entity.X), Y: uint32(entity.Y),
+		})
+		if err == nil {
+			t.broadcastMap(mapID, protocol.SM_STRIKEGRID, payload)
+		}
+	}
 }

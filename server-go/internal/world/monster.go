@@ -44,12 +44,17 @@ type MonsterRecord struct {
 	BehaveMode int
 	// DeadFadeOut 尸体是否在死亡 1 秒后从地图移除（monsterrecord.hpp:52）
 	DeadFadeOut int
-	WalkWait    int
-	WalkStep    int
-	AttackWait  int
-	DCDodgeSet  bool
-	DropItems   [][]DropItem
-	Elem        ElementResist
+	// Profile AI 子类差异（Boss 远程技能 / 宠物跟随 / 空闲姿态）
+	//
+	// nil 表示「标准怪」—— 走默认的追击 + 游荡逻辑。
+	Profile *AIProfile
+
+	WalkWait   int
+	WalkStep   int
+	AttackWait int
+	DCDodgeSet bool
+	DropItems  [][]DropItem
+	Elem       ElementResist
 }
 
 // DropItem 是一条掉落配置。
@@ -170,6 +175,56 @@ type AIState struct {
 	Path         []Point
 	PathExpireMS int64
 	Idle         bool
+
+	// LastSpecialMS 上次施放「特殊技能」的时刻
+	//
+	// 用于 Boss 的远程技能冷却（祖玛教主每 5 秒一次火墙）。
+	// 只有 LastAttackMS 不够 —— 普通攻击和特殊技能的冷却不同频。
+	LastSpecialMS int64
+	// MasterUID 主人 UID（宠物/召唤兽跟随用，0 表示无主）
+	MasterUID uint64
+	// IdleSinceMS 进入空闲的时刻（神兽 30 秒后回站立姿态）
+	IdleSinceMS int64
+}
+
+// SpellAbility 是怪物可以施放的一个技能（AIProfile.Specials 的元素）。
+type SpellAbility struct {
+	// Name 技能名（用于日志与调试）
+	Name string
+	// MagicID 魔法记录 ID
+	MagicID int
+	// CastRange 施法距离（格）
+	CastRange int
+	// CoolDownMS 冷却时间（毫秒）
+	CoolDownMS int64
+	// ChancePercent 触发概率（100 = 每次都考虑）
+	ChancePercent int
+}
+
+// AIProfile 描述一个怪物子类的 AI 差异。
+//
+// 【背景】原版用 C++ 继承实现子类（serverzumataurus.cpp 222 行 /
+// servertaodog.cpp 167 行 / serverguard.cpp 140 行 …共 803 行）。
+// Go 侧没有继承，改用**数据驱动的 profile**：
+//
+//	AIProfile{Specials: [...], FollowMaster: true, ...}
+//
+// 这么做的理由：子类之间的差异其实只有「有没有远程技能」
+// 「技能冷却多久」「要不要跟随主人」这几点，砍掉继承层次
+// 反而更容易看出「这个 Boss 和普通怪到底差在哪」。
+type AIProfile struct {
+	// Specials 可施放的特殊技能列表（按顺序尝试，先命中先生效）
+	Specials []SpellAbility
+	// FollowMaster 无目标时跟随主人（宠物/召唤兽）
+	FollowMaster bool
+	// DieWithMaster 主人死亡时自己也死（神兽）
+	DieWithMaster bool
+	// IdleStandAfterMS 空闲多久后回站立姿态（0 = 不回）
+	IdleStandAfterMS int64
+	// AggroRangeOverride 强制索敌半径（0 = 用视野）
+	//
+	// Boss 常用：视野 10 但索敌 15，玩家还没看到它就已经被盯上。
+	AggroRangeOverride int
 }
 
 // AStarCacheRefreshMS 对应 monster.hpp:33 的 m_refresh = 2000。

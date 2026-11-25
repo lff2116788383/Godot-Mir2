@@ -30,6 +30,9 @@ type BuffDef struct {
 	Dispellable bool               `json:"dispellable"`
 	StackCount  int                `json:"stackCount"`
 	Attrs       []BuffAttrModifier `json:"attrs"`
+	Triggers    []BuffTriggerDef   `json:"triggers"`
+	Auras       []BuffAuraDef      `json:"auras"`
+	AttackMods  []BuffAttackModDef `json:"attackMods"`
 }
 
 // BuffAttrModifier 是一条属性修正。
@@ -37,6 +40,30 @@ type BuffAttrModifier struct {
 	Attr       string `json:"attr"`
 	Value      int    `json:"value"`
 	Percentage int    `json:"percentage"`
+}
+
+// BuffTriggerDef 是一条定时触发（HP持续 等）。
+type BuffTriggerDef struct {
+	Name       string `json:"name"`
+	Duration   int64  `json:"duration"`
+	On         string `json:"on"`
+	TPS        int    `json:"tps"`
+	Value      int    `json:"value"`
+	Percentage int    `json:"percentage"`
+}
+
+// BuffAuraDef 是一条光环（光环半径 + 进出延迟）。
+type BuffAuraDef struct {
+	Name      string `json:"name"`
+	Radius    int    `json:"radius"`
+	LingerIn  int    `json:"lingerIn"`
+	LingerOut int    `json:"lingerOut"`
+}
+
+// BuffAttackModDef 是一条攻击概率修正。
+type BuffAttackModDef struct {
+	Name string `json:"name"`
+	Prob int    `json:"prob"`
 }
 
 // LoadBuffDB 从 JSON 加载 buff 表。
@@ -64,12 +91,33 @@ func LoadBuffDB(path string) (*BuffDB, error) {
 				Attr: a.Attr, Value: a.Value, Percentage: a.Percentage,
 			})
 		}
+		triggers := make([]world.BuffTrigger, 0, len(def.Triggers))
+		for _, t := range def.Triggers {
+			triggers = append(triggers, world.BuffTrigger{
+				Name: t.Name, Duration: t.Duration, On: t.On, TPS: t.TPS,
+				Value: t.Value, Percentage: t.Percentage,
+			})
+		}
+		auras := make([]world.BuffAura, 0, len(def.Auras))
+		for _, a := range def.Auras {
+			auras = append(auras, world.BuffAura{
+				Name: a.Name, Radius: a.Radius,
+				LingerIn: int64(a.LingerIn), LingerOut: int64(a.LingerOut),
+			})
+		}
+		mods := make([]world.AttackModifier, 0, len(def.AttackMods))
+		for _, m := range def.AttackMods {
+			mods = append(mods, world.AttackModifier{Name: m.Name, Prob: m.Prob})
+		}
 		db.records[id] = world.BuffRecord{
 			Name:        def.Name,
 			Favor:       def.Favor,
 			Dispellable: def.Dispellable,
 			StackCount:  def.StackCount,
 			Acts:        acts,
+			Triggers:    triggers,
+			Auras:       auras,
+			AttackMods:  mods,
 		}
 	}
 	return db, nil
