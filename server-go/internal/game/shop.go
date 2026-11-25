@@ -124,7 +124,7 @@ func (h *ShopHandler) GainExp(ctx context.Context, p *Player, exp uint64) {
 		p.MP = p.MaxMP
 
 		if h.Worlds != nil {
-			if err := h.Worlds.SetStats(ctx, p.MapID, p.UID, p.CombatStatsFor(h.Items)); err != nil && h.Logger != nil {
+			if err := h.Worlds.RefreshStats(ctx, p.MapID, p.UID, p.CombatStatsFor(h.Items)); err != nil && h.Logger != nil {
 				h.Logger.Warn("apply level up stats failed", "player", p.Name, "error", err)
 			}
 		}

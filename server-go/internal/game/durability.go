@@ -89,7 +89,7 @@ func (h *DurabilityHandler) DamageWearItem(ctx context.Context, p *Player, wlTyp
 
 	// 装备没了要重算属性 —— 不然损坏后玩家还带着满属性
 	if h.Worlds != nil {
-		_ = h.Worlds.SetStats(ctx, p.MapID, p.UID, p.CombatStatsFor(h.Items))
+		_ = h.Worlds.RefreshStats(ctx, p.MapID, p.UID, p.CombatStatsFor(h.Items))
 	}
 	return true
 }

@@ -1,0 +1,295 @@
+{
+  "source": "buffrecord.inc",
+  "count": 21,
+  "records": {
+    "1": {
+      "buffID": 1,
+      "name": "治愈术",
+      "favor": 1,
+      "dispellable": true,
+      "stackCount": 0,
+      "attrs": [
+        {
+          "attr": "HP",
+          "value": 0,
+          "percentage": 20
+        }
+      ]
+    },
+    "2": {
+      "buffID": 2,
+      "name": "施毒术",
+      "favor": -1,
+      "dispellable": true,
+      "stackCount": 0,
+      "attrs": [
+        {
+          "attr": "HP",
+          "value": 0,
+          "percentage": -20
+        }
+      ]
+    },
+    "3": {
+      "buffID": 3,
+      "name": "龙纹圣光",
+      "favor": 1,
+      "dispellable": false,
+      "stackCount": 0,
+      "attrs": []
+    },
+    "4": {
+      "buffID": 4,
+      "name": "恢复光环",
+      "favor": 1,
+      "dispellable": false,
+      "stackCount": 0,
+      "attrs": [
+        {
+          "attr": "HP恢复",
+          "value": 1,
+          "percentage": 5
+        }
+      ]
+    },
+    "5": {
+      "buffID": 5,
+      "name": "死亡威慑",
+      "favor": 1,
+      "dispellable": false,
+      "stackCount": 0,
+      "attrs": []
+    },
+    "6": {
+      "buffID": 6,
+      "name": "战栗",
+      "favor": 0,
+      "dispellable": false,
+      "stackCount": 0,
+      "attrs": []
+    },
+    "7": {
+      "buffID": 7,
+      "name": "吸血鬼的诅咒",
+      "favor": 1,
+      "dispellable": false,
+      "stackCount": 0,
+      "attrs": []
+    },
+    "8": {
+      "buffID": 8,
+      "name": "吸血光环",
+      "favor": 1,
+      "dispellable": false,
+      "stackCount": 0,
+      "attrs": []
+    },
+    "9": {
+      "buffID": 9,
+      "name": "幽灵盾",
+      "favor": 1,
+      "dispellable": true,
+      "stackCount": 0,
+      "attrs": [
+        {
+          "attr": "MAC下限",
+          "value": 2,
+          "percentage": 5
+        },
+        {
+          "attr": "MAC上限",
+          "value": 2,
+          "percentage": 5
+        }
+      ]
+    },
+    "10": {
+      "buffID": 10,
+      "name": "神圣战甲术",
+      "favor": 1,
+      "dispellable": true,
+      "stackCount": 0,
+      "attrs": [
+        {
+          "attr": "AC下限",
+          "value": 2,
+          "percentage": 5
+        },
+        {
+          "attr": "AC上限",
+          "value": 2,
+          "percentage": 5
+        }
+      ]
+    },
+    "11": {
+      "buffID": 11,
+      "name": "金创药（小）",
+      "favor": 1,
+      "dispellable": false,
+      "stackCount": 0,
+      "attrs": [
+        {
+          "attr": "HP",
+          "value": 0,
+          "percentage": 10
+        }
+      ]
+    },
+    "12": {
+      "buffID": 12,
+      "name": "金创药（中）",
+      "favor": 1,
+      "dispellable": false,
+      "stackCount": 0,
+      "attrs": [
+        {
+          "attr": "HP",
+          "value": 0,
+          "percentage": 20
+        }
+      ]
+    },
+    "13": {
+      "buffID": 13,
+      "name": "金创药（大）",
+      "favor": 1,
+      "dispellable": false,
+      "stackCount": 0,
+      "attrs": [
+        {
+          "attr": "HP",
+          "value": 0,
+          "percentage": 40
+        }
+      ]
+    },
+    "14": {
+      "buffID": 14,
+      "name": "金创药（特）",
+      "favor": 1,
+      "dispellable": false,
+      "stackCount": 0,
+      "attrs": [
+        {
+          "attr": "HP",
+          "value": 0,
+          "percentage": 60
+        }
+      ]
+    },
+    "15": {
+      "buffID": 15,
+      "name": "魔法药（小）",
+      "favor": 1,
+      "dispellable": false,
+      "stackCount": 0,
+      "attrs": [
+        {
+          "attr": "MP",
+          "value": 0,
+          "percentage": 10
+        }
+      ]
+    },
+    "16": {
+      "buffID": 16,
+      "name": "魔法药（中）",
+      "favor": 1,
+      "dispellable": false,
+      "stackCount": 0,
+      "attrs": [
+        {
+          "attr": "MP",
+          "value": 0,
+          "percentage": 20
+        }
+      ]
+    },
+    "17": {
+      "buffID": 17,
+      "name": "魔法药（大）",
+      "favor": 1,
+      "dispellable": false,
+      "stackCount": 0,
+      "attrs": [
+        {
+          "attr": "MP",
+          "value": 0,
+          "percentage": 40
+        }
+      ]
+    },
+    "18": {
+      "buffID": 18,
+      "name": "魔法药（特）",
+      "favor": 1,
+      "dispellable": false,
+      "stackCount": 0,
+      "attrs": [
+        {
+          "attr": "MP",
+          "value": 0,
+          "percentage": 60
+        }
+      ]
+    },
+    "19": {
+      "buffID": 19,
+      "name": "太阳水",
+      "favor": 1,
+      "dispellable": false,
+      "stackCount": 0,
+      "attrs": [
+        {
+          "attr": "HP",
+          "value": 0,
+          "percentage": 70
+        },
+        {
+          "attr": "MP",
+          "value": 0,
+          "percentage": 110
+        }
+      ]
+    },
+    "20": {
+      "buffID": 20,
+      "name": "强效太阳水",
+      "favor": 1,
+      "dispellable": false,
+      "stackCount": 0,
+      "attrs": [
+        {
+          "attr": "HP",
+          "value": 0,
+          "percentage": 110
+        },
+        {
+          "attr": "MP",
+          "value": 0,
+          "percentage": 110
+        }
+      ]
+    },
+    "21": {
+      "buffID": 21,
+      "name": "万年雪霜",
+      "favor": 1,
+      "dispellable": false,
+      "stackCount": 0,
+      "attrs": [
+        {
+          "attr": "HP",
+          "value": 0,
+          "percentage": 210
+        },
+        {
+          "attr": "MP",
+          "value": 0,
+          "percentage": 210
+        }
+      ]
+    }
+  }
+}

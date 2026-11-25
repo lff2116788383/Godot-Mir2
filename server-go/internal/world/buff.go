@@ -1,6 +1,7 @@
 package world
 
 import (
+	"math"
 	"sort"
 )
 
@@ -27,7 +28,56 @@ type BuffRecord struct {
 	IconGfxID    uint32
 	// DurationMS 是 buff 的基础持续时间，BADUR_UNLIMITED 表示永久
 	DurationMS int64
+
+	// Acts 属性修正列表（buffrecord.hpp 的 actList 里 attributeModifier 那部分）
+	//
+	// 【依据】buffrecord.hpp:248-256 BuffActAttributeModifierParam
+	//
+	//	buff 的实际效果不是「加一个数字」而是「按属性名 + 百分比修正」。
+	//	同一个 buff 可能同时改 HP/AC/MAC 好几项（见 buffrecord.inc 的「HP」act）。
+	Acts []BuffAttributeModifier
 }
+
+// BuffAttributeModifier 是一条属性修正（对应 buffrecord.hpp:255 attributeModifier）。
+//
+// 【依据】buffrecord.hpp:34-43 BuffValuePercentage：
+//
+//	int gain(int base) const {
+//	    return value + lround(base * percentage / 100.0);
+//	}
+//
+// 也就是「固定值 + 百分比」两段叠加。
+type BuffAttributeModifier struct {
+	// Attr 属性名（"HP" / "MP" / "AC下限" / "AC上限" / "MAC下限" / "MAC上限" ...）
+	Attr string
+	// Value 固定加成
+	Value int
+	// Percentage 百分比加成（20 表示 +20%）
+	Percentage int
+}
+
+// Gain 是按 base 算出的加成量（buffrecord.hpp:39-42 的 gain）。
+//
+// 用四舍五入而不是截断：截断会让「+15% 的 33 点」变成 +4，
+// 而正确值是 +5。百分比 buff 在低属性时误差尤其明显。
+func (m BuffAttributeModifier) Gain(base int) int {
+	return m.Value + int(math.Round(float64(base)*float64(m.Percentage)/100.0))
+}
+
+// AttrHP / AttrMP 等是属性名常量。
+//
+// 直接用中文字符串而不用枚举：buffrecord.inc 里写的就是中文，
+// 换成枚举要维护一张双向映射表，改一个名字要动两处。
+const (
+	AttrHP     = "HP"
+	AttrMP     = "MP"
+	AttrACMin  = "AC下限"
+	AttrACMax  = "AC上限"
+	AttrMACMin = "MAC下限"
+	AttrMACMax = "MAC上限"
+	AttrHPCure = "HP恢复"
+	AttrMPCure = "MP恢复"
+)
 
 // BadurUnlimited 对应 buffrecord.hpp 的 BADUR_UNLIMITED。
 const BadurUnlimited int64 = -1
@@ -276,4 +326,89 @@ func CanStack(rec BuffRecord, current int) bool {
 		limit = 1
 	}
 	return current < limit
+}
+
+// ApplyAttributeModifiers 把实体身上所有 buff 的属性修正叠加到 stats 上。
+//
+// 【依据】server/src/buffactattributemodifier.cpp 的 onActivate：
+// 在原属性上按 gain(base) 叠加，多個 buff 是**累加**而不是覆盖。
+//
+// ★ 百分比按「叠加前的原始值」算还是「逐层放大」？
+//
+//	原版是**逐层作用在已经改过的值上**（buff 按 buffSeq 顺序依次 apply）。
+//	这里保持一致 —— 否则「+20% 和 +20%」会算成 +40%，
+//	而原版实际是 ×1.44（1.2×1.2）。两层 buff 差别不大，
+//	但五六层叠加时差异会非常明显，且与原版不一致。
+//
+// ★ HP/MP 的修正只改**上限**，不改当前值：
+//
+//	改当前值会让「上 buff 瞬间回满血」，这是 exploit（反复上/下 buff 回血）。
+//	当前值超出新上限时由调用方钳制。
+func ApplyAttributeModifiers(stats *CombatStats, buffs *BuffList) {
+	if stats == nil || buffs == nil {
+		return
+	}
+	for _, buff := range buffs.Active() {
+		for _, act := range buff.Record.Acts {
+			applyOne(stats, act)
+		}
+	}
+}
+
+// applyOne 应用一条属性修正。
+func applyOne(stats *CombatStats, act BuffAttributeModifier) {
+	switch act.Attr {
+	case AttrACMin:
+		stats.AC.Min += act.Gain(stats.AC.Min)
+	case AttrACMax:
+		stats.AC.Max += act.Gain(stats.AC.Max)
+	case AttrMACMin:
+		stats.MAC.Min += act.Gain(stats.MAC.Min)
+	case AttrMACMax:
+		stats.MAC.Max += act.Gain(stats.MAC.Max)
+	case "DC下限":
+		stats.DC.Min += act.Gain(stats.DC.Min)
+	case "DC上限":
+		stats.DC.Max += act.Gain(stats.DC.Max)
+	case "MC下限":
+		stats.MC.Min += act.Gain(stats.MC.Min)
+	case "MC上限":
+		stats.MC.Max += act.Gain(stats.MC.Max)
+	case "SC下限":
+		stats.SC.Min += act.Gain(stats.SC.Min)
+	case "SC上限":
+		stats.SC.Max += act.Gain(stats.SC.Max)
+	}
+}
+
+// MaxHPDelta 返回 buff 对 HP 上限的总修正量（供 Entity 血量钳制用）。
+func MaxHPDelta(base int32, buffs *BuffList) int32 {
+	if buffs == nil {
+		return 0
+	}
+	cur := int(base)
+	for _, buff := range buffs.Active() {
+		for _, act := range buff.Record.Acts {
+			if act.Attr == AttrHP {
+				cur += act.Gain(cur)
+			}
+		}
+	}
+	return int32(cur - int(base))
+}
+
+// MaxMPDelta 返回 buff 对 MP 上限的总修正量。
+func MaxMPDelta(base int32, buffs *BuffList) int32 {
+	if buffs == nil {
+		return 0
+	}
+	cur := int(base)
+	for _, buff := range buffs.Active() {
+		for _, act := range buff.Record.Acts {
+			if act.Attr == AttrMP {
+				cur += act.Gain(cur)
+			}
+		}
+	}
+	return int32(cur - int(base))
 }

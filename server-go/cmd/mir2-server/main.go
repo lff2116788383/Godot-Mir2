@@ -117,6 +117,16 @@ func main() {
 		os.Exit(1)
 	}
 	slog.Info("magic db loaded", "count", magicDB.Count(), "learnable", magicDB.LearnableCount())
+
+	// buff 表（21 条，其中 16 条有属性修正）
+	buffPath := filepath.Join("content", "buffs.json")
+	buffDB, err := game.LoadBuffDB(buffPath)
+	if err != nil {
+		slog.Error("load buff db", "path", buffPath, "error", err)
+		os.Exit(1)
+	}
+	game.BindBuffResolver(buffDB)
+	slog.Info("buff db loaded", "count", buffDB.Count())
 	// 元素抗性解析器只在启动时绑一次（每帧重设会数据竞争）
 	game.BindElementResolver(magicDB)
 

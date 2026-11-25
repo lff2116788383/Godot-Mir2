@@ -361,6 +361,27 @@ func (w *World) DropItem(ctx context.Context, mapID uint32, x, y int, itemIDs []
 	return events, nil
 }
 
+// RefreshStats 重算属性并叠加 buff 修正。
+//
+// ★ 为什么要有这个「重算」入口而不是直接 SetStats：
+//
+//	Buff 对属性的修正是**叠加在基础属性之上**的（+20% AC 等）。
+//	如果每次上/下 buff 都只 SetStats 基础值，那 buff 效果立刻丢失；
+//	反过来如果调用方自己算好再 Set，每个调用点都要记得叠加，
+//	漏一处就会出现「某个 buff 只对法师生效」这种诡异现象。
+//
+//	统一入口：给基础属性，world 层负责叠 buff。
+func (w *World) RefreshStats(ctx context.Context, mapID uint32, uid uint64, base CombatStats) error {
+	_, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return nil, state.MutateEntity(uid, func(e *Entity) error {
+			e.Stats = base
+			ApplyAttributeModifiers(&e.Stats, e.Buffs)
+			return nil
+		})
+	}))
+	return err
+}
+
 // SetStats 更新实体的战斗属性（升级/换装后调用）。
 func (w *World) SetStats(ctx context.Context, mapID uint32, uid uint64, stats CombatStats) error {
 	_, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
@@ -605,4 +626,55 @@ func (w *World) CollectGroundItems(ctx context.Context, mapID uint32, x, y, r in
 	}
 	snaps, _ := value.([]GroundItemSnapshot)
 	return snaps
+}
+
+// AddBuff 给实体挂一个 buff。
+//
+// 【依据】server/src/bufflist.hpp:addBuff。
+//
+// ★ 必须在 world 层做而不是改 Player 字段：
+//
+//	buff 的效果（属性修正 / 光环 / 定时触发）都要在实体的
+//	Stats 与 tick 上生效，而 Stats 属于 world.Entity。
+//	只记在 Player 上就会变成「头上有图标但数值不变」。
+//
+// 返回 error 的场景：实体不存在、已达到堆叠上限。
+func (w *World) AddBuff(ctx context.Context, mapID uint32, uid uint64, buffID uint32, fromUID uint64) error {
+	_, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return nil, state.MutateEntity(uid, func(e *Entity) error {
+			if e.Buffs == nil {
+				e.Buffs = NewBuffList()
+			}
+			rec, _ := buffResolver(buffID)
+			buff := &Buff{
+				FromUID: fromUID,
+				ID:      buffID,
+				// 治愈术/施法类 buff 默认 0 时长（acts 自带 duration），
+				// 这里给 0 让 tick 用 record 的 DurationMS
+				RemainMS: rec.DurationMS,
+				Record:   rec,
+			}
+			// ActiveActs 至少 1，否则 Done() 立刻为 true 被清掉
+			if len(rec.Acts) > 0 {
+				buff.ActiveActs = len(rec.Acts)
+			} else {
+				buff.ActiveActs = 1
+			}
+			return e.Buffs.Add(buff)
+		})
+	}))
+	return err
+}
+
+// RemoveBuff 移除实体的某个 buff（按 buffID 全清）。
+func (w *World) RemoveBuff(ctx context.Context, mapID uint32, uid uint64, buffID uint32) error {
+	_, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return nil, state.MutateEntity(uid, func(e *Entity) error {
+			if e.Buffs != nil {
+				e.Buffs.RemoveID(buffID)
+			}
+			return nil
+		})
+	}))
+	return err
 }

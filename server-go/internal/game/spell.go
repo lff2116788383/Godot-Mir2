@@ -344,7 +344,23 @@ func (h *SpellHandler) castBuff(ctx context.Context, p *Player, rec MagicRecord,
 
 	h.broadcastCastMagic(ctx, p, rec, target.UID, 0, 0)
 
-	// BuffID 用 buffType 直接当 ID，state=ON
+	// ★ 必须真的挂到 world 实体上，只往 Player.Buffs 追加一个 ID 是没用的：
+	//
+	//	属性计算读的是 world.Entity.Stats，而 buff 修正要在
+	//	world 层 ApplyAttributeModifiers 里叠加。
+	//	只记 ID 不挂实体的结果是「头上有图标，数值完全不变」。
+	//
+	//	这也是初版的真实缺陷：buff 一直是「纯装饰」。
+	if err := h.Worlds.AddBuff(ctx, p.MapID, target.UID, buffType, p.UID); err != nil {
+		h.logReject(p, "add buff failed: "+err.Error(), rec.MagicID)
+	}
+
+	// 重算属性（buff 的属性修正要在 Stats 上生效）
+	if err := h.Worlds.RefreshStats(ctx, p.MapID, target.UID,
+		target.CombatStatsFor(h.Items)); err != nil {
+		h.logReject(p, "refresh stats after buff", rec.MagicID)
+	}
+
 	target.Buffs = append(target.Buffs, buffType)
 	return h.broadcastToAll(ctx, p.MapID, protocol.SM_BUFF, protocol.SMBuff{
 		UID: target.UID, Type: buffType, State: 1,
@@ -483,7 +499,7 @@ func (h *SpellHandler) gainExp(ctx context.Context, p *Player, exp uint64) {
 		// 升级要重算 HP 上限与战斗属性
 		p.MaxHP = 30 + int32(newLevel)*5
 		p.HP = p.MaxHP
-		if err := h.Worlds.SetStats(ctx, p.MapID, p.UID, p.CombatStatsFor(h.Items)); err != nil {
+		if err := h.Worlds.RefreshStats(ctx, p.MapID, p.UID, p.CombatStatsFor(h.Items)); err != nil {
 			h.logReject(p, "set stats after level up", 0)
 		}
 	}
@@ -575,37 +591,51 @@ func isTaoistMagic(rec MagicRecord) bool {
 	return false
 }
 
-// buffTypeOfMagic 把魔法名映射到 buff 类型（BFT_*）。
+// buffTypeOfMagic 把魔法名映射到 buff ID。
 //
-// 【依据】player.cpp:1922-1930：治愈术/施毒术/幽灵盾/神圣战甲术
-// 用 DBCOM_BUFFID(魔法名) 查 buffrecord，buffID 就是魔法名索引。
+// 【依据】player.cpp:1922-1930：用 DBCOM_BUFFID(魔法名) 查 buffrecord，
+// buff ID 就是 buffrecord.inc 里的**记录索引**（与魔法表同名但不同表）。
 //
-// ★ buff ID 不是魔法 ID：buffrecord.inc 与 magicrecord.inc 是两张表，
+// ★ 这里必须按 buffrecord.inc 的真实索引写，不能用「1,2,3,4,5」这种
 //
-//	只是同名。这里返回的是 buff 表里的索引，不能直接用 magicID。
+//	  自造常量。初版就是硬编码 1-5，结果是：
+//
+//		buffrecord.inc 里 1 号是「治愈术」、2 号是「施毒术」、
+//		幽灵盾其实是 9 号、神圣战甲术是 10 号。
+//		于是「放幽灵盾」会给玩家挂上「治愈术」的 +20% HP，
+//		而施毒术（应该是 -20% HP 的 debuff）被当成 2 号也算对了 ——
+//		纯属巧合。这种错误在客户端只是「图标不对」，
+//		但数值全错，而且很难联想到根因。
+//
+// 正确 ID（从 content/buffs.json 读出，共 21 条）：
+//
+//	1 治愈术  2 施毒术  9 幽灵盾  10 神圣战甲术  19 太阳水 ...
+//
+// ★ 「魔法盾」「阴阳法环」在 buffrecord.inc 里**不存在**，
+//
+//	它们只是纯特效技能，不产生 buff。这里返回 false 是对的。
 func buffTypeOfMagic(name string) (uint32, bool) {
 	switch name {
-	case "魔法盾":
-		return BuffTypeShield, true
+	case "治愈术":
+		return BuffTypeHeal, true
+	case "施毒术":
+		return BuffTypePoison, true
 	case "幽灵盾":
 		return BuffTypeGhostArmor, true
 	case "神圣战甲术":
 		return BuffTypeHolyArmor, true
-	case "施毒术":
-		return BuffTypePoison, true
-	case "阴阳法环":
-		return BuffTypeYinYang, true
 	}
 	return 0, false
 }
 
-// buff 类型常量（buffrecord.inc 的 BFT_* 子集）。
+// buff ID 常量（buffrecord.inc 的真实记录索引）。
+//
+// 改这里必须同步 content/buffs.json —— 两者是同一张表的两份表示。
 const (
-	BuffTypeShield     uint32 = 1 // BFT_SHIELD 魔法盾
-	BuffTypeGhostArmor uint32 = 2 // 幽灵盾
-	BuffTypeHolyArmor  uint32 = 3 // 神圣战甲术
-	BuffTypePoison     uint32 = 4 // 施毒术
-	BuffTypeYinYang    uint32 = 5 // 阴阳法环
+	BuffTypeHeal       uint32 = 1  // 治愈术  HP +20%
+	BuffTypePoison     uint32 = 2  // 施毒术  HP -20%
+	BuffTypeGhostArmor uint32 = 9  // 幽灵盾  MAC +2 +5%
+	BuffTypeHolyArmor  uint32 = 10 // 神圣战甲术 AC +2 +5%
 )
 
 // ==================== 快捷键（CM_SETMAGICKEY）====================

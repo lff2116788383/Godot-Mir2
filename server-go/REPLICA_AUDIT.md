@@ -1264,3 +1264,138 @@ s.Trades.OnLeaveGame(ctx, player.UID)
 | 交易落库审计 | 原版有 `directtradedb` 记录交易流水，未接 |
 | 仓库格子上限 | 原版有数量限制，现在是无限 |
 | `CM_SETFOLLOWTEAMLEADER` | 跟队长功能（客户端行为，服务端只需存标志） |
+
+### B5 第十三批：P1 起步（buff 属性修正）（本轮）
+
+**buff 从「纯装饰」变成真的影响数值。服务端测试 351 → 356 项。**
+
+#### 1. buff 之前完全没有效果
+
+`castBuff` 只做了一件事：往 `Player.Buffs` 追加一个 ID + 推 `SM_BUFF`。
+
+后果：
+
+| 技能 | 应该是 | 实际 |
+|---|---|---|
+| 幽灵盾 | MAC +2 +5% | **数值完全不变** |
+| 神圣战甲术 | AC +2 +5% | 数值完全不变 |
+| 施毒术（debuff） | HP -20% | 数值完全不变 |
+| 治愈术 | HP +20% | 数值完全不变 |
+
+头顶会出现图标，但战斗数值一点没变 —— 玩家会以为「这些技能是坏的」。
+
+#### 2. 修掉一个更严重的问题：buff ID 全部错位
+
+初版 `buffTypeOfMagic` 用的是**自造常量 1-5**：
+
+```go
+BuffTypeShield     uint32 = 1  // 魔法盾
+BuffTypeGhostArmor uint32 = 2  // 幽灵盾
+BuffTypeHolyArmor  uint32 = 3  // 神圣战甲术
+BuffTypePoison     uint32 = 4  // 施毒术
+BuffTypeYinYang    uint32 = 5  // 阴阳法环
+```
+
+对照 `buffrecord.inc` 的真实索引：
+
+```
+ 1 治愈术      2 施毒术      9 幽灵盾      10 神圣战甲术
+```
+
+也就是说：
+
+- 放「幽灵盾」（应该是 9 号）→ 挂上 **1 号「治愈术」+20% HP**
+- 放「神圣战甲术」（应该是 10 号）→ 挂上 **1 号「治愈术」**
+- 施「施毒术」恰好是 2 号 —— **纯属巧合才对上**
+
+而且 `buffrecord.inc` 里**根本没有「魔法盾」和「阴阳法环」**，
+它们只是纯特效技能，不该产生 buff。
+
+这类错误客户端只会表现成「图标不对」，数值全错且极难联想到根因。
+
+#### 3. 属性修正的公式与叠加语义
+
+【依据】`buffrecord.hpp:34-43` BuffValuePercentage：
+
+```cpp
+int gain(int base) const {
+    return value + lround(base * percentage / 100.0);
+}
+```
+
+即「固定值 + 百分比」两段叠加。
+
+**★ 多 buff 是累乘而非相加：**
+
+两个 `+20%` 在 100 上应该是 `100 → 120 → 144`（×1.44），不是 `+40% = 140`。
+原版是按 `buffSeq` 顺序逐个 apply，作用在**已经改过的值**上。
+保持这个语义很重要 —— 五六层 buff 叠加时差异会非常明显。
+
+**★ HP/MP 修正只改上限，不改当前值：**
+
+改当前值会让「上 buff 瞬间回满血」变成 exploit（反复上/下 buff 回血）。
+
+#### 4. 「刷新属性」要有唯一入口
+
+新增 `World.RefreshStats(ctx, mapID, uid, base)`：
+
+```go
+e.Stats = base
+ApplyAttributeModifiers(&e.Stats, e.Buffs)
+```
+
+**★ 为什么需要这个入口而不是让调用方自己 Set：**
+
+buff 修正是叠加在基础属性上的。如果每个「升级/换装/上下 buff」的调用点
+都自己算好再 Set，**任何一处忘了叠 buff 就会出现「某个 buff 只对法师生效」**
+这种极难复现的现象。统一入口后，所有路径自动带上 buff。
+
+原 4 处 `SetStats` 调用点全部改为 `RefreshStats`。
+
+#### 5. 新增 `World.AddBuff` / `RemoveBuff`
+
+buff 必须挂在 `world.Entity` 上而不是 `Player` 字段上：
+属性修正、光环、定时触发都要在实体上生效，而 `Stats` 属于 `world.Entity`。
+只记在 Player 上就是「头上有图标但数值不变」——初版正是这个症状。
+
+**新增文件**
+
+| 文件 | 行数 | 内容 |
+|---|---|---|
+| `tools/extract/extract_buffs.py` | 250 | 从 buffrecord.inc 提取（顶层花括号配对） |
+| `content/buffs.json` | — | 21 条 buff，16 条有属性修正 |
+| `internal/game/buffdb.go` | 130 | buff 表加载 + 一次性绑定解析器 |
+| `internal/world/buff.go` 补 | +130 | `BuffAttributeModifier` / `Gain` / `ApplyAttributeModifiers` |
+| `internal/world/world.go` 补 | +70 | `AddBuff` / `RemoveBuff` / `RefreshStats` |
+| `internal/game/spell.go` 改 | ~30 | buff ID 修正 + 真正挂载 + 刷新属性 |
+
+**提取脚本的坑（第三次踩同一类）**
+
+`buffrecord.inc` 每条记录内嵌 `.actList { { .name = u8"HP", ... } }`。
+按「任意 `.name`」切分会把嵌套 act 当成独立 buff —— 57 条变几百条，
+且名字全是 `HP`/`MP`。必须用**顶层花括号配对**扫描。
+
+这与 `extract_magics.py`（magicrecord.inc 的 gfxList）、
+`extract_monsters.py`（dropItemList）是同一类问题。
+
+**验证**
+
+| 测试 | 结果 |
+|---|---|
+| `TestAttributeModifierPercentage` | 5 个用例含边界（33 的 15% → 5，四舍五入） |
+| `TestApplyAttributeModifiers` | 幽灵盾：MAC 40/60 → **44/65** |
+| `TestMultipleBuffsStack` | 两层 +20%：AC.Max 100 → **144**（×1.44 不是 140） |
+| `TestDebuffLowersStats` | 施毒术 HP 上限修正 = -20 |
+| `TestNoBuffsNoChange` | 无 buff 时属性不变 |
+| 服务端实跑 | `buff db loaded count=21`，零 error |
+| 客户端 c9c8 | **15 项全过** |
+
+**本轮未做**
+
+| 项目 | 影响 |
+|---|---|
+| `trigger` 类 act | 「HP持续」这类定时回血/掉血没实现（buffrecord.inc 里有 5 条） |
+| `aura` 类 act | 恢复光环/吸血光环的范围效果没实现 |
+| `attackModifier` | 攻击时的概率触发（buffrecord.inc 里有 2 条） |
+| buff 到期后的属性回退 | 到期推 `SM_BUFF off`，但 `Stats` 不会自动重算 |
+| 药品 buff | 金创药/太阳水走的是 buff 表，现在还是瞬时回血 |

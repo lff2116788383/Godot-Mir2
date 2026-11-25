@@ -155,7 +155,7 @@ func (s *KillSettler) gainExp(ctx context.Context, p *Player, exp uint64) {
 		// 升级要重算 HP 上限与战斗属性
 		p.MaxHP = 30 + int32(newLevel)*5
 		p.HP = p.MaxHP
-		if err := s.Worlds.SetStats(ctx, p.MapID, p.UID, p.CombatStatsFor(s.Items)); err != nil {
+		if err := s.Worlds.RefreshStats(ctx, p.MapID, p.UID, p.CombatStatsFor(s.Items)); err != nil {
 			s.log("set stats after level up", p, err)
 		}
 	}
