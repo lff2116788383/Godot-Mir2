@@ -421,3 +421,152 @@ func splitChatMessage(payload []byte) (protocol.CMChatMessageHeader, string, err
 	body := string(payload[chatMessageHeaderSize:])
 	return header, body, nil
 }
+
+// RegisterTeamRoutes 注册组队消息。
+func RegisterTeamRoutes(dispatcher *transport.Dispatcher, teams *TeamManager) error {
+	if teams == nil {
+		return nil
+	}
+
+	fixed := []struct {
+		id protocol.CMType
+		fn func(ctx context.Context, s *transport.Session, p protocol.Packet) error
+	}{
+		{protocol.CM_REQUESTJOINTEAM, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRequestJoinTeam
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return teams.handleJoin(ctx, s.ID(), req.UID)
+		}},
+		{protocol.CM_REQUESTLEAVETEAM, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRequestLeaveTeam
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return teams.handleLeave(ctx, s.ID(), req.UID)
+		}},
+		{protocol.CM_QUERYTEAMINFO, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMQueryTeamInfo
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return teams.handleQueryInfo(ctx, s.ID(), req.UID)
+		}},
+		{protocol.CM_TRANSFERTEAMLEADER, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMTransferTeamLeader
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return teams.handleTransfer(ctx, s.ID(), req.UID)
+		}},
+	}
+	for _, r := range fixed {
+		if err := dispatcher.Register(r.id, r.fn); err != nil {
+			return fmt.Errorf("register %v: %w", r.id, err)
+		}
+	}
+
+	// 变长消息（cerealf 序列化）
+	variable := []struct {
+		id protocol.CMType
+		fn func(ctx context.Context, s *transport.Session, p protocol.Packet) error
+	}{
+		{protocol.CM_CREATETEAM, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.SDTeamReq
+			if err := protocol.CerealDeserialize(p.Payload, &req); err != nil {
+				return nil // 内容非法就静默丢弃，不回错误
+			}
+			return teams.handleCreate(ctx, s.ID(), req)
+		}},
+		{protocol.CM_SETTEAMREQUIREMENT, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.SDTeamReq
+			if err := protocol.CerealDeserialize(p.Payload, &req); err != nil {
+				return nil
+			}
+			return teams.handleSetRequirement(ctx, s.ID(), req)
+		}},
+	}
+	for _, r := range variable {
+		if err := dispatcher.Register(r.id, r.fn); err != nil {
+			return fmt.Errorf("register %v: %w", r.id, err)
+		}
+	}
+	return nil
+}
+
+// RegisterSecuredRoutes 注册仓库消息。
+//
+// ★ 只有「取回」需要路由：
+//
+//	寄存（uidSecureItem）是 NPC 脚本调的服务端函数，不经过客户端消息。
+//	只有「从仓库取回」是玩家点客户端按钮 → CM_REQUESTRETRIEVESECUREDITEM。
+func RegisterSecuredRoutes(dispatcher *transport.Dispatcher, secured *SecuredHandler) error {
+	if secured == nil {
+		return nil
+	}
+	return dispatcher.Register(protocol.CM_REQUESTRETRIEVESECUREDITEM,
+		func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRequestRetrieveSecuredItem
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return secured.Retrieve(ctx, s.ID(), req.ItemID, req.SeqID)
+		})
+}
+
+// RegisterDirectTradeRoutes 注册面对面交易消息。
+func RegisterDirectTradeRoutes(dispatcher *transport.Dispatcher, trades *DirectTradeManager) error {
+	if trades == nil {
+		return nil
+	}
+
+	fixed := []struct {
+		id protocol.CMType
+		fn func(ctx context.Context, s *transport.Session, p protocol.Packet) error
+	}{
+		{protocol.CM_REQUESTDIRECTTRADE, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRequestDirectTrade
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return trades.handleRequest(ctx, s.ID(), req.UID)
+		}},
+		{protocol.CM_RESPONDDIRECTTRADE, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRespondDirectTrade
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return trades.handleRespond(ctx, s.ID(), req.UID, req.Accept != 0)
+		}},
+		{protocol.CM_COMMITDIRECTTRADE, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMCommitDirectTrade
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return trades.handleCommit(ctx, s.ID(), req.UID)
+		}},
+		{protocol.CM_CANCELDIRECTTRADE, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMCancelDirectTrade
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return trades.handleCancel(ctx, s.ID(), req.UID)
+		}},
+	}
+	for _, r := range fixed {
+		if err := dispatcher.Register(r.id, r.fn); err != nil {
+			return fmt.Errorf("register %v: %w", r.id, err)
+		}
+	}
+
+	// 变长消息：更新报价
+	return dispatcher.Register(protocol.CM_UPDATEDIRECTTRADE,
+		func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.SDDirectTradeOfferRequest
+			if err := protocol.CerealDeserialize(p.Payload, &req); err != nil {
+				return nil
+			}
+			return trades.handleUpdate(ctx, s.ID(), req)
+		})
+}

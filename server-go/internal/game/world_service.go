@@ -49,6 +49,12 @@ type WorldService struct {
 	// ★ 之前没有这个字段，`Enter` 只建了个空 Wear map ——
 	//	重登后装备和背包全部消失，而且不报错（客户端看到的就是空背包）。
 	ItemRepo *storage.ItemRepository
+	// Secured 仓库（NPC 寄存/取回）。
+	Secured *SecuredHandler
+	// Teams 组队管理器（下线时要清理队伍关系）。
+	Teams *TeamManager
+	// Trades 面对面交易（下线时要取消交易）。
+	Trades *DirectTradeManager
 	// MapScripts 地图脚本管理器（刷怪/守卫/安全区）。
 	MapScripts *MapScriptManager
 	// Ticker 世界时钟驱动器。地图建好后要 Track 它，
@@ -201,6 +207,9 @@ func (s *WorldService) loadMapNPCs(ctx context.Context, mapID uint32) error {
 			Broadcast: s.Broadcast,
 			Items:     s.Items,
 			Logger:    s.Logger,
+			// 修理 / 仓库：NPC 脚本的 uidRepairItem / uidSecureItem 要用
+			Durability: s.Durability,
+			Secured:    s.Secured,
 		}
 	})
 	if err != nil {
@@ -513,6 +522,21 @@ func (s *WorldService) Leave(ctx context.Context, channelID uint64) {
 	player, ok := s.Players.ByChannel(channelID)
 	if !ok {
 		return
+	}
+
+	// 离开前先清理队伍关系。
+	//
+	// ★ 必须在移除 PlayerManager 之前：
+	//
+	//	TeamManager 推送新队伍列表时要按 UID 查在线玩家。
+	//	先移除的话，剩下的人收到的是「成员列表里有个查不到的人」——
+	//	客户端会显示一个空名字的队员，而且永远占着名额。
+	if s.Teams != nil {
+		s.Teams.OnLeaveGame(ctx, player.UID)
+	}
+	// 交易也要清理：不取消的话对方永远卡在「等待交易中」
+	if s.Trades != nil {
+		s.Trades.OnLeaveGame(ctx, player.UID)
 	}
 
 	// 落库：位置与血量。失败不阻断离开流程。

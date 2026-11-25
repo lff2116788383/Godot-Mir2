@@ -1121,3 +1121,146 @@ Go 的 math/rand 即使种子固定，`Intn(n)` 也不保证第一次返回 0，
 | 修理费用计算 | 原版按物品价格与损失持久算，现在没有扣钱 |
 | 金币面额换算 | 掉 `count=1600` 的金币只入账 1 枚 |
 | 持久落库的完整链路 | 穿戴/脱下路径的 `Duration` 已修，但 NPC 脚本改物品属性时未覆盖 |
+
+### B5 第十二批：P0 收尾（组队 / 交易 / 仓库 / 修理）（本轮）
+
+**P0 四项一次做完。服务端测试 319 → 351 项。**
+
+#### 1. 组队（`internal/game/team.go`，480 行）
+
+原版组队**不入库**，是纯内存状态（`player.hpp:100-103`）：
+
+```cpp
+uint64_t              m_teamLeader;
+std::vector<uint64_t> m_teamMemberList;   // 队长权威，队员副本
+SDTeamReq             m_teamRequirement;
+std::set<uint64_t>    m_teamCandidateSet;
+```
+
+**★ 没有照抄「每个 Player 一份」，而是集中到 `TeamManager`：**
+
+原版是 actor 模型，队长和队员各持副本靠 `AM_TEAMUPDATE` 同步。
+Go 侧每个连接一个 goroutine，各持一份**必然出现「两人看到的队伍不一样」**，
+而且极难复现。集中管理所有读写都在同一把锁下，天然一致。
+代价是所有队伍操作串行 —— 组队是几秒一次的低频操作，不是瓶颈。
+
+**`CM_REQUESTJOINTEAM` 一条消息六种语义**（`playernet.cpp:1280-1337`）：
+
+| 场景 | 结果 |
+|---|---|
+| uid == 自己，已在队伍 | `TEAMERR_INTEAM` |
+| uid == 自己，不在队伍 | 建单人队 |
+| 我是队长，uid 是申请人 | 批准入队 |
+| 我是队长，uid 不是申请人 | `TEAMERR_BADCANDIDATE` |
+| 我在队伍但不是队长 | `TEAMERR_INTEAM` |
+| 我不在队伍，uid 是别人 | 向对方申请（进候选集） |
+
+「候选集」不能省 —— 没有它就无法区分「申请过」和「随便发个 UID 想混进来」。
+
+**队长离队 = 解散**；队员自己走不等队长（队长可能离线）。
+
+#### 2. 面对面交易（`internal/game/direct_trade.go`，640 行）
+
+四阶段状态机：`REQUEST → RESPOND → UPDATE → COMMIT`。
+
+**关键约束（最容易漏的三条）：**
+
+1. **锁定后不能改**：自己锁了，改任何东西都要先解锁。
+   允许「锁定后悄悄改」会让对方确认时看到的不是你锁定的内容。
+2. **对方确认后自己也不能改**：否则对方确认的内容会变。
+3. **双方都锁定才能确认**（原版 `directTradeReady`），
+   **双方都确认才结算**。
+
+**结算顺序（`commitLocked`）：**
+
+```
+1. 先检查双方是否还持有全部物品与金币
+2. 全部能交才一起交；任何一边不足就整体失败
+3. 交完再给对方加
+```
+
+不先全检就逐个搬的话，第一名交了、第二名失败，物品就消失在一半的流程里。
+
+**★ 物品持久值从服务端背包取，不信客户端：**
+客户端可以谎报 `Duration`，成交后对方会拿到一件「假满持久」的装备。
+
+**距离限制 3 格**（不是原版的「视野内」）：视野内可能十几格远，
+隔半条街交易不合理，也会被用来绕过面对面的设计意图。
+
+#### 3. 仓库（`internal/game/secured.go`，190 行）
+
+`storage/items.go` 早就有 `LoadSecuredItems` / `PutSecuredItem` / `TakeSecuredItem`，
+只差 game 层接上。
+
+**★ 寄存与取回的顺序是相反的：**
+
+```
+寄存：先写库 → 再删背包     （先删背包，写库失败物品就消失）
+取回：先从库原子取出 → 再进背包  （先删库，进背包失败物品也消失）
+```
+
+取回要同时推两条消息：`SM_INVENTORY`（背包变了）+ `SM_REMOVESECUREDITEM`（仓库列表删一行）。
+只推前者的话，NPC 仓库面板里那一行还在，玩家会重复点「取回」。
+
+#### 4. NPC 修理（走脚本定价）
+
+**修理费在 Lua 里算，不在 Go 里算**（`include/invop.lua:64-86`）：
+
+```lua
+local repairGoldPerDuration = 30
+local cost = (max - curr) * repairGoldPerDuration
+if special then cost = cost * 3 end
+```
+
+这是**脚本层策略**而不是协议规则。写在服务端会让「改修理价格」变成改代码重编译。
+所以 `uidRepairItem(uid, itemID, seqID, special, cost)` 由脚本传 price 进来。
+
+**扣钱顺序：修成功才扣钱。** 反过来的话，扣了钱但修失败会让玩家白花钱。
+
+#### 本轮修掉的一个连带缺陷：下线不清理队伍/交易
+
+`WorldService.Leave` 之前只做落库 + 移除实体。加了两处清理：
+
+```go
+s.Teams.OnLeaveGame(ctx, player.UID)
+s.Trades.OnLeaveGame(ctx, player.UID)
+```
+
+★ 必须在移除 `PlayerManager` **之前**：
+`TeamManager` 推新队伍列表要按 UID 查在线玩家，先移除的话
+剩下的人会收到「成员列表里有个查不到的人」——客户端显示空名字队员，且永远占名额。
+
+**新增文件**
+
+| 文件 | 行数 | 内容 |
+|---|---|---|
+| `internal/game/team.go` | 540 | 组队（建/申请/批准/踢/解散/移交/要求/查询） |
+| `internal/game/direct_trade.go` | 640 | 交易状态机 + 结算 |
+| `internal/game/secured.go` | 190 | 仓库寄存/取回/列表 |
+| `internal/game/durability.go` 补 | +20 | `notifyGold` |
+| `internal/game/npc_manager.go` 补 | +45 | `RepairItem` / `SecureItem` / `PostSecuredItemList` |
+| `internal/script/npc.go` 补 | +50 | 三个 Lua 绑定（原来是空桩） |
+
+**路由：23 → 35 条**（+组队 6、+仓库 1、+交易 5）
+
+**验证**
+
+| 测试组 | 项数 | 覆盖 |
+|---|---|---|
+| 组队 | 8 | 建队/重复建/申请批准/未申请拒绝/满员/队长解散/移交/下线清理 |
+| 交易 | 7 | 物品互换/金币互换/锁定不可改/双方须锁定/超距/拒绝后可重发/物品不足整体失败 |
+| 仓库 | 2 | 寄存取回（持久保住）/取不存在不造物 |
+| 修理 | 1 | 钱不够拒绝、钱够扣款并恢复持久 |
+| **新增合计** | **18** | 319 → **351 项全通过** |
+
+服务端实跑：1111 只怪 / 27 守卫 / 3 安全区，`player items loaded`，零 error。
+客户端 c9c8 **15 项全过**。
+
+**P0 剩余未做**
+
+| 项目 | 说明 |
+|---|---|
+| 客户端侧 UI | 服务端全部就绪，客户端还没画交易/组队/仓库面板 |
+| 交易落库审计 | 原版有 `directtradedb` 记录交易流水，未接 |
+| 仓库格子上限 | 原版有数量限制，现在是无限 |
+| `CM_SETFOLLOWTEAMLEADER` | 跟队长功能（客户端行为，服务端只需存标志） |

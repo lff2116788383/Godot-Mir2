@@ -45,9 +45,12 @@ func (printHost) QueryRedName(uint64) bool                            { return f
 func (printHost) QueryItemDuration(uint64, uint32, uint32) (int, int, bool) {
 	return 0, 0, false
 }
-func (printHost) RemoveGold(uint64, uint64) bool           { return true }
-func (printHost) GrantGold(uint64, uint64) bool            { return true }
-func (printHost) SpaceMove(uint64, uint32, int, int) error { return nil }
+func (printHost) RepairItem(uint64, uint32, uint32, bool, uint64) bool { return true }
+func (printHost) SecureItem(uint64, uint32, uint32) bool               { return true }
+func (printHost) PostSecuredItemList(uint64) error                     { return nil }
+func (printHost) RemoveGold(uint64, uint64) bool                       { return true }
+func (printHost) GrantGold(uint64, uint64) bool                        { return true }
+func (printHost) SpaceMove(uint64, uint32, int, int) error             { return nil }
 func (h printHost) Log(level int, msg string) {
 	if h.verbose {
 		fmt.Printf("[lua %d] %s\n", level, msg)

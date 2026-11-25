@@ -43,10 +43,10 @@ const (
 //
 // 语义严格照原版：
 //
-//	1. 该部位没装备 / 装备没有持久概念 → false（药水、材料不磨损）
-//	2. 掷骰没中                       → false
-//	3. 当前持久 > 0                   → 减 1，推 SM_WEARITEMDURATION
-//	4. 当前持久 == 0（这次要减到 -1）   → **装备永久销毁**
+//  1. 该部位没装备 / 装备没有持久概念 → false（药水、材料不磨损）
+//  2. 掷骰没中                       → false
+//  3. 当前持久 > 0                   → 减 1，推 SM_WEARITEMDURATION
+//  4. 当前持久 == 0（这次要减到 -1）   → **装备永久销毁**
 //
 // ★ 第 4 条是「销毁」不是「留在身上」：
 //
@@ -220,6 +220,21 @@ func (h *DurabilityHandler) AddGold(ctx context.Context, p *Player, count uint64
 		_ = h.Golds.Set(ctx, p.DBID, p.Gold)
 	}
 	return add
+}
+
+// notifyGold 把当前金币推给客户端（SM_GOLD）。
+//
+// 单独一个方法是因为「扣钱」的场景很多（修理/买货/传送/修装备），
+// 每处都自己拼包容易漏 —— 漏了的表现是「钱花了但界面数字没变」。
+func (h *DurabilityHandler) notifyGold(p *Player) {
+	if h.Broadcast == nil || p == nil || p.ChannelID == 0 {
+		return
+	}
+	payload, err := protocol.AppendWirePayload(nil, protocol.SMGold{Gold: p.Gold})
+	if err != nil {
+		return
+	}
+	_ = h.Broadcast.SendTo(p.ChannelID, protocol.SM_GOLD, payload, 0)
 }
 
 // ==================== 持久推送 ====================

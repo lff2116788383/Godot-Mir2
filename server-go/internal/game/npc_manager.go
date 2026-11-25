@@ -242,6 +242,10 @@ type npcHostAdapter struct {
 	Broadcast Broadcaster
 	Items     *ItemDB
 	Logger    *slog.Logger
+	// Durability 修理（NPC 修理要恢复持久并扣钱）
+	Durability *DurabilityHandler
+	// Secured 仓库（NPC 寄存/取回）
+	Secured *SecuredHandler
 
 	mu sync.Mutex
 }
@@ -401,6 +405,55 @@ func (h *npcHostAdapter) QueryItemDuration(playerUID uint64, itemID, seqID uint3
 		return 0, 0, false
 	}
 	return int(it.Durability), int(it.MaxDurability), true
+}
+
+// RepairItem 修理背包物品：扣钱 + 恢复持久。
+//
+// ★ 顺序是「先修后扣钱」还是「先扣钱后修」？
+//
+//	原版是先判断能否修（不打钱），再 repairInventoryItem，再调脚本扣钱。
+//	这里统一成：修成功才扣钱。反过来的话，扣了钱但修失败（比如
+//	物品在扣钱到修理之间被交易走）会让玩家白花钱。
+func (h *npcHostAdapter) RepairItem(playerUID uint64, itemID, seqID uint32, special bool, cost uint64) bool {
+	p, ok := h.Players.Get(playerUID)
+	if !ok || h.Durability == nil {
+		return false
+	}
+	if cost > 0 && p.Gold < cost {
+		return false // 钱不够
+	}
+	if _, repaired := h.Durability.RepairItem(p, itemID, uint64(seqID), special); !repaired {
+		return false
+	}
+	if cost > 0 {
+		p.Gold -= cost
+		h.Durability.notifyGold(p)
+	}
+	return true
+}
+
+// SecureItem 把背包物品寄存到仓库。
+func (h *npcHostAdapter) SecureItem(playerUID uint64, itemID, seqID uint32) bool {
+	if h.Secured == nil {
+		return false
+	}
+	p, ok := h.Players.Get(playerUID)
+	if !ok {
+		return false
+	}
+	return h.Secured.Secure(context.Background(), p, itemID, seqID)
+}
+
+// PostSecuredItemList 推开仓库物品列表。
+func (h *npcHostAdapter) PostSecuredItemList(playerUID uint64) error {
+	if h.Secured == nil {
+		return nil
+	}
+	p, ok := h.Players.Get(playerUID)
+	if !ok {
+		return nil
+	}
+	return h.Secured.ShowList(context.Background(), p)
 }
 
 func (h *npcHostAdapter) RemoveGold(playerUID uint64, amount uint64) bool {

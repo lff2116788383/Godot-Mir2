@@ -86,6 +86,7 @@ func (h *InventoryHandler) playerOf(channelID uint64) (*Player, bool) {
 // toSDItem 把内部 Item 转成协议层 SDItem。
 //
 // ★ 必须带 Duration：存储层是按 Duration[2] 落库的，
+//
 //	转换时丢掉的话，装备每次「穿上/脱下/重登」都会恢复满持久 ——
 //	磨损系统等于不存在，而且不会有任何报错。
 func toSDItem(it Item) protocol.SDItem {

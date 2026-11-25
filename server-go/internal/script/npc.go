@@ -49,6 +49,19 @@ type NPCHost interface {
 	// QueryItemDuration 查询物品持久度
 	QueryItemDuration(playerUID uint64, itemID, seqID uint32) (cur, max int, ok bool)
 
+	// RepairItem 修理背包物品（special=true 为特殊修理）
+	//
+	// ★ 由脚本传 cost 进来而不是服务端自己算：
+	//
+	//	原版的定价在 include/invop.lua 里（(max-curr)*30，特殊修理 ×3），
+	//	是**脚本层策略**而不是协议规则。写在服务端会让
+	//	「改个修理价格」变成改代码重编译。
+	RepairItem(playerUID uint64, itemID, seqID uint32, special bool, cost uint64) bool
+	// SecureItem 把背包物品寄存到仓库
+	SecureItem(playerUID uint64, itemID, seqID uint32) bool
+	// PostSecuredItemList 把仓库列表推给玩家
+	PostSecuredItemList(playerUID uint64) error
+
 	// RemoveGold 扣金币
 	RemoveGold(playerUID uint64, amount uint64) bool
 	// GrantGold 给金币
@@ -226,9 +239,10 @@ func (s *NPCScript) bindings() map[string]lua.LGFunction {
 		"uidRemoteCall":          s.luaRemoteCall,
 		"uidStartTrade":          luaReturnNothing,
 		"uidStartRepair":         luaReturnNothing,
-		"uidRepairItem":          luaReturnNothing,
+		"uidRepairItem":          s.luaRepairItem,
 		"uidStartSecure":         luaReturnNothing,
-		"uidSecureItem":          luaReturnNothing,
+		"uidSecureItem":          s.luaSecureItem,
+		"uidPostSecuredItemList": s.luaPostSecuredItemList,
 		"uidShowSecuredItemList": luaReturnNothing,
 		"uidGrant":               luaReturnNothing,
 		"uidRemove":              luaReturnNothing,
@@ -469,4 +483,40 @@ func (s *NPCScript) luaRemoteCall(l *lua.LState) int {
 	s.host.Log(1, fmt.Sprintf("npc %s: uidRemoteCall not implemented", s.FullName))
 	l.Push(lua.LNil)
 	return 1
+}
+
+// luaRepairItem 对应 player.cpp:188 的 repairItem 绑定。
+//
+// Lua 签名：uidRepairItem(uid, itemID, seqID, special, cost)
+//
+// ★ cost 是脚本算好的价格（invop.lua 里的 (max-curr)*30，特殊 ×3）。
+// 服务端负责「扣钱 + 恢复持久」，不负责定价。
+func (s *NPCScript) luaRepairItem(l *lua.LState) int {
+	uid := uint64(l.CheckInt64(1))
+	itemID := uint32(l.CheckInt64(2))
+	seqID := uint32(l.CheckInt64(3))
+	special := l.CheckBool(4)
+	cost := uint64(l.OptInt64(5, 0))
+
+	l.Push(lua.LBool(s.host.RepairItem(uid, itemID, seqID, special, cost)))
+	return 1
+}
+
+// luaSecureItem 对应 player.cpp:178 的 secureItem 绑定。
+func (s *NPCScript) luaSecureItem(l *lua.LState) int {
+	uid := uint64(l.CheckInt64(1))
+	itemID := uint32(l.CheckInt64(2))
+	seqID := uint32(l.CheckInt64(3))
+	s.host.SecureItem(uid, itemID, seqID)
+	return 0
+}
+
+// luaPostSecuredItemList 把控仓库列表推给客户端。
+//
+// 对应 player.cpp 里 querySecuredItemList 那一带的绑定：
+// NPC 打开仓库面板时调用，客户端据此画出「已寄存物品」列表。
+func (s *NPCScript) luaPostSecuredItemList(l *lua.LState) int {
+	uid := uint64(l.CheckInt64(1))
+	_ = s.host.PostSecuredItemList(uid)
+	return 0
 }

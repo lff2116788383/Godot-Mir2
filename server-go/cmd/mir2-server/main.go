@@ -254,8 +254,25 @@ func main() {
 		},
 	}
 
+	// 组队（内存态，队长为权威）+ 仓库（走 DB）
+	teamManager := game.NewTeamManager(players, broadcaster, slog.Default())
+	securedHandler := &game.SecuredHandler{
+		Players:   players,
+		Broadcast: broadcaster,
+		Logger:    slog.Default(),
+		Items:     itemDB,
+		Repo:      storage.NewItemRepository(store),
+	}
+	worldService.Secured = securedHandler
+	worldService.Teams = teamManager
+
+	// 面对面交易（双人协商状态机）
+	tradeManager := game.NewDirectTradeManager(players, broadcaster, slog.Default())
+	worldService.Trades = tradeManager
+
 	if err := game.RegisterAllRoutes(dispatcher, loginHandler, actionHandler,
-		inventoryHandler, spellHandler, deathHandler, shopHandler, npcHandler, chatHandler); err != nil {
+		inventoryHandler, spellHandler, deathHandler, shopHandler, npcHandler, chatHandler,
+		teamManager, securedHandler, tradeManager); err != nil {
 		slog.Error("register routes", "error", err)
 		os.Exit(1)
 	}
