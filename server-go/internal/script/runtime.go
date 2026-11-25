@@ -135,14 +135,45 @@ func NewRuntime(opts Options) (*Runtime, error) {
 //
 // 必须在加载具体 NPC 脚本之前调用：具体脚本开头就调 setEventHandler，
 // 而那个函数是 npchar.lua 定义的。
+//
+// ★ 顺序：npchar.lua 之后、具体脚本之前装 `server` 表。
+//
+//	具体脚本的第一行就是 `local dialog = require(...)` +
+//	`server.player.xxx(...)`。server 表晚一步装，脚本就报
+//	"attempt to index a nil value (global 'server')"。
 func (rt *Runtime) LoadNPCFramework() error {
 	path := filepath.Join(rt.frameworkDir, "npchar.lua")
 	if err := rt.L.DoFile(path); err != nil {
 		return fmt.Errorf("load npchar.lua: %w", err)
 	}
+	// 装 server 表（api/player.lua 等零翻译复用）
+	if err := rt.LoadServerTable(); err != nil {
+		return err
+	}
 	rt.mu.Lock()
 	rt.loaded = true
 	rt.mu.Unlock()
+	return nil
+}
+
+// LoadServerTable 注入 `server` 表（server.player / server.npc / server.utils）。
+//
+// ★ 用 pcall 包裹每个 require：某个 api 模块自身语法有问题时，
+// 只是那个子表缺失，不会让整个 NPC 加载失败。
+//
+//	（比奇县行政官员这种关键 NPC 依赖 server.player；
+//	 即使 api.npc 坏了也不该连累它。）
+func (rt *Runtime) LoadServerTable() error {
+	if rt.scriptRoot == "" {
+		// 没有脚本根目录就装不了 api/*.lua ——
+		// 此时 server 表只有空壳，脚本调 server.player.xxx 会报 nil 索引。
+		// 这是「无脚本模式」下的预期行为（只有内置测试会走到）。
+		return rt.L.DoString("server = server or {}")
+	}
+	script := ServerTableBindings()
+	if err := rt.L.DoString(script); err != nil {
+		return fmt.Errorf("install server table: %w", err)
+	}
 	return nil
 }
 

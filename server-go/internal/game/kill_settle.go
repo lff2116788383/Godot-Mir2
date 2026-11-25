@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/lff2116788383/godot-mir2/server-go/internal/common"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/protocol"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/world"
 )
@@ -41,7 +42,31 @@ type KillSettler struct {
 	Items     *ItemDB
 	Broadcast Broadcaster
 	Logger    *slog.Logger
+	// GuildWars 公会战判定（用来免 PK 点）
+	//
+	// ★ 没有它的话，公会战双方互杀会一路刷成红名：
+	//
+	//	原版 playerop.cpp:671 ——
+	//	  if(isPlayer(target) && hasAggression(target) && !atGuildWar(target)) addPKPoint(...)
+	//
+	//	「killing a member of a guild my guild is at war with is no murder」
+	//	漏了这一个判断，公会战就变成「谁先动手谁变红名」，
+	//	而红名会掉装备、不能进城、被守卫打 —— 等于没人敢打公会战。
+	GuildWars *GuildWarManager
+	// Chars 角色持久化（PK 点要落库，否则重登清零）
+	Chars PKPointWriter
 }
+
+// PKPointWriter 是 PK 点落库的最小接口。
+type PKPointWriter interface {
+	UpdatePKPoint(ctx context.Context, dbid uint32, pkPoint int32) error
+}
+
+// SysPKPointPerKill 是杀人增加的 PK 点（sysconst.hpp:136）。
+const SysPKPointPerKill int32 = 100
+
+// SysPKPointRedName 是红名阈值（sysconst.hpp:137）。
+const SysPKPointRedName int32 = 200
 
 // Settle 结算一次击杀。
 //
@@ -119,7 +144,66 @@ func (s *KillSettler) settle(ctx context.Context, mapID uint32, killer *Player, 
 	if result.Exp > 0 && killer != nil {
 		s.gainExp(ctx, killer, result.Exp)
 	}
+
+	// 3. 杀玩家的 PK 点（playerop.cpp:671 on_AM_NOTIFYDEAD）
+	//
+	// 只有「杀的是玩家」才加。杀怪不加。
+	s.applyPKPoint(ctx, killer, targetUID)
 	return true
+}
+
+// applyPKPoint 处理「杀了另一个玩家」的 PK 点。
+//
+// 原版判定（playerop.cpp:671）：
+//
+//	if(amND.UID && uidf::isPlayer(amND.UID) && hasAggression(amND.UID) && !atGuildWar(amND.UID)){
+//	    addPKPoint(SYS_PKPOINTPERKILL);
+//	}
+//
+// 三个条件缺一不可：
+//
+//	isPlayer(target)  —— 杀怪不加 PK 点
+//	hasAggression     —— **对方先动手打我的，我反杀不加 PK 点**（正当防卫）
+//	!atGuildWar       —— 公会战中的敌人不算谋杀
+//
+// ★ 第二个条件最容易漏，漏了的后果是「被偷袭的人反杀反而变红名」——
+// 玩家会彻底不敢还手，PK 系统直接失效。
+//
+// ★ Go 侧当前没有 m_aggressionList，所以「正当防卫」这一条**未实现**：
+// 只有「目标先攻击过击杀者」才算正当防卫。目前退化成
+// 「杀任何非同会非敌对玩家都加 PK 点」，比原版更严。
+// 已在 REPLICA_AUDIT 记录（而不是假装做了）。
+func (s *KillSettler) applyPKPoint(ctx context.Context, killer *Player, targetUID uint64) {
+	if s == nil || killer == nil || targetUID == 0 {
+		return
+	}
+	// 目标是玩家吗？（UID 高 4 位是类型）
+	if !common.IsPlayerUID(targetUID) {
+		return
+	}
+	targetDBID, err := common.GetPlayerDBID(targetUID)
+	if err != nil || targetDBID == 0 || targetDBID == killer.DBID {
+		return
+	}
+
+	// 公会战中杀敌不算谋杀
+	if s.GuildWars != nil && s.GuildWars.AtWar(ctx, killer.DBID, targetDBID) {
+		return
+	}
+
+	killer.PKPoint += SysPKPointPerKill
+
+	// 落库：不存的话重登清零，红名惩罚形同虚设
+	if s.Chars != nil {
+		if err := s.Chars.UpdatePKPoint(ctx, killer.DBID, killer.PKPoint); err != nil {
+			s.log("persist pk point failed", killer, err)
+		}
+	}
+
+	if s.Logger != nil && killer.PKPoint >= SysPKPointRedName {
+		s.Logger.Info("player became red-named",
+			"name", killer.Name, "pk_point", killer.PKPoint)
+	}
 }
 
 // resolveDropItems 把掉落名换成 itemID。

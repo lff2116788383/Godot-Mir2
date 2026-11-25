@@ -155,6 +155,50 @@ from tbl_delivery where fld_dbid = ? and fld_claimed = 0 order by fld_timestamp,
 	return result, rows.Err()
 }
 
+// BindMessage 把投递记录关联到一条聊天消息（deliverydb.cpp:72 的 update）。
+//
+// ★ 这一步不是可选的：
+//
+//	客户端点「收取」时带的 record 来自**聊天消息正文里的 XML**。
+//	如果 fld_messageid 没回填，消息和投递记录就没有关联，
+//	以后想「删消息同时删投递」或者「按消息查投递」都做不到。
+//	当前实现里它只影响一致性检查，但仍要写 —— 原版写了。
+func (r *DeliveryRepository) BindMessage(ctx context.Context, record string, messageID uint64) error {
+	result, err := r.store.db.ExecContext(ctx,
+		`update tbl_delivery set fld_messageid = ? where fld_record = ?`, messageID, record)
+	if err != nil {
+		return fmt.Errorf("bind delivery message: %w", err)
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return ErrDeliveryNotFound
+	}
+	return nil
+}
+
+// Unclaim 把一条已领取的投递改回未领取（对应原版的事务回滚）。
+//
+// ★ 为什么需要「领取后再回滚」：
+//
+//	原版 claimDelivery 在一个事务里做「取投递 → 检查金币不溢出 → 提交」，
+//	金币溢出时事务回滚，投递保持未领取。
+//	Go 侧 storage 是单语句 autocommit，所以只能「先领、失败再退」。
+//
+//	只有「金币到账会超过 SYS_MAXGOLD」这一种情况需要回滚，
+//	且概率极低（要 9000 万亿金币），但漏了就是物品凭空消失。
+func (r *DeliveryRepository) Unclaim(ctx context.Context, record string) error {
+	_, err := r.store.db.ExecContext(ctx, `
+update tbl_delivery set fld_claimed = 0, fld_claimtime = null
+where fld_record = ?`, record)
+	if err != nil {
+		return fmt.Errorf("unclaim delivery: %w", err)
+	}
+	return nil
+}
+
 func (r *DeliveryRepository) Claim(ctx context.Context, dbid uint32, record string) ([]protocol.SDItem, error) {
 	claimTime := time.Now().UnixNano()
 	var payload []byte

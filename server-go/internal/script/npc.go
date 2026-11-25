@@ -70,8 +70,73 @@ type NPCHost interface {
 	// SpaceMove 传送玩家
 	SpaceMove(playerUID uint64, mapID uint32, x, y int) error
 
+	// RemoteCall 在「玩家范围」执行一段 Lua 代码（uidRemoteCall 的核心）。
+	//
+	// ★ 原版语义（serverluacoroutinerunner.cpp:217）：
+	//
+	//	向目标 actor 发 AM_REMOTECALL {code, args}，
+	//	目标 actor 在自己的 Lua 状态里把 code 当 chunk 执行，
+	//	取 varargs 做参数，把返回值序列化回来。
+	//
+	//	「在自己的 Lua 状态里」是关键：玩家的金币/背包/公会都归玩家 actor 管，
+	//	NPC 的 Lua 状态看不到这些。所以 uidRemoteCall 不是 RPC，
+	//	而是「让目标 actor 执行我写的代码」。
+	//
+	// Go 侧没有 per-actor Lua 状态（那需要给每个玩家起一个 gopher-lua，
+	// 内存与加载成本都太高），所以改成「按代码串识别意图 + 在 Go 里执行等价操作」。
+	// 见 remote_call.go 的说明与已知限制。
+	RemoteCall(targetUID uint64, code string, args []RemoteArg) ([]RemoteArg, error)
+
 	// Log 写日志（对应 addLogString）
 	Log(level int, msg string)
+}
+
+// RemoteArg 是跨范围调用的一个参数（对应 luaf::luaVar 的子集）。
+//
+// 只保留脚本里实际用到的三种类型：数字、字符串、布尔。
+// 表/函数无法跨 actor 传递，原版也是靠 cerealf 序列化支持有限类型的。
+type RemoteArg struct {
+	Kind  RemoteArgKind
+	Num   float64
+	Str   string
+	Bool  bool
+	IsNil bool
+}
+
+// RemoteArgKind 是 RemoteArg 的类型标签。
+type RemoteArgKind uint8
+
+const (
+	RemoteArgNil RemoteArgKind = iota
+	RemoteArgNumber
+	RemoteArgString
+	RemoteArgBool
+)
+
+// RemoteNumber / RemoteString / RemoteBool 是构造参数的小工具。
+func RemoteNumber(v float64) RemoteArg {
+	return RemoteArg{Kind: RemoteArgNumber, Num: v}
+}
+func RemoteString(v string) RemoteArg {
+	return RemoteArg{Kind: RemoteArgString, Str: v}
+}
+func RemoteBool(v bool) RemoteArg {
+	return RemoteArg{Kind: RemoteArgBool, Bool: v}
+}
+
+// AsNumber / AsString 是取值辅助（类型不符返回零值）。
+func (a RemoteArg) AsNumber() float64 {
+	if a.Kind == RemoteArgNumber {
+		return a.Num
+	}
+	return 0
+}
+
+func (a RemoteArg) AsString() string {
+	if a.Kind == RemoteArgString {
+		return a.Str
+	}
+	return ""
 }
 
 // InvOpCost 是一条背包操作花费（SDCostItem）。
@@ -470,19 +535,119 @@ func (s *NPCScript) luaSpaceMove(l *lua.LState) int {
 	return 1
 }
 
-// luaRemoteCall 是跨 NPC 调用（uidRemoteCall）。
+// luaRemoteCall 是跨范围调用（uidRemoteCall）。
 //
-// 原版会起协程把代码串发到目标 actor 里执行。当前版本没有跨 actor
-// 调度，先返回 nil 并记日志 —— 脚本里通常写成
+// 原版签名（serverluacoroutinerunner.lua:290）：
 //
-//	local ret = uidRemoteCall(uid, npcName, args, code)
-//	if ret then ... end
+//	uidRemoteCall(uid, ..., code)   -- 最后一个参数是代码串，前面全是 code 的实参
 //
-// 返回 nil 会走 else 分支，不会崩。
+// 例：
+//
+//	player.getGold(uid)          → uidRemoteCall(uid, [[ return getGold() ]])
+//	player.declareGuildWar(uid, name, gold)
+//	                             → uidRemoteCall(uid, name, gold,
+//	                                     [[ return declareGuildWar(...) ]])
+//	player.addItem(uid, item, n) → uidRemoteCall(uid, item, n,
+//	                                     [[ local item, count = ... return addItem(item, count) ]])
+//
+// ★ 代码串里用 `...` 取参数，所以实参顺序必须原样传过去，不能自己重排。
+//
+// ★ 返回值是**多值**：原版返回 sol::as_args(resList)，调用方用
+// `local a, b = uidRemoteCall(...)` 接。gopher-lua 侧直接 push 多个值即可。
 func (s *NPCScript) luaRemoteCall(l *lua.LState) int {
-	s.host.Log(1, fmt.Sprintf("npc %s: uidRemoteCall not implemented", s.FullName))
-	l.Push(lua.LNil)
-	return 1
+	top := l.GetTop()
+	if top < 2 {
+		s.host.Log(1, "uidRemoteCall: needs at least (uid, code)")
+		l.Push(lua.LNil)
+		return 1
+	}
+
+	targetUID := uint64(l.CheckInt64(1))
+	code := l.CheckString(top)
+
+	// 中间的都是实参
+	args := make([]RemoteArg, 0, top-2)
+	for i := 2; i < top; i++ {
+		args = append(args, luaToRemoteArg(l.Get(i)))
+	}
+
+	results, err := s.host.RemoteCall(targetUID, code, args)
+	if err != nil {
+		// 原版这里 fatalPrintf，会让整个协程失败。
+		// Go 侧退化成「记日志 + 返回 nil」：
+		// 一个远程调用失败不该把 NPC 对话整个打断（玩家会卡在对话里）。
+		//
+		// ★ 但要把错误打出来 —— 否则「NPC 说已宣战但实际没宣」这种
+		//   静默失败极难排查。
+		s.host.Log(1, fmt.Sprintf("uidRemoteCall to %d failed: %v (code=%s)",
+			targetUID, err, shortenCode(code)))
+		l.Push(lua.LNil)
+		return 1
+	}
+
+	if len(results) == 0 {
+		l.Push(lua.LNil)
+		return 1
+	}
+	for _, r := range results {
+		l.Push(remoteArgToLua(l, r))
+	}
+	return len(results)
+}
+
+// shortenCode 把代码串压成一行便于日志（去掉换行与多余空白）。
+func shortenCode(code string) string {
+	out := make([]rune, 0, 80)
+	lastSpace := false
+	for _, r := range code {
+		if r == '\n' || r == '\t' || r == '\r' {
+			r = ' '
+		}
+		if r == ' ' {
+			if lastSpace {
+				continue
+			}
+			lastSpace = true
+		} else {
+			lastSpace = false
+		}
+		out = append(out, r)
+		if len(out) >= 80 {
+			return string(out) + "…"
+		}
+	}
+	return string(out)
+}
+
+// luaToRemoteArg 把 Lua 值转成可跨范围的参数。
+func luaToRemoteArg(v lua.LValue) RemoteArg {
+	switch v.Type() {
+	case lua.LTNil:
+		return RemoteArg{Kind: RemoteArgNil, IsNil: true}
+	case lua.LTNumber:
+		return RemoteNumber(float64(v.(lua.LNumber)))
+	case lua.LTString:
+		return RemoteString(string(v.(lua.LString)))
+	case lua.LTBool:
+		return RemoteBool(bool(v.(lua.LBool)))
+	default:
+		// 表/函数/用户数据无法跨范围：原版靠 cerealf 也会失败
+		return RemoteArg{Kind: RemoteArgNil, IsNil: true}
+	}
+}
+
+// remoteArgToLua 把返回值转回 Lua 值。
+func remoteArgToLua(l *lua.LState, a RemoteArg) lua.LValue {
+	switch a.Kind {
+	case RemoteArgNumber:
+		return lua.LNumber(a.Num)
+	case RemoteArgString:
+		return lua.LString(a.Str)
+	case RemoteArgBool:
+		return lua.LBool(a.Bool)
+	default:
+		return lua.LNil
+	}
 }
 
 // luaRepairItem 对应 player.cpp:188 的 repairItem 绑定。

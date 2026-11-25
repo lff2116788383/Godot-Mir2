@@ -61,6 +61,31 @@ type WorldService struct {
 	// 否则这张图的 NowMS 永远不动（技能冷却永远不结束）。
 	Ticker *MapTicker
 
+	// GuildWars 公会战管理器。进场时推一次完整战列表（原版 refreshGuildWarList(true)）。
+	//
+	// ★ 不推的后果：登录后客户端「交战行会」面板永远是空的，
+	// 玩家不知道自己在打仗，也看不出「杀敌对不会红名」。
+	GuildWars *GuildWarManager
+	// Deliveries 投递服务。进场时补推「未领取的投递」。
+	//
+	// ★ 这就是原版的「邮箱」：不是独立协议，而是把未领取的投递
+	// 重新生成成系统聊天消息推下去。不做这一步的话，
+	// 离线期间收到的货款要等玩家自己翻历史聊天才看得到。
+	Deliveries *DeliveryService
+	// DeliveryRepo 未领取列表查询（配合 Deliveries 用）
+	DeliveryRepo *storage.DeliveryRepository
+
+	// Guilds 公会仓储（NPC 脚本的 server.player.isGuildLeader / getGuildName 要用）
+	//
+	// ★ 这两个字段是 uidRemoteCall 的数据源：行政官员问「你是不是会长」时，
+	//   走 server.player.isGuildLeader → uidRemoteCall → executeRemoteCall，
+	//   那里读的就是 Guilds。
+	Guilds *storage.GuildRepository
+	// Shops 商店/经验（remoteCall 的 addExp 要用）
+	Shops *ShopHandler
+	// Golds 金币落库（createGuild 扣建会费要用）
+	Golds GoldRepository
+
 	// mapCache mapID -> *world.MapData，避免每次进场都读文件
 	mapCache map[uint32]*world.MapData
 	// assetsRoot 地图素材目录
@@ -210,6 +235,17 @@ func (s *WorldService) loadMapNPCs(ctx context.Context, mapID uint32) error {
 			// 修理 / 仓库：NPC 脚本的 uidRepairItem / uidSecureItem 要用
 			Durability: s.Durability,
 			Secured:    s.Secured,
+			// ★ 公会/公会战/魔法/商店：uidRemoteCall 要用
+			//
+			//	比奇县行政官员的「申请创建行会」「申请行会战争」全靠
+			//	server.player.createGuild / declareGuildWar，
+			//	那两个走 uidRemoteCall → executeRemoteCall，
+			//	里面读的正是这几个字段。留空会变成「永远返回 NOGUILD」。
+			Guilds:    s.Guilds,
+			GuildWars: s.GuildWars,
+			Magics:    s.Magics,
+			Shops:     s.Shops,
+			Golds:     s.Golds,
 		}
 	})
 	if err != nil {
@@ -344,11 +380,91 @@ func (s *WorldService) Enter(ctx context.Context, ch storage.Character, channelI
 	// ★ 关键：把 AOI 事件转成网络消息，否则玩家进去看不到任何人
 	s.dispatchObserverEvents(ctx, p, events)
 
+	// 登录补推：公会战列表 + 未领取的投递
+	//
+	// ★ 顺序在 AOI 之后：先让玩家看到世界，再补推「你在打仗」「你有邮件」。
+	//   反了的话这两类消息会插在进场消息之前，客户端还没建好 UI 就收到了。
+	s.pushLoginExtras(ctx, p)
+
 	s.Logger.Info("player entered world",
 		"name", p.Name, "uid", common.GetUIDString(p.UID),
 		"map", mapID, "at", fmt.Sprintf("(%d,%d)", p.X, p.Y),
 		"aoi_events", len(events))
 	return p, nil
+}
+
+// pushLoginExtras 登录时补推「战列表」与「未领取投递」（原版 Player 构造尾部）。
+//
+// 两件事都在同一个地方做，因为它们共享一个性质：
+// **只在登录时需要，且都靠系统聊天 / SM_GUILDWARLIST 走**。
+func (s *WorldService) pushLoginExtras(ctx context.Context, p *Player) {
+	if s.GuildWars != nil {
+		s.GuildWars.OnPlayerLogin(ctx, p.DBID)
+	}
+	s.repushUnclaimedDeliveries(ctx, p)
+}
+
+// repushUnclaimedDeliveries 把未领取的投递重新推给玩家。
+//
+// ★ 这不是「重新创建投递」，只是把 tbl_delivery 里 fld_claimed=0 的记录
+// 再生成一遍系统聊天消息推下去。投递本身还在，record 也没变，
+// 玩家点「收取」用原来的 record 就能领。
+//
+// 为什么需要这一步：
+//
+//	原版登录时会 RetrieveLatest 拉最近聊天记录，里面自然包含
+//	之前推过的投递消息。但聊天记录有**条数上限**（默认几十条），
+//	玩家离线久了、或者中间聊了几百句，那条投递消息就被挤出窗口了。
+//	这时「投递还在但玩家看不见」，等于丢件。
+//
+//	所以补推是必要的，而且只推 unclaimed —— 已领的不能再推，
+//	否则玩家点进去会拿到 CDERR_INVALID_CLAIM。
+func (s *WorldService) repushUnclaimedDeliveries(ctx context.Context, p *Player) {
+	if s.DeliveryRepo == nil || s.Broadcast == nil || p.ChannelID == 0 {
+		return
+	}
+	pending, err := s.DeliveryRepo.ListUnclaimed(ctx, p.DBID)
+	if err != nil || len(pending) == 0 {
+		return
+	}
+	from := protocol.NewSDChatPeerID(protocol.CPR_SPECIAL, SysChatDBID)
+	to := protocol.NewSDChatPeerID(protocol.CPR_PLAYER, p.DBID)
+
+	// ★ 一次最多推 10 条：玩家离线期间可能堆了几百件，
+	//   全推会把登录包撑爆（每条都是一段 XML）。
+	const maxRepush = 10
+	shown := 0
+	for _, d := range pending {
+		if shown >= maxRepush {
+			break
+		}
+		items, decErr := decodeDeliveryPayload(d.Payload)
+		if decErr != nil {
+			continue
+		}
+		body := buildDeliveryXML("你有一份未领取的系统投递：", s.Items, items, d.Record)
+		var seq protocol.SDChatMessageDBSeq
+		if d.MessageID != nil {
+			seq = protocol.SDChatMessageDBSeq{ID: *d.MessageID, Timestamp: d.Timestamp}
+		}
+		list := protocol.SDChatMessageList{{
+			HasSeq:  d.MessageID != nil,
+			Seq:     seq,
+			From:    from,
+			To:      to,
+			Message: body,
+		}}
+		payload, encErr := protocol.CerealSerialize(list)
+		if encErr != nil {
+			continue
+		}
+		_ = s.Broadcast.SendTo(p.ChannelID, protocol.SM_CHATMESSAGELIST, payload, 0)
+		shown++
+	}
+	if len(pending) > shown {
+		text := fmt.Sprintf("你还有 %d 份未领取的系统投递，清完手上这些后再登录查看。", len(pending)-shown)
+		_ = s.Broadcast.SendTo(p.ChannelID, protocol.SM_TEXT, []byte(text), 0)
+	}
 }
 
 // dispatchObserverEvents 把 AOI 事件翻译成 SM 消息。

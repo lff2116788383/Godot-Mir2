@@ -163,8 +163,117 @@ returning fld_seller, fld_itemid, fld_seqid, fld_count, fld_duration, fld_maxdur
 	return result, nil
 }
 
-func (r *AuctionRepository) Unregister(ctx context.Context, sellerDBID uint32, auctionID uint64) (protocol.SDItem, bool, error) {
+// Reinstate 把已经 Take 走但未能成交的拍卖物品放回表里。
+//
+// ★ 这是**失败补偿**，用于实现原版的「事务回滚」语义。
+//
+//	原版 dbBuyAuctionItem 整个流程在一个事务里：
+//	delete 取走 → 判自己买自己 → 扣钱 → 建投递，任一步返回 unexpected
+//	都会让 transaction 析构时回滚，「物品回到拍卖行」是自动的。
+//
+//	Go 侧 storage 是 autocommit，所以 Take 之后必须显式放回。
+//	两个补偿点：自己买自己的（OWNITEM）、钱不够（INSUFFICIENT）。
+//
+// 注意：放回时用 Take 拿到的原 SellerDBID / Price / Item，
+// expireTime 用「一个新周期」而不是原始值 —— 因为 Take 的 returning
+// 没有带 fld_expiretime。代价是补偿后物品会多挂 7 天，
+// 这比「物品凭空消失」好得多（原版回滚会恢复原到期时间）。
+func (r *AuctionRepository) Reinstate(ctx context.Context, taken AuctionTakeResult) error {
+	if taken.SellerDBID == 0 || taken.Item.ItemID == 0 {
+		return fmt.Errorf("reinstate: incomplete take result")
+	}
+	blob, err := marshalExtAttrList(taken.Item.ExtAttrList)
+	if err != nil {
+		return fmt.Errorf("reinstate extattr: %w", err)
+	}
+	expire := taken.Price // placeholder, overwritten below
+	_ = expire
+	var newExpire int64 = time.Now().Unix() + 7*24*60*60
+
+	item := taken.Item
+	_, err = r.store.db.ExecContext(ctx, `
+insert into tbl_auctionitem(fld_seller, fld_note, fld_itemid, fld_seqid, fld_count,
+fld_duration, fld_maxduration, fld_extattrlist, fld_price, fld_expiretime)
+values(?, '', ?, ?, ?, ?, ?, ?, ?, ?)`,
+		taken.SellerDBID, item.ItemID, item.SeqID, item.Count,
+		item.Duration[0], item.Duration[1], blob, taken.Price, newExpire)
+	if err != nil {
+		return fmt.Errorf("reinstate auction item: %w", err)
+	}
+	return nil
+}
+
+// AuctionExpired 是一条已过期、待退回卖家的拍卖记录。
+type AuctionExpired struct {
+	AuctionID  uint64
+	SellerDBID uint32
+}
+
+// LoadExpired 列出已过期的拍卖（fld_expiretime <= now）。
+//
+// ★ 为什么不能直接用 DeleteExpired：
+//
+//	DeleteExpired 只删不发，过期物品就永久消失了。
+//	原版是「惰性过期」（所有查询都带 expiretime > now），
+//	物品其实一直留在表里，玩家永远也拿不回来。
+//
+//	Go 侧既然要清理，就必须连带把物品退回卖家 —— 所以先查后逐条退。
+func (r *AuctionRepository) LoadExpired(ctx context.Context, now int64) ([]AuctionExpired, error) {
+	if now == 0 {
+		now = time.Now().Unix()
+	}
+	rows, err := r.store.db.QueryContext(ctx, `
+select fld_id, fld_seller from tbl_auctionitem
+where fld_expiretime <= ? order by fld_expiretime, fld_id`, now)
+	if err != nil {
+		return nil, fmt.Errorf("load expired auctions: %w", err)
+	}
+	defer rows.Close()
+	var result []AuctionExpired
+	for rows.Next() {
+		var record AuctionExpired
+		if err := rows.Scan(&record.AuctionID, &record.SellerDBID); err != nil {
+			return nil, err
+		}
+		result = append(result, record)
+	}
+	return result, rows.Err()
+}
+
+// TakeExpired 原子取走一条**已过期**的拍卖（与 Take 相反的条件）。
+//
+// ★ 条件写成 `fld_expiretime <= ?` 而不是 `> ?`：
+//
+//	这是「过期回收」专用。写成 > 的话会跟买家抢同一件物品 ——
+//	买家 Take 成功、清理器也 Take 成功，物品被退回两次。
+//	SQLite 的 delete ... returning 是原子的，两个 Take 只有一个能拿到行。
+func (r *AuctionRepository) TakeExpired(ctx context.Context, auctionID uint64, now int64) (protocol.SDItem, bool, error) {
+	if now == 0 {
+		now = time.Now().Unix()
+	}
 	var item protocol.SDItem
+	var blob []byte
+	err := r.store.db.QueryRowContext(ctx, `
+delete from tbl_auctionitem where fld_id = ? and fld_expiretime <= ?
+returning fld_itemid, fld_seqid, fld_count, fld_duration, fld_maxduration, fld_extattrlist`,
+		auctionID, now).Scan(&item.ItemID, &item.SeqID, &item.Count,
+		&item.Duration[0], &item.Duration[1], &blob)
+	if errors.Is(err, sql.ErrNoRows) {
+		return protocol.SDItem{}, false, nil
+	}
+	if err != nil {
+		return protocol.SDItem{}, false, fmt.Errorf("take expired auction: %w", err)
+	}
+	attributes, err := unmarshalExtAttrList(blob)
+	if err != nil {
+		return protocol.SDItem{}, false, err
+	}
+	item.ExtAttrList = attributes
+	item.SeqID = 0
+	return item, true, nil
+}
+
+func (r *AuctionRepository) Unregister(ctx context.Context, sellerDBID uint32, auctionID uint64) (protocol.SDItem, bool, error) {	var item protocol.SDItem
 	var blob []byte
 	err := r.store.db.QueryRowContext(ctx, `
 delete from tbl_auctionitem where fld_id = ? and fld_seller = ?

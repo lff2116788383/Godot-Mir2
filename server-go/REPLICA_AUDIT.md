@@ -1737,3 +1737,142 @@ Boss 会一直放火墙而不放主力技能。
 | 拍卖「钱不够」不回滚 | 概率极低，失败会 Warn 日志 |
 | 拍卖到期清理未定时触发 | `DeleteExpired` 有实现，但没接定时器 |
 | 邮箱列表查询 | 只有「领取」，没有「列出未领取」（`ListUnclaimed` 已就绪） |
+
+---
+
+# B5 第十七批：P2 全量收尾（本轮）
+
+**服务端测试 364 → 512 项，全通过。客户端 c9c8 15/15。**
+
+## ★★ 本轮首先纠正了三条错误的审计结论 ★★
+
+上一批的「P2 已知限制」里，有三条**判断本身就是错的**。翻原版源码逐条核实后：
+
+### 1. 「协议表缺 SM_GUILDINVITE」—— 不存在这条协议
+
+原版 `servermsg.hpp` 全套里根本没有 `SM_GUILDINVITE`。公会邀请走的是
+`playernet.cpp:2248` 的 `postSystemMessage()`：发一条**系统助手的聊天消息**，
+正文是带 `<event accept="" guild="7">同意</event>` 的 XML，
+客户端点按钮时把 `accept`/`guild` 原样塞进 `CM_RESPONDGUILDINVITE`
+（字段就是 `guildID + accept`，见 `clientmsg.hpp:491`）。
+
+改成原版做法后额外得到一个好处：**邀请离线可收**（消息入库）。
+
+### 2. 「缺邮箱列表协议」—— 邮箱就是系统聊天记录
+
+同样不存在 `SM_DELIVERYLIST`。原版 `deliverydb.cpp:14`
+`dbCreateDeliveryInTransaction` 在同一个事务里做两件事：
+
+1. `insert into tbl_delivery(...)` —— 物品存这儿
+2. `dbSaveChatMessage(SYS_CHATDBID_SYSTEM, 玩家)` —— 消息存这儿，正文里带
+   `<event id="SYS_DELIVERY" record="abc...">收取</event>`
+
+玩家点「收取」时把 `record` 原样塞进 `CM_CLAIMDELIVERY`。
+所以「邮箱列表」= 系统助手的聊天记录，`CM_CLAIMDELIVERY` 是唯一入口。
+
+### 3. 「拍卖钱不够无法回滚」—— storage 早就有原子扣减，只是没用
+
+`storage.GoldRepository.Remove` 是条件更新
+（`where fld_dbid=? and fld_gold>=? returning fld_gold`），
+不足时返回 `ok=false` 且**不扣**。上一批走的是
+「先 Take → 判金币 → Warn 了事」，物品已经 delete 掉了没有补偿。
+
+**这是一个真实的物品丢失 bug**，不是「概率极低」——只要买家钱不够就必丢。
+
+## 本轮修掉的真实缺陷
+
+| # | 缺陷 | 后果 |
+|---|---|---|
+| 1 | `checkAuctionCategory` 恒返回 0（`ItemCategoryMatch` 从没注入） | **拍卖列表永远为空**，上架/购买却正常 → 极难发现 |
+| 2 | 拍卖「钱不够」物品直接消失 | 玩家丢物品 |
+| 3 | 拍卖卖家离线时货款凭空消失 | 离线卖家永久损失 |
+| 4 | 拍卖成交直接进背包（背包满就丢） | 物品丢失 |
+| 5 | 拍卖上架时长 24h（原版 7 天） | 与客户端「剩余时间」不符 |
+| 6 | 拍卖缺自买检测 | 可以自己买自己的东西刷税 |
+| 7 | 拍卖缺 2% 交易税 | 经济模型不符 |
+| 8 | 拍卖到期只删不退 | 过期物品永久消失 |
+| 9 | 投递金币溢出时 clamp + 标记已领 | 超出部分静默丢失且再也领不回 |
+| 10 | 投递错误码 GOLDFULL 写成 2（真实是 4） | 客户端显示「领取无效」而非「金币已满」 |
+| 11 | 拍卖分类 0 未归一（原版分类从 1 起） | 客户端默认传 0 → 空列表 |
+| 12 | `uidRemoteCall` 返回 nil 占位 | **公会战完全没有玩家入口** |
+| 13 | `server` 表从未注入 | 8 个脚本（含行政官员）`server.player.*` 直接 nil 索引 |
+| 14 | 没有 PK 点的「公会战免罪」判定 | 公会战互杀一路刷红名 |
+| 15 | `executeRemoteCall` 缺 nil 检查 | 玩家点 NPC 可触发服务端 panic |
+
+## 新增/重写文件
+
+| 文件 | 行数 | 内容 |
+|---|---|---|
+| `internal/game/delivery.go` | 320 | 投递服务（建投递 + 写系统聊天消息，原子语义） |
+| `internal/game/guildwar.go` | 420 | 公会战全链路（宣战/战列表/到期/免 PK 点） |
+| `internal/game/remote_call.go` | 470 | `uidRemoteCall` 的玩家侧执行（21 种代码串） |
+| `internal/game/auction_category.go` | 150 | 拍卖分类匹配器（修 bug 1） |
+| `internal/game/auction.go` | 重写 | 拍卖按原版顺序 + 投递 + 税 + 自买检测 |
+| `internal/game/p2_test.go` | 620 | 9 项 P2 集成测试（真 SQLite） |
+| `internal/game/remote_call_test.go` | 280 | 7 项 remoteCall 测试 |
+| `internal/script/bindings.go` 补 | +75 | `server` 表注入（api/*.lua 零翻译复用） |
+
+## 关键顺序（都是「反了就丢东西」）
+
+| 场景 | 正确顺序 |
+|---|---|
+| 拍卖成交 | 原子取走 → **条件扣金币** → 双方投递（任一步失败 → Reinstate 放回） |
+| 拍卖到期 | 先 `LoadExpired` → 逐条退投递 → 再删（不能直接 `DeleteExpired`） |
+| 建公会 | 先 `Create` 成功 → 再扣金币与号角 |
+| 宣战 | 先判金币 → 建战争 → **成功了才扣钱** |
+| 投递领取 | 先算金币总量 → 溢出则 `Unclaim` 回滚 → 再发放 |
+| 投递创建 | 先建 delivery → 写聊天消息 → 回填 `fld_messageid` |
+
+## `uidRemoteCall` 的实现策略（重要设计决策）
+
+原版每个 actor 各带一个 Lua state，`uidRemoteCall` 是「让目标 actor 执行代码」。
+
+Go 侧**没有** per-actor Lua state（几千玩家各起一个 gopher-lua 内存撑不住，
+初始化要跑 base.lua + 340 个 require）。改成：
+
+> **按代码串识别意图，在 Go 里执行等价操作。**
+
+覆盖 `api/player.lua` 里全部 16 种实际写法 + 5 个补充分支。
+未识别的代码串**返回错误并记日志**，不静默返回 nil ——
+静默 nil 会让脚本的 `if ... then` 走 else，玩家看到「操作失败」而非「引擎不支持」。
+
+★ 踩到的坑：脚本写法不统一，`getGold ()` 名字与括号之间有空格，
+`getLevel()` 没有。规整函数必须**删掉所有空白**而不是「压成一个空格」。
+
+## 实机验证
+
+| 项 | 结果 |
+|---|---|
+| 编译 / vet / 全量测试 | 全通过（**512 项**） |
+| NPC 脚本加载 | 161/161 成功（含新 `server` 表） |
+| 服务端实跑 | 比奇县 1107 只怪 / 27 守卫 / 25 NPC / 3 安全区，**零 error** |
+| 客户端 c9c8 | **15 项全过** |
+
+## P2 最终完成度
+
+| 系统 | 状态 |
+|---|---|
+| 公会 | ✅ 11 条路由（邀请改走系统消息，符合原版） |
+| 摆摊 | ✅ 6 条路由 |
+| 拍卖行 | ✅ 4 条路由（钱够不够都能正确回滚，含税/自买/7天/分类） |
+| 寄送（邮箱） | ✅ 领取 + 登录补推（原版就是聊天记录） |
+| 好友 / 黑名单 | ✅ 3 条路由 |
+| 公会战 | ✅ **宣战/战列表/到期/免 PK 点全链路**，入口为 `server.player.declareGuildWar` |
+
+## 仍然存在的已知限制（诚实标注）
+
+| 项目 | 影响 |
+|---|---|
+| `uidRemoteCall` 是「代码串模式匹配」而非真的执行 | 脚本写出**新模式**（未在 21 种内）会报错。当前覆盖 `api/player.lua` 全部实际用法 |
+| `addBoundItem` 退化成普通物品 | 任务奖励的绑定装备玩家可交易（extAttrList 无法跨 RemoteArg） |
+| `getJobList` 只返回单职业字符串 | 多职业角色（原版支持）会只看得到第一个 |
+| 投递不写 `fld_messageid` 时也能领取 | 一致性检查弱化（原版是同事务） |
+| 拍卖 `Reinstate` 重置到期时间为 7 天 | 原版事务回滚会恢复原时间 |
+| 金币溢出回滚依赖 `Unclaim` 成功 | 若 `Unclaim` 也失败，物品会卡在已领取（记 Critical 日志） |
+| 无 `m_aggressionList`（仇恨标记） | 「正当防卫」判定缺失，杀任何非同会非敌对玩家都加 PK 点 |
+
+## 任务系统（仍未做）
+
+44 个任务、20,819 行，依赖 `uidRemoteCall` 254 处（现在能跑了）、
+12 个 quest 绑定、每任务独立 Lua state。
+**本轮把地基（`uidRemoteCall` + `server` 表）打通了，任务系统可以在这上面做。**

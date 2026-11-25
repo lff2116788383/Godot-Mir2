@@ -10,6 +10,7 @@ import (
 	"github.com/lff2116788383/godot-mir2/server-go/internal/common"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/protocol"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/script"
+	"github.com/lff2116788383/godot-mir2/server-go/internal/storage"
 	"github.com/lff2116788383/godot-mir2/server-go/internal/world"
 )
 
@@ -247,7 +248,47 @@ type npcHostAdapter struct {
 	// Secured 仓库（NPC 寄存/取回）
 	Secured *SecuredHandler
 
+	// ---- 以下供 uidRemoteCall 使用（P2 公会/任务路径）----
+	//
+	// ★ 这些不是「可选的美化」：公会战唯一的玩家入口是
+	//   server.player.declareGuildWar → uidRemoteCall → 这里。
+	//   缺了 GuildWars，宣战永远返回 GUILDERR_NOGUILD。
+	Guilds    *storage.GuildRepository
+	GuildWars *GuildWarManager
+	Magics    *MagicDB
+	Shops     *ShopHandler
+	Golds     GoldRepository
+
 	mu sync.Mutex
+}
+
+// RemoteCall 在玩家范围执行一段 Lua 代码（uidRemoteCall 的核心）。
+//
+// 详见 remote_call.go 的实现说明。
+func (h *npcHostAdapter) RemoteCall(targetUID uint64, code string,
+	args []script.RemoteArg) ([]script.RemoteArg, error) {
+	return h.executeRemoteCall(targetUID, code, args)
+}
+
+// pushInventory 把整包背包推给客户端（SM_INVENTORY）。
+//
+// ★ 用 SM_INVENTORY（整包）而不是 SM_UPDATEITEM（增量）：
+//
+//	remoteCall 里的 addItem/removeItem 是脚本驱动的任意改动
+//	（可能一次加多件、也可能合并到已有格子），
+//	自己算增量容易漏。整包推几十件物品也就几百字节，
+//	在「玩家点 NPC 对话」这个低频场景完全可接受。
+func (h *npcHostAdapter) pushInventory(p *Player) {
+	if h.Broadcast == nil || p == nil || p.ChannelID == 0 {
+		return
+	}
+	list := make([]protocol.SDItem, 0, len(p.Inventory))
+	for _, it := range p.Inventory {
+		list = append(list, toSDItem(it))
+	}
+	if payload, err := protocol.AppendWirePayload(nil, list); err == nil {
+		_ = h.Broadcast.SendTo(p.ChannelID, protocol.SM_INVENTORY, payload, 0)
+	}
 }
 
 func (h *npcHostAdapter) setScript(s *script.NPCScript) {

@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	guildRankLeader int32 = 1
+	GuildRankLeader int32 = 1
 	guildRankMember int32 = 2
 
 	guildNameMaxBytes   = 32
@@ -94,7 +94,7 @@ func loadLedGuildIDQuery(ctx context.Context, queryer guildRowQueryer, dbid uint
 	if err != nil {
 		return 0, 0, fmt.Errorf("load guild leadership: %w", err)
 	}
-	if rank != guildRankLeader {
+	if rank != GuildRankLeader {
 		return 0, GuildErrNotLeader, nil
 	}
 	return guildID, GuildErrNone, nil
@@ -129,7 +129,7 @@ func GuildNoticeValid(notice string) bool {
 
 func defaultGuildTitle(rank int32) string {
 	switch rank {
-	case guildRankLeader:
+	case GuildRankLeader:
 		return "掌门人"
 	case guildRankMember:
 		return "成员"
@@ -249,7 +249,7 @@ func (r *GuildRepository) Create(ctx context.Context, leaderDBID uint32, name st
 		if err := tx.QueryRowContext(ctx, `insert into tbl_guild(fld_name, fld_createtime) values(?, ?) returning fld_id`, name, time.Now().Unix()).Scan(&guildID); err != nil {
 			return err
 		}
-		if err := insertGuildMember(ctx, tx, guildID, leaderDBID, guildRankLeader, time.Now().Unix()); err != nil {
+		if err := insertGuildMember(ctx, tx, guildID, leaderDBID, GuildRankLeader, time.Now().Unix()); err != nil {
 			return err
 		}
 		_, err := tx.ExecContext(ctx, `delete from tbl_guildinvite where fld_dbid = ?`, leaderDBID)
@@ -345,7 +345,7 @@ func (r *GuildRepository) Leave(ctx context.Context, dbid uint32) (GuildErrorCod
 	if !ok {
 		return GuildErrNoGuild, nil
 	}
-	if membership.Rank == guildRankLeader {
+	if membership.Rank == GuildRankLeader {
 		return GuildErrLeaderLeave, nil
 	}
 	_, err = r.store.db.ExecContext(ctx, `delete from tbl_guildmember where fld_dbid = ?`, dbid)
@@ -398,7 +398,7 @@ func (r *GuildRepository) TransferLeader(ctx context.Context, leaderDBID, target
 		if err := setGuildRank(ctx, tx, leaderDBID, guildRankMember); err != nil {
 			return err
 		}
-		return setGuildRank(ctx, tx, targetDBID, guildRankLeader)
+		return setGuildRank(ctx, tx, targetDBID, GuildRankLeader)
 	})
 	return codeFromError(err), normalizeGuildError(err)
 }

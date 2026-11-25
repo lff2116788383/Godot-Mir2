@@ -277,6 +277,29 @@ func (db *ItemDB) FindByName(name string) (uint32, bool) {
 	return 0, false
 }
 
+// IDOfName 是按名字查 itemID 的别名。
+//
+// ★ 单独开一个名字而不是复用 FindByName：
+//
+//	投递拆金币要按「金币（小）/（中）/（大）…」这些**确定名字**反查，
+//	语义是「这个名字必须存在」，和 FindByName 的「随便查一个」不同。
+//	同名多条时取最小 itemID（与 GoldID 的取法一致，避免 map 顺序随机）。
+func (db *ItemDB) IDOfName(name string) uint32 {
+	if db == nil || name == "" {
+		return 0
+	}
+	var best uint32
+	for id, rec := range db.records {
+		if rec.Name != name {
+			continue
+		}
+		if best == 0 || id < best {
+			best = id
+		}
+	}
+	return best
+}
+
 // GoldID 返回「金币」这一物品的 itemID（找不到时返回 0）。
 //
 // ★ 金币不是一条记录，而是 5 条面额：金币（小/中/大/特/超），

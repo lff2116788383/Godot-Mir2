@@ -19,7 +19,7 @@ func TestGuildLifecycleAndWar(t *testing.T) {
 		t.Fatalf("create guild = %d, %d, %v", guildID, code, err)
 	}
 	membership, ok, err := repo.LoadMembership(ctx, dbids[0])
-	if err != nil || !ok || membership.GuildID != guildID || membership.Rank != guildRankLeader {
+	if err != nil || !ok || membership.GuildID != guildID || membership.Rank != GuildRankLeader {
 		t.Fatalf("membership = %+v, %v, %v", membership, ok, err)
 	}
 
@@ -70,7 +70,7 @@ func TestGuildLifecycleAndWar(t *testing.T) {
 		t.Fatalf("transfer = %d, %v", code, err)
 	}
 	newMembership, ok, err := repo.LoadMembership(ctx, dbids[1])
-	if err != nil || !ok || newMembership.Rank != guildRankLeader {
+	if err != nil || !ok || newMembership.Rank != GuildRankLeader {
 		t.Fatalf("new leader = %+v, %v, %v", newMembership, ok, err)
 	}
 

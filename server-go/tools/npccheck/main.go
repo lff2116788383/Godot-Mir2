@@ -51,6 +51,17 @@ func (printHost) PostSecuredItemList(uint64) error                     { return 
 func (printHost) RemoveGold(uint64, uint64) bool                       { return true }
 func (printHost) GrantGold(uint64, uint64) bool                        { return true }
 func (printHost) SpaceMove(uint64, uint32, int, int) error             { return nil }
+
+// RemoteCall 在 npccheck 工具里是空实现（只做语法检查，不跑业务）。
+//
+// ★ 返回 nil 而不是报错：npccheck 的目的是「确认 340 个脚本能否加载」，
+//   加载过程本身不会触发 remoteCall（那是玩家点 NPC 才发生）。
+//   这里返回 error 会让脚本里的 pcall 捕获到「失败」，
+//   反而掩盖真正的语法错误。
+func (printHost) RemoteCall(uint64, string, []script.RemoteArg) ([]script.RemoteArg, error) {
+	return nil, nil
+}
+
 func (h printHost) Log(level int, msg string) {
 	if h.verbose {
 		fmt.Printf("[lua %d] %s\n", level, msg)

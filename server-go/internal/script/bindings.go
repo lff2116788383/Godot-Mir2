@@ -137,7 +137,65 @@ func CommonBindings(items *NameTable, monsters *NameTable, maps *NameTable,
 	return bindings
 }
 
-// boolBinding 把 Go 的 bool 函数包成 Lua 绑定。
+// ServerTableBindings 注入 `server` 表及其子模块
+// （对应 serverluacoroutinerunner.lua:475-480）。
+//
+// ★★ 为什么必须有这张表 ★★
+//
+//	原版脚本写的全是 `server.player.getGold(uid)` 这种形式 ——
+//	340 个 NPC 脚本里有 8 个（含 4 个 include 模块）依赖它，
+//	其中最要紧的是「比奇县行政官员」：
+//
+//		server.player.createGuild(uid, name, gold, item)   -- 建公会
+//		server.player.declareGuildWar(uid, 敌会名, gold)   -- 宣战
+//		server.player.isGuildLeader(uid)                   -- 是不是会长
+//
+//	**宣战没有任何 CM_ 协议入口，只能从这张表进。**
+//	缺了 `server` 表，脚本第一句 `server.player.xxx` 就是
+//	"attempt to index a nil value (global 'server')"，
+//	整个事件处理中断，玩家点 NPC 什么都收不到。
+//
+// ★ 只装 api/player.lua 里真正实现过的那几个函数：
+//
+//	未实现的（getTeamLeader / dbHasFlag / getWLItem / getQuestState …）
+//	在 Go 侧还没有对应能力，装成 nil 会让脚本报
+//	"attempt to call a nil value"，比不装更糟。
+//	所以这些**先不放进表里**，脚本调到时是 "attempt to index a nil value"，
+//	同样是错，但至少不会误以为能工作。
+//
+//	比这更好的做法是装成「返回 nil 的函数」（见 npc.go 的占位策略），
+//	但 api/player.lua 里这些函数本身只是一层 uidRemoteCall 壳，
+//	真正执行在玩家侧；那里已经有完整的「未实现就返回 nil」处理，
+//	所以这里保持原样：把 api/*.lua 原文件 require 进来即可。
+//
+// 实现方式：直接 require 原版 api/player.lua（零翻译复用），
+// 它里面的 uidRemoteCall 会走我们新实现的 luaRemoteCall → host.RemoteCall。
+func ServerTableBindings() string {
+	return `
+server = server or {}
+
+-- api/*.lua 是原版脚本，逐字复用（不做翻译）。
+-- 它们只依赖 assertType / uidRemoteCall / getItemID 等基础绑定，
+-- 这些在 base.lua 与 bindings.go 里都已提供。
+local okPlayer, playerM = pcall(require, 'api.player')
+if okPlayer and playerM then server.player = playerM end
+
+local okUtils, utilsM = pcall(require, 'api.utils')
+if okUtils and utilsM then server.utils = utilsM end
+
+local okNPC, npcM = pcall(require, 'api.npc')
+if okNPC and npcM then server.npc = npcM end
+
+-- api.quest 依赖任务系统（未实现），装上会让脚本以为能用
+-- local okQuest, questM = pcall(require, 'api.quest')
+-- if okQuest and questM then server.quest = questM end
+`
+}
+
+// boolBinding 把 Go 的 bool 函数包成 Lua 绑定（对应 getUIDType == X 这类判定）。
+//
+// 统一抽出来是因为约 10 个 is* 绑定结构完全一样，
+// 每个都手写一遍闭包既啰嗦又容易漏 return 1。
 func boolBinding(fn func(uid uint64) bool) lua.LGFunction {
 	return func(l *lua.LState) int {
 		uid := uint64(l.CheckInt64(1))

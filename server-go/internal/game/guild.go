@@ -2,6 +2,7 @@ package game
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/lff2116788383/godot-mir2/server-go/internal/common"
@@ -32,6 +33,11 @@ type GuildHandler struct {
 	Broadcast Broadcaster
 	Logger    *slog.Logger
 	Repo      *storage.GuildRepository
+	// Chat 系统消息落库（邀请通知靠它，见 Invite）
+	//
+	// 可以留空：留空时邀请仍然成功，只是被邀请者收不到通知
+	// （也不会入库，离线再看就没有了）。
+	Chat ChatRepository
 }
 
 // QueryPlayerGuild 查某角色所属公会（CM_QUERYPLAYERGUILD）。
@@ -87,6 +93,33 @@ func (h *GuildHandler) QueryGuildInfo(ctx context.Context, channelID uint64) err
 // Invite 邀请某人入会（CM_INVITEGUILDMEMBER）。
 //
 // 原版按名字邀请（客户端只知道自己看到的角色名）。
+//
+// ★★ 这里曾经写错过，值得留档。★★
+//
+// 早期实现认为「协议表缺 SM_GUILDINVITE，所以只能复用 SM_GUILDINFO」，
+// 并在审计里记成「需要补协议表」。**这个判断是错的。**
+//
+// 翻原版 playernet.cpp:2248 net_CM_INVITEGUILDMEMBER，邀请通知走的是：
+//
+//	postSystemMessage(memberDBID, xml)     // 存成系统助手的聊天消息
+//
+// 那段 xml 长这样（每行一个 <par>）：
+//
+//	你被<t color="red">邀请者</t>邀请加入<t color="red">会名</t>行会，你可以选择
+//	<event id="SYS_GIRESP" accept="" guild="7">同意</event>
+//	<event id="SYS_GIRESP" reject="" guild="7">拒绝</event>
+//
+// 客户端点「同意」时把 `accept=""/reject=""` 与 `guild` 原样塞进
+// CM_RESPONDGUILDINVITE（字段就是 guildID + accept，见 clientmsg.hpp:491）。
+//
+// 也就是说：**不需要任何新协议**。协议表本来就只有
+// SM_GUILDWARLIST / SM_PLAYERGUILD / SM_GUILDERROR / SM_GUILDINFO / SM_GUILDCHAT。
+// 邀请和投递一样，复用「系统聊天气泡 + <event> 回调」这套通用机制。
+//
+// ★ 走系统消息还有一个副作用是**离线可收**：
+// 邀请存进 tbl_chatmessage，被邀请者下次登录会看到这条消息，
+// 但那时 tbl_guildinvite 里那条邀请可能已经过期或被撤，
+// 点「同意」会拿到 GUILDERR_NOINVITE —— 与原版行为一致。
 func (h *GuildHandler) Invite(ctx context.Context, channelID uint64, name string) error {
 	p, ok := h.Players.ByChannel(channelID)
 	if !ok || h.Repo == nil {
@@ -113,26 +146,71 @@ func (h *GuildHandler) Invite(ctx context.Context, channelID uint64, name string
 		return nil
 	}
 
-	// 通知被邀请者（在线才有意义）
-	//
-	// ★ 没有专门的「邀请」消息类型，复用了 SM_GUILDINFO：
-	//
-	//	原版协议里 SM_GUILDINVITE 是独立消息，但 Go 侧协议表里
-	//	只映射了 SM_PLAYERGUILD/SM_GUILDERROR/SM_GUILDINFO/SM_GUILDCHAT，
-	//	没有 SM_GUILDINVITE。
-	//
-	//	复用的风险：客户端看到 SM_GUILDINFO 会以为「我已经在会里」
-	//	而不是「有人邀请我」。要让邀请真正弹出确认框，
-	//	需要在协议表里补 SM_GUILDINVITE 并让客户端处理。
-	//	已在 REPLICA_AUDIT 记为待办。
-	if target, exists := h.Players.ByDBID(targetDBID); exists {
-		member, _, _ := h.Repo.LoadMembership(ctx, p.DBID)
-		info, _ := h.Repo.LoadInfo(ctx, member.GuildID)
-		if payload, err := protocol.CerealSerialize(info); err == nil {
-			h.sendTo(target, protocol.SM_GUILDINFO, payload)
+	// 取公会名用于消息正文（邀请成功后一定能查到）
+	member, found, _ := h.Repo.LoadMembership(ctx, p.DBID)
+	if !found {
+		return nil
+	}
+	info, err := h.Repo.LoadInfo(ctx, member.GuildID)
+	if err != nil {
+		return nil
+	}
+
+	h.postSystemMessage(ctx, targetDBID, buildGuildInviteXML(p.Name, info.Name, info.GuildID))
+	return nil
+}
+
+// buildGuildInviteXML 拼公会邀请的系统消息正文（playernet.cpp:2248）。
+//
+// ★ 三个 <par> 之间**不能用 <br> 或 \n**：
+//
+//	客户端的 XML 布局引擎只认 <layout>/<par> 结构，
+//	裸换行会被当成空白丢掉，「同意」「拒绝」会挤在同一行。
+func buildGuildInviteXML(inviter, guildName string, guildID uint32) string {
+	return string("<layout>") +
+		"<par>你被<t color=\"red\">" + escapeXMLText(inviter) + "</t>邀请加入<t color=\"red\">" +
+		escapeXMLText(guildName) + "</t>行会，你可以选择</par>" +
+		fmt.Sprintf("<par><event id=\"%s\" accept=\"\" guild=\"%d\">同意</event></par>", SysEventGuildInvite, guildID) +
+		fmt.Sprintf("<par><event id=\"%s\" reject=\"\" guild=\"%d\">拒绝</event></par>", SysEventGuildInvite, guildID) +
+		"</layout>"
+}
+
+// postSystemMessage 以「系统助手」身份给某角色发一条聊天消息
+// （player.cpp:3508 postSystemMessage）。
+//
+// 在线就直接推下去；离线只入库，下次登录随聊天记录拉下来。
+func (h *GuildHandler) postSystemMessage(ctx context.Context, toDBID uint32, body string) {
+	from := protocol.NewSDChatPeerID(protocol.CPR_SPECIAL, SysChatDBID)
+	to := protocol.NewSDChatPeerID(protocol.CPR_PLAYER, toDBID)
+
+	var seq protocol.SDChatMessageDBSeq
+	if h.Chat != nil {
+		saved, err := h.Chat.SaveMessage(ctx, from, to, body, nil)
+		if err != nil {
+			if h.Logger != nil {
+				h.Logger.Warn("save guild invite message failed", "to", toDBID, "error", err)
+			}
+		} else {
+			seq = saved
 		}
 	}
-	return nil
+
+	target, online := h.Players.ByDBID(toDBID)
+	if !online || target.ChannelID == 0 || h.Broadcast == nil {
+		return
+	}
+	list := protocol.SDChatMessageList{{
+		HasSeq:  h.Chat != nil,
+		Seq:     seq,
+		From:    from,
+		To:      to,
+		Message: body,
+	}}
+	payload, err := protocol.CerealSerialize(list)
+	if err != nil {
+		return
+	}
+	_ = h.Broadcast.SendTo(target.ChannelID, protocol.SM_CHATMESSAGELIST, payload, 0)
 }
 
 // RespondInvite 回应邀请（CM_RESPONDGUILDINVITE）。

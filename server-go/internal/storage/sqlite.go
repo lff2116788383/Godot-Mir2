@@ -106,6 +106,35 @@ func Open(ctx context.Context, options OpenOptions) (*Store, error) {
 	return store, nil
 }
 
+// SetItemCategoryMatch 在开库之后补装「拍卖分类匹配器」。
+//
+// ★ 为什么要「补装」而不是开库时传进去：
+//
+//	分类匹配要查物品表（isWeapon / isDress / wearable(WLG_*)），
+//	而物品表是 game 包从 content/items.json 载的，
+//	**开库时还不知道物品表长什么样**（开库发生在载表之前）。
+//
+//	早期实现把 ItemCategoryMatch 放在 OpenOptions 里，但 main 从没传 →
+//	checkAuctionCategory 恒返回 0 → 拍卖列表永远为空（见下面的长注释）。
+//
+//	现在用 atomic 存函数指针，开库后随时可换，且读写无锁竞争。
+func SetItemCategoryMatch(fn func(itemID, category int64) bool) {
+	if fn == nil {
+		return
+	}
+	itemCategoryMatchFunc.Store(&fn)
+}
+
+// getItemCategoryMatch 读取当前分类匹配器（可能为 nil）。
+func getItemCategoryMatch() func(itemID, category int64) bool {
+	if p := itemCategoryMatchFunc.Load(); p != nil {
+		return *p
+	}
+	return nil
+}
+
+var itemCategoryMatchFunc atomic.Pointer[func(itemID, category int64) bool]
+
 func registerSQLiteFunctions(drv *sqlite.Driver, itemCategoryMatch func(int64, int64) bool) error {
 	if err := drv.RegisterDeterministicScalarFunction("jobValid", 1, func(_ *sqlite.FunctionContext, args []driver.Value) (driver.Value, error) {
 		if len(args) != 1 {
@@ -132,10 +161,39 @@ func registerSQLiteFunctions(drv *sqlite.Driver, itemCategoryMatch func(int64, i
 		}
 		itemID, okItem := args[0].(int64)
 		category, okCategory := args[1].(int64)
-		if !okItem || !okCategory || itemCategoryMatch == nil {
+		if !okItem || !okCategory {
 			return int64(0), nil
 		}
-		if itemCategoryMatch(itemID, category) {
+		// ★★ 这一行曾经把「拍卖列表永远为空」的 bug 藏了很久 ★★
+		//
+		// 早期实现：`if !okItem || !okCategory || itemCategoryMatch == nil { return 0 }`
+		//
+		// 而 main.go 从来没传 OpenOptions.ItemCategoryMatch ——
+		// 于是这个函数**恒返回 0**，SQL 条件 `checkAuctionCategory(...) = 1`
+		// 永远不成立，拍卖行**任何物品都查不出来**。
+		//
+		// 表现极具迷惑性：上架成功（写库 OK）、自买自检生效（Take 不带该条件）、
+		// 只有「浏览列表」是空的 —— 玩家会以为「拍卖行没人挂东西」。
+		//
+		// 修法：category == ALL 时直接放行（原版 server.cpp:352
+		// `if(category == AUCTIONCAT_ALL){ result_int(1); return; }` 在最前面）。
+		// 只有需要按具体类别过滤时才依赖注入的匹配器。
+		const auctionCatAll = 1
+		if category == auctionCatAll {
+			return int64(1), nil
+		}
+		// 优先用运行时补装的匹配器（见 SetItemCategoryMatch），
+		// 其次退回开库时传的
+		match := getItemCategoryMatch()
+		if match == nil {
+			match = itemCategoryMatch
+		}
+		if match == nil {
+			// 没有分类器时不能假装「不匹配」—— 那会让整个拍卖列表空掉。
+			// 退化成「全部类别都匹配」，至少玩家能看到东西。
+			return int64(1), nil
+		}
+		if match(itemID, category) {
 			return int64(1), nil
 		}
 		return int64(0), nil

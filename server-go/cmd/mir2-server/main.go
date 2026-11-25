@@ -109,6 +109,13 @@ func main() {
 	game.GoldItemID = itemDB.GoldID()
 	slog.Info("item db loaded", "count", itemDB.Count(), "gold_item_id", game.GoldItemID)
 
+	// ★ 把物品表接入拍卖分类筛选。
+	//
+	//	不做这一步，storage 的 checkAuctionCategory 恒返回 0，
+	//	拍卖列表**永远是空的**（上架/购买都正常，只有浏览看不到东西）。
+	//	详见 internal/game/auction_category.go 的长注释。
+	game.InstallAuctionCategories(itemDB)
+
 	// 魔法表（施法校验/MP 消耗/伤害区间/元素抗性都依赖它）
 	magicsPath := filepath.Join("content", "magics.json")
 	magicDB, err := game.LoadMagicDB(magicsPath)
@@ -169,17 +176,31 @@ func main() {
 	}
 	actionHandler.Spells = spellHandler
 
+	// 公会战管理器：要在「击杀结算」之前构造（PR 点判定要用）。
+	//
+	// 宣战入口是 Lua 的 server.player.declareGuildWar（原版没有 CM_ 消息），
+	// 但登录推战列表、到期弹提示、PK 点免除这三条是纯服务端行为。
+	goldRepo := storage.NewGoldRepository(store)
+	guildWarManager := game.NewGuildWarManager(players, broadcaster,
+		storage.NewGuildRepository(store), goldRepo)
+
 	// 击杀结算器：物理攻击与法术共用一个实例。
 	//
 	// ★ 必须是同一个实例，不能各建一个：
 	//   结算逻辑有两份就会漂移（一边加了归属保护、另一边忘了），
 	//   而且玩家会遇到「用法术打有掉落、用刀砍没有」这种诡异现象。
+	//
+	// ★ GuildWars 必须在 KillSettler 之前建好：
+	//   击杀结算要用它判断「杀的这个人是公会战敌人吗」来决定加不加 PK 点。
+	//   漏接的话公会战互杀会一路刷成红名（见 kill_settle.go applyPKPoint）。
 	killSettler := &game.KillSettler{
 		Players:   players,
 		Worlds:    worlds,
 		Items:     itemDB,
 		Broadcast: broadcaster,
 		Logger:    slog.Default(),
+		GuildWars: guildWarManager,
+		Chars:     storage.NewCharacterRepository(store),
 	}
 	actionHandler.Kills = killSettler
 
@@ -297,27 +318,57 @@ func main() {
 	}
 
 	// 拍卖行 / 邮件 / 好友
+	//
+	// ★ 投递服务必须先于拍卖构造：拍卖成交后买卖双方都靠它收货，
+	//   所以 AuctionHandler.Deliveries 指向同一个实例。
+	auctionRepo := storage.NewAuctionRepository(store)
+	deliveryRepo := storage.NewDeliveryRepository(store)
+	chatRepo := storage.NewChatRepository(store)
+
+	deliveryService := game.NewDeliveryService(deliveryRepo, chatRepo, itemDB,
+		players, broadcaster, slog.Default())
+
 	auctionHandler := &game.AuctionHandler{
-		Players:   players,
-		Broadcast: broadcaster,
-		Logger:    slog.Default(),
-		Repo:      storage.NewAuctionRepository(store),
-		Items:     itemDB,
-		Golds:     storage.NewGoldRepository(store),
+		Players:    players,
+		Broadcast:  broadcaster,
+		Logger:     slog.Default(),
+		Repo:       auctionRepo,
+		Items:      itemDB,
+		Golds:      goldRepo,
+		Deliveries: deliveryService,
+		Stalls:     storage.NewStallRepository(store),
 	}
 	deliveryHandler := &game.DeliveryHandler{
-		Players:   players,
-		Broadcast: broadcaster,
-		Logger:    slog.Default(),
-		Repo:      storage.NewDeliveryRepository(store),
-		Items:     itemDB,
+		Players:    players,
+		Broadcast:  broadcaster,
+		Logger:     slog.Default(),
+		Repo:       deliveryRepo,
+		Items:      itemDB,
+		Golds:      goldRepo,
+		Deliveries: deliveryService,
 	}
 	friendHandler := &game.FriendHandler{
 		Players:   players,
 		Broadcast: broadcaster,
 		Logger:    slog.Default(),
-		Repo:      storage.NewChatRepository(store),
+		Repo:      chatRepo,
 	}
+
+	worldService.GuildWars = guildWarManager
+	worldService.Deliveries = deliveryService
+	worldService.DeliveryRepo = deliveryRepo
+	// ★ NPC 脚本的 server.player.* 走 uidRemoteCall，数据源在这里
+	worldService.Guilds = storage.NewGuildRepository(store)
+	worldService.Shops = shopHandler
+	worldService.Golds = goldRepo
+
+	// 拍卖到期清理：过期物品退回卖家（走投递），而不是静默删除
+	auctionSweeper := game.NewAuctionSweeper(auctionRepo, deliveryService, itemDB, slog.Default())
+	go auctionSweeper.Run(context.Background())
+
+	// 公会邀请通知走系统聊天消息（原版 postSystemMessage），
+	// 所以 GuildHandler 需要 chat 仓储
+	guildHandler.Chat = chatRepo
 
 	if err := game.RegisterAllRoutes(dispatcher, loginHandler, actionHandler,
 		inventoryHandler, spellHandler, deathHandler, shopHandler, npcHandler, chatHandler,
