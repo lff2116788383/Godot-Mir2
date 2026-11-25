@@ -280,9 +280,25 @@ func main() {
 	tradeManager := game.NewDirectTradeManager(players, broadcaster, slog.Default())
 	worldService.Trades = tradeManager
 
+	// 公会（入库）+ 摆摊（入库，卖家可离线）
+	guildHandler := &game.GuildHandler{
+		Players:   players,
+		Broadcast: broadcaster,
+		Logger:    slog.Default(),
+		Repo:      storage.NewGuildRepository(store),
+	}
+	stallHandler := &game.StallHandler{
+		Players:   players,
+		Broadcast: broadcaster,
+		Logger:    slog.Default(),
+		Repo:      storage.NewStallRepository(store),
+		Items:     itemDB,
+		Golds:     storage.NewGoldRepository(store),
+	}
+
 	if err := game.RegisterAllRoutes(dispatcher, loginHandler, actionHandler,
 		inventoryHandler, spellHandler, deathHandler, shopHandler, npcHandler, chatHandler,
-		teamManager, securedHandler, tradeManager); err != nil {
+		teamManager, securedHandler, tradeManager, guildHandler, stallHandler); err != nil {
 		slog.Error("register routes", "error", err)
 		os.Exit(1)
 	}

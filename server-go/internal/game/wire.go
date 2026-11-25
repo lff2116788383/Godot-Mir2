@@ -570,3 +570,155 @@ func RegisterDirectTradeRoutes(dispatcher *transport.Dispatcher, trades *DirectT
 			return trades.handleUpdate(ctx, s.ID(), req)
 		})
 }
+
+// RegisterGuildRoutes 注册公会消息。
+func RegisterGuildRoutes(dispatcher *transport.Dispatcher, guilds *GuildHandler) error {
+	if guilds == nil {
+		return nil
+	}
+	routes := []struct {
+		id protocol.CMType
+		fn transport.HandlerFunc
+	}{
+		// 定长消息
+		{protocol.CM_QUERYPLAYERGUILD, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMQueryPlayerGuild
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return guilds.QueryPlayerGuild(ctx, s.ID(), req.DBID)
+		}},
+		{protocol.CM_INVITEGUILDMEMBER, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMInviteGuildMember
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return guilds.Invite(ctx, s.ID(), trimCString([]byte(req.Name.String())))
+		}},
+		{protocol.CM_RESPONDGUILDINVITE, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRespondGuildInvite
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return guilds.RespondInvite(ctx, s.ID(), req.GuildID, req.Accept != 0)
+		}},
+		{protocol.CM_KICKGUILDMEMBER, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMKickGuildMember
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return guilds.Kick(ctx, s.ID(), req.DBID)
+		}},
+		{protocol.CM_TRANSFERGUILDLEADER, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMTransferGuildLeader
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return guilds.TransferLeader(ctx, s.ID(), req.DBID)
+		}},
+		{protocol.CM_SETGUILDNOTICE, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMSetGuildNotice
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return guilds.SetNotice(ctx, s.ID(), trimCString([]byte(req.Notice.String())))
+		}},
+		{protocol.CM_SETGUILDMEMBERTITLE, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMSetGuildMemberTitle
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return guilds.SetMemberTitle(ctx, s.ID(), req.DBID, trimCString([]byte(req.Title.String())))
+		}},
+		{protocol.CM_GUILDCHAT, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMGuildChat
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return guilds.GuildChat(ctx, s.ID(), req)
+		}},
+	}
+	for _, r := range routes {
+		if err := dispatcher.Register(r.id, r.fn); err != nil {
+			return fmt.Errorf("register %v: %w", r.id, err)
+		}
+	}
+
+	// 无参数消息
+	empty := []struct {
+		id protocol.CMType
+		fn transport.HandlerFunc
+	}{
+		{protocol.CM_QUERYGUILDINFO, func(ctx context.Context, s *transport.Session, _ protocol.Packet) error {
+			return guilds.QueryGuildInfo(ctx, s.ID())
+		}},
+		{protocol.CM_LEAVEGUILD, func(ctx context.Context, s *transport.Session, _ protocol.Packet) error {
+			return guilds.Leave(ctx, s.ID())
+		}},
+		{protocol.CM_DISBANDGUILD, func(ctx context.Context, s *transport.Session, _ protocol.Packet) error {
+			return guilds.Disband(ctx, s.ID())
+		}},
+	}
+	for _, r := range empty {
+		if err := dispatcher.Register(r.id, r.fn); err != nil {
+			return fmt.Errorf("register %v: %w", r.id, err)
+		}
+	}
+	return nil
+}
+
+// RegisterStallRoutes 注册摆摊消息。
+func RegisterStallRoutes(dispatcher *transport.Dispatcher, stalls *StallHandler) error {
+	if stalls == nil {
+		return nil
+	}
+	routes := []struct {
+		id protocol.CMType
+		fn transport.HandlerFunc
+	}{
+		{protocol.CM_ADDSTALLITEM, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMAddStallItem
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return stalls.AddItem(ctx, s.ID(), req)
+		}},
+		{protocol.CM_REMOVESTALLITEM, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRemoveStallItem
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return stalls.RemoveItem(ctx, s.ID(), req)
+		}},
+		{protocol.CM_STARTSTALL, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMStartStall
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return stalls.Start(ctx, s.ID(), req)
+		}},
+		{protocol.CM_QUERYSTALL, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMQueryStall
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return stalls.Query(ctx, s.ID(), req.DBID)
+		}},
+		{protocol.CM_BUYSTALLITEM, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMBuyStallItem
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return stalls.Buy(ctx, s.ID(), req)
+		}},
+		{protocol.CM_CLOSESTALL, func(ctx context.Context, s *transport.Session, _ protocol.Packet) error {
+			return stalls.Close(ctx, s.ID())
+		}},
+	}
+	for _, r := range routes {
+		if err := dispatcher.Register(r.id, r.fn); err != nil {
+			return fmt.Errorf("register %v: %w", r.id, err)
+		}
+	}
+	return nil
+}
