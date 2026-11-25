@@ -33,6 +33,39 @@ type ItemBook struct {
 	Magic string `json:"magic"`
 }
 
+// ItemExtHealth 是装备对 HP/MP 的三项修正（itemrecord.hpp ExtHealth）。
+type ItemExtHealth struct {
+	Add     int `json:"add"`
+	Steal   int `json:"steal"`
+	Recover int `json:"recover"`
+}
+
+// ItemEquip 是装备的战斗属性（itemrecord.hpp:20-100 EquipAttribute）。
+//
+// ★ 这些字段是服务端算玩家属性的唯一来源。
+//
+//	getCombatNode 把穿的每件装备的 dc/ac/mc/sc 累加，再加等级基础值。
+//	如果物品表里没提 equip，玩家穿什么都只有等级属性 —— 表现就是
+//	「换了把屠龙刀攻击力一点没变」，而且从日志完全看不出来。
+type ItemEquip struct {
+	Duration  int            `json:"duration"`
+	DC        [2]int         `json:"dc"`
+	MC        [2]int         `json:"mc"`
+	SC        [2]int         `json:"sc"`
+	AC        [2]int         `json:"ac"`
+	MAC       [2]int         `json:"mac"`
+	DCHit     int            `json:"dcHit"`
+	MCHit     int            `json:"mcHit"`
+	DCDodge   int            `json:"dcDodge"`
+	MCDodge   int            `json:"mcDodge"`
+	Speed     int            `json:"speed"`
+	Comfort   int            `json:"comfort"`
+	LuckCurse int            `json:"luckCurse"`
+	HP        *ItemExtHealth `json:"hp,omitempty"`
+	MP        *ItemExtHealth `json:"mp,omitempty"`
+	ReqLevel  int            `json:"reqLevel"`
+}
+
 // ItemRecord 是一条物品定义。
 type ItemRecord struct {
 	ItemID   uint32      `json:"itemID"`
@@ -44,6 +77,7 @@ type ItemRecord struct {
 	Shape    int         `json:"shape"`
 	Potion   *ItemPotion `json:"potion,omitempty"`
 	Book     *ItemBook   `json:"book,omitempty"`
+	Equip    *ItemEquip  `json:"equip,omitempty"`
 }
 
 // 物品类型常量（itemrecord.hpp 的 type 字符串）。
@@ -168,6 +202,8 @@ func (r ItemRecord) IsGold() bool { return r.Type == TypeGold }
 // ItemDB 是物品表。
 type ItemDB struct {
 	records map[uint32]*ItemRecord
+	// goldID 「金币」物品的 itemID 缓存（懒解析，见 GoldID）
+	goldID uint32
 }
 
 // LoadItemDB 从 JSON 文件加载物品表。
@@ -239,4 +275,30 @@ func (db *ItemDB) FindByName(name string) (uint32, bool) {
 		}
 	}
 	return 0, false
+}
+
+// GoldID 返回「金币」这一物品的 itemID（找不到时返回 0）。
+//
+// ★ 为什么要查表而不是硬编码 1：
+//
+//	当前 itemrecord.inc 的第 1 条恰好是「金币（小）」，但那是数组顺序。
+//	重新生成物品表（比如原版加了一条记录在最前）就会整体错位。
+//	购买路径里到处都要判「这个 cost 是不是金币」，判错等于
+//	「买东西不扣钱」或者「扣了金币物品的空间」。
+//
+// 缓存到 db 上：每次购买都线性扫 1258 条太浪费。
+func (db *ItemDB) GoldID() uint32 {
+	if db == nil {
+		return 0
+	}
+	if db.goldID != 0 {
+		return db.goldID
+	}
+	for id, rec := range db.records {
+		if rec.Type == TypeGold {
+			db.goldID = id
+			return id
+		}
+	}
+	return 0
 }

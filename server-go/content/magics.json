@@ -1,0 +1,4650 @@
+{
+ "_meta": {
+  "count": 116,
+  "learnableCount": 63,
+  "note": "magicID = .inc 顶层数组下标（第 0 项为空占位）",
+  "source": "E:/Desktop/game/mir2x/common/src/magicrecord.inc"
+ },
+ "records": {
+  "1": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 1,
+    "type": "CRT_DIR",
+    "typeID": 1
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 1,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "物理攻击",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "10": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 10,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "魔法特效_召唤雷电",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "100": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 100,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "祖玛教主_石像碎片",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "101": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 6,
+    "type": "CRT_LIMITED",
+    "typeID": 3
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "火",
+   "elemID": "fire",
+   "learnable": false,
+   "magicID": 101,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "祖玛教主_火墙",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "102": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 6,
+    "type": "CRT_DIR",
+    "typeID": 1
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "火",
+   "elemID": "fire",
+   "learnable": false,
+   "magicID": 102,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "祖玛教主_地狱火",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "103": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 5,
+    "type": "CRT_LIMITED",
+    "typeID": 3
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 103,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "爆毒蚂蚁_喷毒",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "104": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 5,
+    "type": "CRT_LIMITED",
+    "typeID": 3
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 104,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "沙漠风魔_扇风",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "105": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 105,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "神舰守卫_死亡特效",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "106": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 106,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "月魔蜘蛛_死亡特效",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "107": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 107,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "爆裂蜘蛛_死亡特效",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "108": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 108,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "霸王教主_火刃",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "109": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 5,
+    "type": "CRT_DIR",
+    "typeID": 1
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 109,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "霸王教主_野蛮冲撞",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "11": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 11,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "魔法特效_困魔咒",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "110": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 110,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "霸王教主_死亡特效",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "111": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 111,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "潘夜右护卫_死亡特效",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "112": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 1,
+    "type": "CRT_DIR",
+    "typeID": 1
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 112,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "潘夜右护卫_电魔杖",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "113": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 10,
+    "type": "CRT_LIMITED",
+    "typeID": 3
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "雷",
+   "elemID": "light",
+   "learnable": false,
+   "magicID": 113,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "潘夜右护卫_雷电术",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "114": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 114,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "潘夜左护卫_死亡特效",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "115": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 1,
+    "type": "CRT_DIR",
+    "typeID": 1
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 115,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "潘夜左护卫_火魔杖",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "116": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 8,
+    "type": "CRT_LIMITED",
+    "typeID": 3
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "火",
+   "elemID": "fire",
+   "learnable": false,
+   "magicID": 116,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "潘夜左护卫_火球术",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "12": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 12,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "祖玛教主_魔法特效_施法",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "13": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 13,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "魔法特效_安全区边界",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "14": {
+   "addPower": [
+    7,
+    11
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 800,
+   "elem": "雷",
+   "elemID": "light",
+   "learnable": true,
+   "magicID": 14,
+   "mp": 7,
+   "mpInc": 6,
+   "name": "雷电术",
+   "power": [
+    15,
+    19
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     16,
+     18,
+     20
+    ],
+    "prior": "霹雳掌",
+    "train": [
+     40,
+     50,
+     60
+    ]
+   },
+   "seffBase": 11
+  },
+  "15": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 100,
+   "elem": "风",
+   "elemID": "wind",
+   "learnable": true,
+   "magicID": 15,
+   "mp": 20,
+   "mpInc": 30,
+   "name": "魔法盾",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     29,
+     31,
+     33
+    ],
+    "prior": "抗拒火环",
+    "train": [
+     90,
+     100,
+     110
+    ]
+   },
+   "seffBase": 31
+  },
+  "16": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 2000,
+   "elem": "幻影",
+   "elemID": "phantom",
+   "learnable": true,
+   "magicID": 16,
+   "mp": 15,
+   "mpInc": 10,
+   "name": "召唤骷髅",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     17,
+     19,
+     21
+    ],
+    "prior": "",
+    "train": [
+     40,
+     50,
+     60
+    ]
+   },
+   "seffBase": null
+  },
+  "17": {
+   "addPower": [
+    0,
+    4
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 1,
+   "coolDown": 500,
+   "elem": "火",
+   "elemID": "fire",
+   "learnable": true,
+   "magicID": 17,
+   "mp": 3,
+   "mpInc": 1,
+   "name": "火球术",
+   "power": [
+    6,
+    10
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     7,
+     9,
+     11
+    ],
+    "prior": "",
+    "train": [
+     10,
+     20,
+     30
+    ]
+   },
+   "seffBase": null
+  },
+  "18": {
+   "addPower": [
+    7,
+    11
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 1,
+   "coolDown": 700,
+   "elem": "火",
+   "elemID": "fire",
+   "learnable": true,
+   "magicID": 18,
+   "mp": 6,
+   "mpInc": 6,
+   "name": "大火球",
+   "power": [
+    15,
+    19
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     15,
+     17,
+     19
+    ],
+    "prior": "火球术",
+    "train": [
+     40,
+     50,
+     60
+    ]
+   },
+   "seffBase": null
+  },
+  "19": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 400,
+   "elem": "神圣",
+   "elemID": "holy",
+   "learnable": true,
+   "magicID": 19,
+   "mp": 7,
+   "mpInc": 2,
+   "name": "治愈术",
+   "power": [
+    11,
+    15
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     7,
+     9,
+     11
+    ],
+    "prior": "",
+    "train": [
+     10,
+     20,
+     30
+    ]
+   },
+   "seffBase": 2
+  },
+  "2": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 2,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "魔法特效_火焰灰烬",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "20": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": true,
+   "magicID": 20,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "基本剑术",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "战士",
+    "level": [
+     7,
+     9,
+     11
+    ],
+    "prior": "",
+    "train": [
+     10,
+     20,
+     30
+    ]
+   },
+   "seffBase": null
+  },
+  "21": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": true,
+   "magicID": 21,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "精神力战法",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     8,
+     10,
+     12
+    ],
+    "prior": "",
+    "train": [
+     10,
+     20,
+     30
+    ]
+   },
+   "seffBase": null
+  },
+  "22": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 600,
+   "elem": "暗黑",
+   "elemID": "dark",
+   "learnable": true,
+   "magicID": 22,
+   "mp": 10,
+   "mpInc": 5,
+   "name": "施毒术",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     12,
+     14,
+     16
+    ],
+    "prior": "",
+    "train": [
+     20,
+     30,
+     40
+    ]
+   },
+   "seffBase": 6
+  },
+  "23": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": true,
+   "magicID": 23,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "攻杀剑术",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "战士",
+    "level": [
+     14,
+     16,
+     18
+    ],
+    "prior": "基本剑术",
+    "train": [
+     30,
+     40,
+     50
+    ]
+   },
+   "seffBase": null
+  },
+  "24": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 600,
+   "elem": "风",
+   "elemID": "wind",
+   "learnable": true,
+   "magicID": 24,
+   "mp": 8,
+   "mpInc": 1,
+   "name": "抗拒火环",
+   "power": [
+    0,
+    2
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     12,
+     14,
+     16
+    ],
+    "prior": "风掌",
+    "train": [
+     20,
+     30,
+     40
+    ]
+   },
+   "seffBase": 8
+  },
+  "25": {
+   "addPower": [
+    12,
+    16
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 800,
+   "elem": "雷",
+   "elemID": "light",
+   "learnable": true,
+   "magicID": 25,
+   "mp": 12,
+   "mpInc": 15,
+   "name": "疾光电影",
+   "power": [
+    14,
+    14
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     21,
+     23,
+     25
+    ],
+    "prior": "雷电术",
+    "train": [
+     50,
+     60,
+     70
+    ]
+   },
+   "seffBase": 10
+  },
+  "26": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": true,
+   "magicID": 26,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "刺杀剑术",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "战士",
+    "level": [
+     19,
+     21,
+     23
+    ],
+    "prior": "攻杀剑术",
+    "train": [
+     40,
+     50,
+     60
+    ]
+   },
+   "seffBase": null
+  },
+  "27": {
+   "addPower": [
+    3,
+    3
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 1,
+   "coolDown": 500,
+   "elem": "暗黑",
+   "elemID": "dark",
+   "learnable": true,
+   "magicID": 27,
+   "mp": 6,
+   "mpInc": 3,
+   "name": "灵魂火符",
+   "power": [
+    6,
+    10
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     13,
+     15,
+     17
+    ],
+    "prior": "隐身术",
+    "train": [
+     20,
+     30,
+     40
+    ]
+   },
+   "seffBase": 13
+  },
+  "28": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 700,
+   "elem": "暗黑",
+   "elemID": "dark",
+   "learnable": true,
+   "magicID": 28,
+   "mp": 10,
+   "mpInc": 5,
+   "name": "幽灵盾",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     21,
+     23,
+     25
+    ],
+    "prior": "困魔咒",
+    "train": [
+     50,
+     60,
+     70
+    ]
+   },
+   "seffBase": 14
+  },
+  "29": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 700,
+   "elem": "暗黑",
+   "elemID": "dark",
+   "learnable": true,
+   "magicID": 29,
+   "mp": 10,
+   "mpInc": 5,
+   "name": "神圣战甲术",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     25,
+     27,
+     29
+    ],
+    "prior": "幽灵盾",
+    "train": [
+     70,
+     80,
+     90
+    ]
+   },
+   "seffBase": 15
+  },
+  "3": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 3,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "魔法特效_冰刺",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "30": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 1000,
+   "elem": "暗黑",
+   "elemID": "dark",
+   "learnable": true,
+   "magicID": 30,
+   "mp": 15,
+   "mpInc": 10,
+   "name": "困魔咒",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     27,
+     29,
+     31
+    ],
+    "prior": "施毒术",
+    "train": [
+     80,
+     90,
+     100
+    ]
+   },
+   "seffBase": 16
+  },
+  "31": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 700,
+   "elem": "暗黑",
+   "elemID": "dark",
+   "learnable": true,
+   "magicID": 31,
+   "mp": 5,
+   "mpInc": 5,
+   "name": "隐身术",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     20,
+     22,
+     24
+    ],
+    "prior": "施毒术",
+    "train": [
+     50,
+     60,
+     70
+    ]
+   },
+   "seffBase": 18
+  },
+  "32": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 700,
+   "elem": "暗黑",
+   "elemID": "dark",
+   "learnable": true,
+   "magicID": 32,
+   "mp": 10,
+   "mpInc": 5,
+   "name": "集体隐身术",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     23,
+     25,
+     27
+    ],
+    "prior": "隐身术",
+    "train": [
+     60,
+     70,
+     80
+    ]
+   },
+   "seffBase": null
+  },
+  "33": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 600,
+   "elem": "幻影",
+   "elemID": "phantom",
+   "learnable": true,
+   "magicID": 33,
+   "mp": 3,
+   "mpInc": 3,
+   "name": "诱惑之光",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     13,
+     15,
+     17
+    ],
+    "prior": "",
+    "train": [
+     20,
+     30,
+     40
+    ]
+   },
+   "seffBase": 20
+  },
+  "34": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 700,
+   "elem": "幻影",
+   "elemID": "phantom",
+   "learnable": true,
+   "magicID": 34,
+   "mp": 10,
+   "mpInc": 10,
+   "name": "瞬息移动",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     14,
+     16,
+     18
+    ],
+    "prior": "",
+    "train": [
+     30,
+     40,
+     50
+    ]
+   },
+   "seffBase": null
+  },
+  "35": {
+   "addPower": [
+    1,
+    6
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 1000,
+   "elem": "火",
+   "elemID": "fire",
+   "learnable": true,
+   "magicID": 35,
+   "mp": 22,
+   "mpInc": 30,
+   "name": "火墙",
+   "power": [
+    2,
+    9
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     24,
+     26,
+     28
+    ],
+    "prior": "地狱火",
+    "train": [
+     60,
+     70,
+     80
+    ]
+   },
+   "seffBase": 22
+  },
+  "36": {
+   "addPower": [
+    12,
+    16
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 800,
+   "elem": "火",
+   "elemID": "fire",
+   "learnable": true,
+   "magicID": 36,
+   "mp": 11,
+   "mpInc": 15,
+   "name": "地狱火",
+   "power": [
+    14,
+    18
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     20,
+     22,
+     24
+    ],
+    "prior": "大火球",
+    "train": [
+     50,
+     60,
+     70
+    ]
+   },
+   "seffBase": 9
+  },
+  "37": {
+   "addPower": [
+    14,
+    18
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 900,
+   "elem": "火",
+   "elemID": "fire",
+   "learnable": true,
+   "magicID": 37,
+   "mp": 15,
+   "mpInc": 20,
+   "name": "爆裂火焰",
+   "power": [
+    14,
+    18
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     32,
+     34,
+     36
+    ],
+    "prior": "地狱火",
+    "train": [
+     100,
+     110,
+     120
+    ]
+   },
+   "seffBase": 23
+  },
+  "38": {
+   "addPower": [
+    14,
+    18
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 900,
+   "elem": "雷",
+   "elemID": "light",
+   "learnable": true,
+   "magicID": 38,
+   "mp": 17,
+   "mpInc": 20,
+   "name": "地狱雷光",
+   "power": [
+    14,
+    18
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     33,
+     35,
+     37
+    ],
+    "prior": "疾光电影",
+    "train": [
+     100,
+     110,
+     120
+    ]
+   },
+   "seffBase": 24
+  },
+  "39": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": true,
+   "magicID": 39,
+   "mp": 0,
+   "mpInc": 3,
+   "name": "半月弯刀",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "战士",
+    "level": [
+     24,
+     26,
+     28
+    ],
+    "prior": "刺杀剑术",
+    "train": [
+     60,
+     70,
+     80
+    ]
+   },
+   "seffBase": null
+  },
+  "4": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 4,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "魔法特效_护身符",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": 13
+  },
+  "40": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": true,
+   "magicID": 40,
+   "mp": 2,
+   "mpInc": 7,
+   "name": "烈火剑法",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "战士",
+    "level": [
+     32,
+     34,
+     36
+    ],
+    "prior": "半月弯刀",
+    "train": [
+     100,
+     110,
+     120
+    ]
+   },
+   "seffBase": null
+  },
+  "41": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": true,
+   "magicID": 41,
+   "mp": 20,
+   "mpInc": 0,
+   "name": "野蛮冲撞",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "战士",
+    "level": [
+     27,
+     29,
+     31
+    ],
+    "prior": "基本剑术",
+    "train": [
+     70,
+     80,
+     90
+    ]
+   },
+   "seffBase": null
+  },
+  "42": {
+   "addPower": [
+    4,
+    4
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 400,
+   "elem": "神圣",
+   "elemID": "holy",
+   "learnable": true,
+   "magicID": 42,
+   "mp": 10,
+   "mpInc": 20,
+   "name": "群体治愈术",
+   "power": [
+    8,
+    12
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     31,
+     33,
+     35
+    ],
+    "prior": "治愈术",
+    "train": [
+     100,
+     110,
+     120
+    ]
+   },
+   "seffBase": 29
+  },
+  "43": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 2000,
+   "elem": "幻影",
+   "elemID": "phantom",
+   "learnable": true,
+   "magicID": 43,
+   "mp": 15,
+   "mpInc": 15,
+   "name": "召唤神兽",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     30,
+     32,
+     34
+    ],
+    "prior": "召唤骷髅",
+    "train": [
+     90,
+     100,
+     110
+    ]
+   },
+   "seffBase": 30
+  },
+  "44": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 1000,
+   "elem": "幻影",
+   "elemID": "phantom",
+   "learnable": true,
+   "magicID": 44,
+   "mp": 30,
+   "mpInc": 30,
+   "name": "圣言术",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     26,
+     28,
+     30
+    ],
+    "prior": "诱惑之光",
+    "train": [
+     70,
+     80,
+     90
+    ]
+   },
+   "seffBase": 32
+  },
+  "45": {
+   "addPower": [
+    14,
+    18
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 900,
+   "elem": "冰",
+   "elemID": "ice",
+   "learnable": true,
+   "magicID": 45,
+   "mp": 19,
+   "mpInc": 20,
+   "name": "冰咆哮",
+   "power": [
+    12,
+    16
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     34,
+     36,
+     38
+    ],
+    "prior": "冰沙掌",
+    "train": [
+     100,
+     110,
+     120
+    ]
+   },
+   "seffBase": 33
+  },
+  "46": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": true,
+   "magicID": 46,
+   "mp": 3,
+   "mpInc": 9,
+   "name": "莲月剑法",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "战士",
+    "level": [
+     38,
+     40,
+     42
+    ],
+    "prior": "烈火剑法",
+    "train": [
+     100,
+     110,
+     120
+    ]
+   },
+   "seffBase": null
+  },
+  "47": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": true,
+   "magicID": 47,
+   "mp": 2,
+   "mpInc": 8,
+   "name": "翔空剑法",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "战士",
+    "level": [
+     35,
+     37,
+     39
+    ],
+    "prior": "半月弯刀",
+    "train": [
+     100,
+     110,
+     120
+    ]
+   },
+   "seffBase": null
+  },
+  "48": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 800,
+   "elem": "",
+   "elemID": "",
+   "learnable": true,
+   "magicID": 48,
+   "mp": 20,
+   "mpInc": 10,
+   "name": "空拳刀法",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     28,
+     30,
+     32
+    ],
+    "prior": "精神力战法",
+    "train": [
+     90,
+     100,
+     110
+    ]
+   },
+   "seffBase": null
+  },
+  "49": {
+   "addPower": [
+    3,
+    3
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 500,
+   "elem": "神圣",
+   "elemID": "holy",
+   "learnable": true,
+   "magicID": 49,
+   "mp": 6,
+   "mpInc": 3,
+   "name": "月魂断玉",
+   "power": [
+    6,
+    10
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     14,
+     16,
+     18
+    ],
+    "prior": "治愈术",
+    "train": [
+     30,
+     40,
+     50
+    ]
+   },
+   "seffBase": 37
+  },
+  "5": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 5,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "魔法特效_召唤骷髅",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": 17
+  },
+  "50": {
+   "addPower": [
+    7,
+    7
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "神圣",
+   "elemID": "holy",
+   "learnable": true,
+   "magicID": 50,
+   "mp": 8,
+   "mpInc": 4,
+   "name": "月魂灵波",
+   "power": [
+    8,
+    12
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     24,
+     26,
+     28
+    ],
+    "prior": "月魂断玉",
+    "train": [
+     60,
+     70,
+     80
+    ]
+   },
+   "seffBase": 38
+  },
+  "51": {
+   "addPower": [
+    0,
+    4
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 1,
+   "coolDown": 500,
+   "elem": "冰",
+   "elemID": "ice",
+   "learnable": true,
+   "magicID": 51,
+   "mp": 4,
+   "mpInc": 1,
+   "name": "冰月神掌",
+   "power": [
+    4,
+    8
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     9,
+     11,
+     13
+    ],
+    "prior": "",
+    "train": [
+     10,
+     20,
+     30
+    ]
+   },
+   "seffBase": 39
+  },
+  "52": {
+   "addPower": [
+    7,
+    11
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 1,
+   "coolDown": 700,
+   "elem": "冰",
+   "elemID": "ice",
+   "learnable": true,
+   "magicID": 52,
+   "mp": 7,
+   "mpInc": 6,
+   "name": "冰月震天",
+   "power": [
+    13,
+    17
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     17,
+     19,
+     21
+    ],
+    "prior": "冰月神掌",
+    "train": [
+     40,
+     50,
+     60
+    ]
+   },
+   "seffBase": 40
+  },
+  "53": {
+   "addPower": [
+    0,
+    4
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 500,
+   "elem": "雷",
+   "elemID": "light",
+   "learnable": true,
+   "magicID": 53,
+   "mp": 4,
+   "mpInc": 1,
+   "name": "霹雳掌",
+   "power": [
+    6,
+    10
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     8,
+     10,
+     12
+    ],
+    "prior": "",
+    "train": [
+     10,
+     20,
+     30
+    ]
+   },
+   "seffBase": 41
+  },
+  "54": {
+   "addPower": [
+    12,
+    16
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 1,
+   "coolDown": 800,
+   "elem": "冰",
+   "elemID": "ice",
+   "learnable": true,
+   "magicID": 54,
+   "mp": 12,
+   "mpInc": 15,
+   "name": "冰沙掌",
+   "power": [
+    12,
+    16
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     22,
+     24,
+     26
+    ],
+    "prior": "冰月震天",
+    "train": [
+     50,
+     60,
+     70
+    ]
+   },
+   "seffBase": 53
+  },
+  "55": {
+   "addPower": [
+    0,
+    4
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 500,
+   "elem": "风",
+   "elemID": "wind",
+   "learnable": true,
+   "magicID": 55,
+   "mp": 3,
+   "mpInc": 1,
+   "name": "风掌",
+   "power": [
+    5,
+    9
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     10,
+     12,
+     14
+    ],
+    "prior": "",
+    "train": [
+     10,
+     20,
+     30
+    ]
+   },
+   "seffBase": 67
+  },
+  "56": {
+   "addPower": [
+    14,
+    18
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 900,
+   "elem": "风",
+   "elemID": "wind",
+   "learnable": true,
+   "magicID": 56,
+   "mp": 18,
+   "mpInc": 20,
+   "name": "龙卷风",
+   "power": [
+    13,
+    17
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     35,
+     37,
+     39
+    ],
+    "prior": "风震天",
+    "train": [
+     100,
+     110,
+     120
+    ]
+   },
+   "seffBase": 72
+  },
+  "57": {
+   "addPower": [
+    12,
+    16
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 800,
+   "elem": "风",
+   "elemID": "wind",
+   "learnable": true,
+   "magicID": 57,
+   "mp": 13,
+   "mpInc": 15,
+   "name": "风震天",
+   "power": [
+    13,
+    17
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     23,
+     25,
+     27
+    ],
+    "prior": "击风",
+    "train": [
+     60,
+     70,
+     80
+    ]
+   },
+   "seffBase": 73
+  },
+  "58": {
+   "addPower": [
+    7,
+    11
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 800,
+   "elem": "风",
+   "elemID": "wind",
+   "learnable": true,
+   "magicID": 58,
+   "mp": 6,
+   "mpInc": 6,
+   "name": "击风",
+   "power": [
+    14,
+    18
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     18,
+     20,
+     22
+    ],
+    "prior": "风掌",
+    "train": [
+     40,
+     50,
+     60
+    ]
+   },
+   "seffBase": 74
+  },
+  "59": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 5000,
+   "elem": "神圣",
+   "elemID": "holy",
+   "learnable": true,
+   "magicID": 59,
+   "mp": 100,
+   "mpInc": 100,
+   "name": "回生术",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     35,
+     37,
+     39
+    ],
+    "prior": "群体治愈术",
+    "train": [
+     50,
+     60,
+     70
+    ]
+   },
+   "seffBase": 77
+  },
+  "6": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 6,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "魔法特效_雷电术",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": 11
+  },
+  "60": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 700,
+   "elem": "暗黑",
+   "elemID": "dark",
+   "learnable": true,
+   "magicID": 60,
+   "mp": 10,
+   "mpInc": 5,
+   "name": "强魔震法",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     29,
+     31,
+     33
+    ],
+    "prior": "神圣战甲术",
+    "train": [
+     90,
+     100,
+     110
+    ]
+   },
+   "seffBase": 89
+  },
+  "61": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 700,
+   "elem": "暗黑",
+   "elemID": "dark",
+   "learnable": true,
+   "magicID": 61,
+   "mp": 10,
+   "mpInc": 5,
+   "name": "猛虎强势",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     34,
+     36,
+     38
+    ],
+    "prior": "强魔震法",
+    "train": [
+     100,
+     110,
+     120
+    ]
+   },
+   "seffBase": 94
+  },
+  "62": {
+   "addPower": [
+    3,
+    5
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 1000,
+   "elem": "",
+   "elemID": "",
+   "learnable": true,
+   "magicID": 62,
+   "mp": 40,
+   "mpInc": 20,
+   "name": "铁布衫",
+   "power": [
+    2,
+    4
+   ],
+   "req": {
+    "job": "战士",
+    "level": [
+     44,
+     47,
+     50
+    ],
+    "prior": "乾坤大挪移",
+    "train": [
+     1000,
+     2000,
+     3000
+    ]
+   },
+   "seffBase": 102
+  },
+  "63": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": true,
+   "magicID": 63,
+   "mp": 0,
+   "mpInc": 7,
+   "name": "十方斩",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "战士",
+    "level": [
+     40,
+     43,
+     46
+    ],
+    "prior": "翔空剑法",
+    "train": [
+     500,
+     800,
+     1000
+    ]
+   },
+   "seffBase": null
+  },
+  "64": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 2500,
+   "elem": "幻影",
+   "elemID": "phantom",
+   "learnable": true,
+   "magicID": 64,
+   "mp": 20,
+   "mpInc": 20,
+   "name": "异形换位",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     27,
+     29,
+     31
+    ],
+    "prior": "瞬息移动",
+    "train": [
+     80,
+     90,
+     100
+    ]
+   },
+   "seffBase": 104
+  },
+  "65": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 2000,
+   "elem": "幻影",
+   "elemID": "phantom",
+   "learnable": true,
+   "magicID": 65,
+   "mp": 20,
+   "mpInc": 25,
+   "name": "超强召唤骷髅",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     33,
+     35,
+     37
+    ],
+    "prior": "召唤神兽",
+    "train": [
+     100,
+     110,
+     120
+    ]
+   },
+   "seffBase": 105
+  },
+  "66": {
+   "addPower": [
+    3,
+    5
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 2000,
+   "elem": "",
+   "elemID": "",
+   "learnable": true,
+   "magicID": 66,
+   "mp": 100,
+   "mpInc": 100,
+   "name": "破血狂杀",
+   "power": [
+    2,
+    4
+   ],
+   "req": {
+    "job": "战士",
+    "level": [
+     48,
+     51,
+     54
+    ],
+    "prior": "斗转星移",
+    "train": [
+     1000,
+     2000,
+     3000
+    ]
+   },
+   "seffBase": 106
+  },
+  "67": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 200,
+   "elem": "",
+   "elemID": "",
+   "learnable": true,
+   "magicID": 67,
+   "mp": 40,
+   "mpInc": 10,
+   "name": "乾坤大挪移",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "战士",
+    "level": [
+     42,
+     45,
+     48
+    ],
+    "prior": "野蛮冲撞",
+    "train": [
+     500,
+     800,
+     1000
+    ]
+   },
+   "seffBase": 107
+  },
+  "68": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 200,
+   "elem": "",
+   "elemID": "",
+   "learnable": true,
+   "magicID": 68,
+   "mp": 40,
+   "mpInc": 20,
+   "name": "斗转星移",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "战士",
+    "level": [
+     46,
+     49,
+     52
+    ],
+    "prior": "铁布衫",
+    "train": [
+     500,
+     800,
+     1000
+    ]
+   },
+   "seffBase": 108
+  },
+  "69": {
+   "addPower": [
+    16,
+    20
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 100,
+   "elem": "冰",
+   "elemID": "ice",
+   "learnable": true,
+   "magicID": 69,
+   "mp": 20,
+   "mpInc": 20,
+   "name": "魄冰刺",
+   "power": [
+    16,
+    20
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     38,
+     41,
+     44
+    ],
+    "prior": "冰咆哮",
+    "train": [
+     500,
+     800,
+     1000
+    ]
+   },
+   "seffBase": 110
+  },
+  "7": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 7,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "魔法特效_火球术",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": 1
+  },
+  "70": {
+   "addPower": [
+    20,
+    30
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 100,
+   "elem": "雷",
+   "elemID": "light",
+   "learnable": true,
+   "magicID": 70,
+   "mp": 40,
+   "mpInc": 30,
+   "name": "怒神霹雳",
+   "power": [
+    20,
+    40
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     40,
+     42,
+     44
+    ],
+    "prior": "地狱雷光",
+    "train": [
+     500,
+     800,
+     1000
+    ]
+   },
+   "seffBase": 111
+  },
+  "71": {
+   "addPower": [
+    1,
+    1
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 100,
+   "elem": "幻影",
+   "elemID": "phantom",
+   "learnable": true,
+   "magicID": 71,
+   "mp": 60,
+   "mpInc": 10,
+   "name": "凝血离魂",
+   "power": [
+    6,
+    2
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     46,
+     48,
+     50
+    ],
+    "prior": "圣言术",
+    "train": [
+     1000,
+     2000,
+     3000
+    ]
+   },
+   "seffBase": 112
+  },
+  "72": {
+   "addPower": [
+    14,
+    22
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 100,
+   "elem": "火",
+   "elemID": "fire",
+   "learnable": true,
+   "magicID": 72,
+   "mp": 32,
+   "mpInc": 20,
+   "name": "焰天火雨",
+   "power": [
+    32,
+    40
+   ],
+   "req": {
+    "job": "法师",
+    "level": [
+     43,
+     45,
+     47
+    ],
+    "prior": "大火球",
+    "train": [
+     1000,
+     2000,
+     3000
+    ]
+   },
+   "seffBase": 113
+  },
+  "73": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 100,
+   "elem": "神圣",
+   "elemID": "holy",
+   "learnable": true,
+   "magicID": 73,
+   "mp": 20,
+   "mpInc": 10,
+   "name": "云寂术",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     38,
+     41,
+     44
+    ],
+    "prior": "月魂灵波",
+    "train": [
+     500,
+     800,
+     1000
+    ]
+   },
+   "seffBase": 120
+  },
+  "74": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 100,
+   "elem": "暗黑",
+   "elemID": "dark",
+   "learnable": true,
+   "magicID": 74,
+   "mp": 120,
+   "mpInc": 80,
+   "name": "妙影无踪",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     43,
+     45,
+     47
+    ],
+    "prior": "集体隐身术",
+    "train": [
+     1000,
+     2000,
+     3000
+    ]
+   },
+   "seffBase": 121
+  },
+  "75": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 200,
+   "elem": "神圣",
+   "elemID": "holy",
+   "learnable": true,
+   "magicID": 75,
+   "mp": 60,
+   "mpInc": 50,
+   "name": "阴阳法环",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     46,
+     48,
+     50
+    ],
+    "prior": "云寂术",
+    "train": [
+     1000,
+     2000,
+     3000
+    ]
+   },
+   "seffBase": 122
+  },
+  "76": {
+   "addPower": [
+    3,
+    4
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 200,
+   "elem": "幻影",
+   "elemID": "phantom",
+   "learnable": true,
+   "magicID": 76,
+   "mp": 40,
+   "mpInc": 30,
+   "name": "移花接玉",
+   "power": [
+    4,
+    8
+   ],
+   "req": {
+    "job": "道士",
+    "level": [
+     40,
+     42,
+     44
+    ],
+    "prior": "超强召唤骷髅",
+    "train": [
+     500,
+     800,
+     1000
+    ]
+   },
+   "seffBase": 123
+  },
+  "77": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 2,
+    "type": "CRT_DIR",
+    "typeID": 1
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "火",
+   "elemID": "fire",
+   "learnable": false,
+   "magicID": 77,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "神兽_喷火",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "78": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 78,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "沙漠石人_石坑",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "79": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 79,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "沙漠石人_死亡特效",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "8": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 8,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "魔法特效_大火球",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": 5
+  },
+  "80": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 8,
+    "type": "CRT_DIR",
+    "typeID": 1
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "雷",
+   "elemID": "light",
+   "learnable": false,
+   "magicID": 80,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "雷电僵尸_雷电",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "81": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 81,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "僧侣僵尸_地洞",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "82": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 5,
+    "type": "CRT_LIMITED",
+    "typeID": 3
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 82,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "沙漠树魔_喷刺",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "83": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 1,
+    "type": "CRT_DIR",
+    "typeID": 1
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 83,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "楔蛾_喷毒",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "84": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 5,
+    "type": "CRT_LIMITED",
+    "typeID": 3
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 84,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "掷斧骷髅_掷斧",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "85": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 8,
+    "type": "CRT_LIMITED",
+    "typeID": 3
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "火",
+   "elemID": "fire",
+   "learnable": false,
+   "magicID": 85,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "诺玛法老_火球术",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "86": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 10,
+    "type": "CRT_LIMITED",
+    "typeID": 3
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "雷",
+   "elemID": "light",
+   "learnable": false,
+   "magicID": 86,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "诺玛大法老_雷电术",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "87": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 87,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "稻草人_死亡特效",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "88": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 88,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "轻甲守卫_死亡特效",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "89": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 8,
+    "type": "CRT_LIMITED",
+    "typeID": 3
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 89,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "蚂蚁道士_治疗",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "9": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 9,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "魔法特效_瞬息移动",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": 21
+  },
+  "90": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 8,
+    "type": "CRT_LIMITED",
+    "typeID": 3
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 90,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "红衣法师_魔法",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "91": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 91,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "红衣法师_死亡特效",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "92": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 0,
+    "type": "CRT_LONG",
+    "typeID": 2
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 92,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "骷髅精灵_死亡特效",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "93": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 1,
+    "type": "CRT_DIR",
+    "typeID": 1
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 93,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "洞蛆_喷毒",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "94": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 1,
+    "type": "CRT_DIR",
+    "typeID": 1
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 94,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "火焰沃玛_喷火",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "95": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 1,
+    "type": "CRT_DIR",
+    "typeID": 1
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "雷",
+   "elemID": "light",
+   "learnable": false,
+   "magicID": 95,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "沃玛教主_电光",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "96": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 10,
+    "type": "CRT_LIMITED",
+    "typeID": 3
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "雷",
+   "elemID": "light",
+   "learnable": false,
+   "magicID": 96,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "沃玛教主_雷电术",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "97": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 8,
+    "type": "CRT_LIMITED",
+    "typeID": 3
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 97,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "暗黑战士_喷刺",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "98": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 1,
+    "type": "CRT_DIR",
+    "typeID": 1
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 98,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "粪虫_喷毒",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  },
+  "99": {
+   "addPower": [
+    0,
+    0
+   ],
+   "castDelay": 0,
+   "castRange": {
+    "distance": 8,
+    "type": "CRT_LIMITED",
+    "typeID": 3
+   },
+   "checkGround": 0,
+   "coolDown": 0,
+   "elem": "",
+   "elemID": "",
+   "learnable": false,
+   "magicID": 99,
+   "mp": 0,
+   "mpInc": 0,
+   "name": "祖玛弓箭手_射箭",
+   "power": [
+    0,
+    0
+   ],
+   "req": {
+    "job": "",
+    "level": [
+     0,
+     0,
+     0
+    ],
+    "prior": "",
+    "train": [
+     0,
+     0,
+     0
+    ]
+   },
+   "seffBase": null
+  }
+ }
+}

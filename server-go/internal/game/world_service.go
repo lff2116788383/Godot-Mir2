@@ -35,6 +35,15 @@ type WorldService struct {
 	Chars     *storage.CharacterRepository
 	Logger    *slog.Logger
 
+	// Items 物品表，用于算玩家战斗属性（CombatStatsFor）。
+	// 为 nil 时属性退化成「只有等级基础值」，装备不生效。
+	Items *ItemDB
+	// Magics 魔法表，用于施法校验与伤害结算。为 nil 时所有技能被拒。
+	Magics *MagicDB
+	// Ticker 世界时钟驱动器。地图建好后要 Track 它，
+	// 否则这张图的 NowMS 永远不动（技能冷却永远不结束）。
+	Ticker *MapTicker
+
 	// mapCache mapID -> *world.MapData，避免每次进场都读文件
 	mapCache map[uint32]*world.MapData
 	// assetsRoot 地图素材目录
@@ -116,12 +125,28 @@ func (s *WorldService) LoadMap(ctx context.Context, mapID uint32) error {
 	if err := s.Worlds.CreateMap(mapID, data); err != nil {
 		// 地图已存在（重启/重连）不算错误
 		if s.Worlds.MapCount() > 0 {
+			s.trackMap(mapID)
 			return nil
 		}
 		return fmt.Errorf("create map actor: %w", err)
 	}
+	s.trackMap(mapID)
 	s.Logger.Info("map ready", "map", mapID, "size", fmt.Sprintf("%dx%d", data.Width, data.Height))
 	return nil
+}
+
+// trackMap 让 ticker 开始驱动这张地图。
+//
+// ★ 必须在 CreateMap 成功后立刻做：
+//
+//	NowMS 只在 World.Advance 被调用时推进，没人调它就恒为 0。
+//	而技能冷却判断是 `nowMS - last < coolDown`，两个 0 相减
+//	得到 0，永远小于任何正数冷却 —— 表现是「第一次放技能后
+//	这个技能再也放不出来」。
+func (s *WorldService) trackMap(mapID uint32) {
+	if s.Ticker != nil {
+		s.Ticker.Track(mapID)
+	}
 }
 
 // Enter 把玩家放进世界。
@@ -182,10 +207,16 @@ func (s *WorldService) Enter(ctx context.Context, ch storage.Character, channelI
 		X:         int(ch.MapX),
 		Y:         int(ch.MapY),
 		Wear:      make(map[int]*Item),
+		// ★ 这三个 map 必须在进场时初始化，不能留给首次使用时懒建。
+		//   施法路径会直接写 p.MagicCooldown[magicID] = nowMS，
+		//   nil map 写入是 panic（不是静默失败），一次技能就把服务端打挂。
+		MagicTrain:    make(map[uint32]int),
+		MagicCooldown: make(map[uint32]int64),
+		MagicKeys:     make(map[uint32]uint8),
 	}
 
 	// 进地图
-	events, err := s.Worlds.AddEntity(ctx, mapID, p.WorldEntity(mapUID))
+	events, err := s.Worlds.AddEntity(ctx, mapID, p.WorldEntity(mapUID, s.Items))
 	if err != nil {
 		return nil, fmt.Errorf("add player to map: %w", err)
 	}

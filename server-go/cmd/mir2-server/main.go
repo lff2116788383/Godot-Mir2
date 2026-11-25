@@ -98,14 +98,36 @@ func main() {
 		Broadcast: broadcaster,
 	}
 
-	// 物品表（穿戴校验/药剂效果/技能书都依赖它）
+	// 物品表（穿戴校验/药剂效果/技能书/属性计算都依赖它）
 	itemsPath := filepath.Join("content", "items.json")
 	itemDB, err := game.LoadItemDB(itemsPath)
 	if err != nil {
 		slog.Error("load item db", "path", itemsPath, "error", err)
 		os.Exit(1)
 	}
-	slog.Info("item db loaded", "count", itemDB.Count())
+	// 金币 itemID 不能硬编码：按表里的 type == "金币" 解析一次
+	game.GoldItemID = itemDB.GoldID()
+	slog.Info("item db loaded", "count", itemDB.Count(), "gold_item_id", game.GoldItemID)
+
+	// 魔法表（施法校验/MP 消耗/伤害区间/元素抗性都依赖它）
+	magicsPath := filepath.Join("content", "magics.json")
+	magicDB, err := game.LoadMagicDB(magicsPath)
+	if err != nil {
+		slog.Error("load magic db", "path", magicsPath, "error", err)
+		os.Exit(1)
+	}
+	slog.Info("magic db loaded", "count", magicDB.Count(), "learnable", magicDB.LearnableCount())
+
+	// 属性计算与施法都要读物品/魔法表，回填到 worldService
+	worldService.Items = itemDB
+	worldService.Magics = magicDB
+
+	// 世界时钟：技能冷却/buff 到期/地面物品过期全靠它推进。
+	// 不启动的话 NowMS 恒为 0，所有冷却判断都会退化成「永久冷却中」。
+	ticker := game.NewMapTicker(worlds, worldService, broadcaster, players, slog.Default())
+	worldService.Ticker = ticker
+	ticker.Start(ctx)
+	defer ticker.Stop()
 
 	inventoryHandler := &game.InventoryHandler{
 		Players:   players,
@@ -116,7 +138,39 @@ func main() {
 		Sessions:  loginHandler.Sessions,
 	}
 
-	if err := game.RegisterAllRoutes(dispatcher, loginHandler, actionHandler, inventoryHandler); err != nil {
+	spellHandler := &game.SpellHandler{
+		Players:   players,
+		Worlds:    worlds,
+		Items:     itemDB,
+		Magics:    magicDB,
+		Broadcast: broadcaster,
+		Sessions:  loginHandler.Sessions,
+		Logger:    slog.Default(),
+		ItemRepo:  storage.NewItemRepository(store),
+		KeySaver:  storage.NewItemRepository(store),
+	}
+	actionHandler.Spells = spellHandler
+
+	deathHandler := &game.DeathHandler{
+		Players:   players,
+		Worlds:    worlds,
+		Broadcast: broadcaster,
+		Logger:    slog.Default(),
+		Chars:     storage.NewCharacterRepository(store),
+	}
+
+	shopHandler := &game.ShopHandler{
+		Players:   players,
+		Worlds:    worlds,
+		Items:     itemDB,
+		Broadcast: broadcaster,
+		Logger:    slog.Default(),
+		Golds:     storage.NewGoldRepository(store),
+		Chars:     storage.NewCharacterRepository(store),
+	}
+
+	if err := game.RegisterAllRoutes(dispatcher, loginHandler, actionHandler,
+		inventoryHandler, spellHandler, deathHandler, shopHandler); err != nil {
 		slog.Error("register routes", "error", err)
 		os.Exit(1)
 	}
@@ -133,7 +187,8 @@ func main() {
 		"database", cfg.DatabasePath,
 		"assets", assetsRoot,
 		"routes", "ping,login,querychar,online,account,password,createchar,deletechar,"+
-			"action,equipwear,grabwear,equipbelt,grabelt,dropitem,consumeitem",
+			"action,equipwear,grabwear,equipbelt,grabelt,dropitem,consumeitem,"+
+			"setmagickey,die,revive,addexp,addhealth,querysellitemlist,buy",
 	)
 	if err := server.ListenAndServe(ctx); err != nil && ctx.Err() == nil {
 		slog.Error("legacy TCP server stopped", "error", err)

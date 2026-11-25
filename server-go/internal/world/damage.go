@@ -145,13 +145,46 @@ func (e ElementResist) ResistFor(elem Element) int {
 type CombatStats struct {
 	DC      AbilityBounds // 攻击方：物理伤害区间
 	MC      AbilityBounds // 攻击方：魔法伤害区间
+	SC      AbilityBounds // 攻击方：道术伤害区间（道士技能用这个而不是 MC）
 	DCHit   int           // 攻击方：命中
 	DCDodge int           // 受击方：闪避
 	MCHit   int           // 攻击方：魔法命中
-	MCDodge int           // 受击方：魔法闪避
+	MCDodge int           // 攻击方：魔法闪避
 	AC      AbilityBounds // 受击方：物防区间
 	MAC     AbilityBounds // 受击方：魔防区间
 	Elem    ElementResist // 受击方：元素抗性
+}
+
+// ElementFromName 把 magicrecord 的 elem 中文字段映射成 Element。
+//
+// 【依据】magicrecord.hpp:38-48 magicElemID：
+//
+//	火->MET_FIRE 冰->MET_ICE 雷->MET_LIGHT 风->MET_WIND
+//	神圣->MET_HOLY 暗黑->MET_DARK 幻影->MET_PHANTOM
+//
+// ★ 「雷」映射到 ElemLight（不是新造一个 ElemThunder）：
+//
+//	原版 MET_LIGHT 就是这个意思，元素抗性表里也只有 light 一栏。
+//	如果按中文直觉写 ElemThunder，抗性永远查不到，法师的雷电术
+//	打在雷属性怪物身上会被当成「无属性」满额伤害。
+func ElementFromName(name string) Element {
+	switch name {
+	case "火", "fire":
+		return ElemFire
+	case "冰", "ice":
+		return ElemIce
+	case "雷", "light":
+		return ElemLight
+	case "风", "wind":
+		return ElemWind
+	case "神圣", "holy":
+		return ElemHoly
+	case "暗黑", "dark":
+		return ElemDark
+	case "幻影", "phantom":
+		return ElemPhantom
+	}
+	return ElemNone
 }
 
 // Sigmoid 对应 mathf::sigmoid。
@@ -254,5 +287,29 @@ func RollAttackDamage(magicID int, dc, mc AbilityBounds, dcHit, mcHit, modifierI
 		Damage:     int32(mc.RandInclusive(r)),
 		MCHit:      mcHit,
 		ModifierID: modifierID,
+	}.ToNode()
+}
+
+// RollAttackDamageWith 用调用方给定的伤害区间 roll 一次伤害。
+//
+// 技能伤害不走「攻击方 MC 区间」，而是「技能 power + 攻击方属性」，
+// 由上层算好后传进来（player.cpp:1265 getAttackDamage）。
+//
+// ★ hit 传 0 时不要当成「命中率为 0」：
+//
+//	ResolveDamage 里 hitProb 来自 sigmoid((hit - dodge)/2.5)/2 + 0.5，
+//	两者都是 0 时命中率是 0.75，不是 0。所以 hit=0 是合法输入，
+//	表示「这个技能不吃命中加成」，不是「必不中」。
+func RollAttackDamageWith(magicID int, bounds AbilityBounds, hit int, r *rand.Rand) DamageNode {
+	if magicID == MagicIDPlainAttack {
+		return PlainPhyDamage{
+			Damage: int32(bounds.RandInclusive(r)),
+			DCHit:  hit,
+		}.ToNode()
+	}
+	return MagicDamage{
+		MagicID: magicID,
+		Damage:  int32(bounds.RandInclusive(r)),
+		MCHit:   hit,
 	}.ToNode()
 }

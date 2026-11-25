@@ -90,13 +90,35 @@ func startE2EServer(t *testing.T) *e2eServer {
 		cancel()
 		t.Fatalf("load item db: %v", err)
 	}
+	GoldItemID = itemDB.GoldID()
+
+	magicDB, err := LoadMagicDB("../../content/magics.json")
+	if err != nil {
+		cancel()
+		t.Fatalf("load magic db: %v", err)
+	}
+
 	inventory := &InventoryHandler{
 		Players: players, Items: itemDB, Worlds: worlds, Broadcast: cast,
 		ItemRepo: storage.NewItemRepository(store), Sessions: loginHandler.Sessions,
 	}
+	spells := &SpellHandler{
+		Players: players, Worlds: worlds, Items: itemDB, Magics: magicDB,
+		Broadcast: cast, Sessions: loginHandler.Sessions,
+	}
+	deaths := &DeathHandler{
+		Players: players, Worlds: worlds, Broadcast: cast,
+		Chars: chars,
+	}
+	shops := &ShopHandler{
+		Players: players, Worlds: worlds, Items: itemDB, Broadcast: cast,
+		Golds: storage.NewGoldRepository(store), Chars: chars,
+	}
+	actions.Spells = spells
 
 	dispatcher := transport.NewDispatcher()
-	if err := RegisterAllRoutes(dispatcher, loginHandler, actions, inventory); err != nil {
+	if err := RegisterAllRoutes(dispatcher, loginHandler, actions, inventory,
+		spells, deaths, shops); err != nil {
 		cancel()
 		t.Fatalf("register routes: %v", err)
 	}
@@ -433,4 +455,161 @@ func TestE2EEquipWearOverNetwork(t *testing.T) {
 		t.Fatalf("unexpected error code %d", eqErr.Error)
 	}
 	t.Logf("equip error round-trip ok: code=%d", eqErr.Error)
+}
+
+// e2eLogin 完成登录 + 进图，返回 SM_ONLINEOK 内容。
+func e2eLogin(t *testing.T, addr, account string) (*e2eClient, protocol.SMOnlineOK) {
+	t.Helper()
+	c := dialE2E(t, addr)
+
+	var login protocol.CMLogin
+	_ = login.ID.Assign([]byte(account))
+	_ = login.Password.Assign([]byte("pwd123"))
+	payload, err := protocol.AppendWirePayload(nil, login)
+	if err != nil {
+		t.Fatalf("encode login: %v", err)
+	}
+	c.send(t, protocol.CM_LOGIN, payload)
+	c.recvUntil(t, protocol.SM_LOGINOK, 3*time.Second)
+	c.send(t, protocol.CM_QUERYCHAR, nil)
+	c.recvUntil(t, protocol.SM_QUERYCHAROK, 3*time.Second)
+	c.send(t, protocol.CM_ONLINE, nil)
+	online := c.recvUntil(t, protocol.SM_ONLINEOK, 3*time.Second)
+
+	var ok protocol.SMOnlineOK
+	if _, err := protocol.ReadWirePayload(&ok, online.Payload); err != nil {
+		t.Fatalf("decode onlineok: %v", err)
+	}
+	return c, ok
+}
+
+// TestE2EDieAndRevive 走真网络验证「求死 -> 收到死亡 -> 复活 -> 收到复活」。
+//
+// 这条链路的客户端表现是「角色倒地 -> 尸体淡出 -> 回到复活点站起来」，
+// 三个包（SM_NOTIFYDEAD / SM_DEADFADEOUT / SM_REVIVE）缺任何一条
+// 都会让客户端卡在某个中间状态。
+func TestE2EDieAndRevive(t *testing.T) {
+	srv := startE2EServer(t)
+	c, _ := e2eLogin(t, srv.addr, "alice")
+	defer c.close()
+
+	// CM_REQUESTDIE 是空消息
+	c.send(t, protocol.CM_REQUESTDIE, nil)
+
+	dead := c.recvUntil(t, protocol.SM_NOTIFYDEAD, 3*time.Second)
+	var deadPkt protocol.SMNotifyDead
+	if _, err := protocol.ReadWirePayload(&deadPkt, dead.Payload); err != nil {
+		t.Fatalf("decode SM_NOTIFYDEAD: %v", err)
+	}
+
+	fade := c.recvUntil(t, protocol.SM_DEADFADEOUT, 3*time.Second)
+	var fadePkt protocol.SMDeadFadeOut
+	if _, err := protocol.ReadWirePayload(&fadePkt, fade.Payload); err != nil {
+		t.Fatalf("decode SM_DEADFADEOUT: %v", err)
+	}
+	if fadePkt.UID != deadPkt.UID {
+		t.Fatalf("dead uid mismatch: notify=%#x fade=%#x", deadPkt.UID, fadePkt.UID)
+	}
+	t.Logf("death over network: uid=%#x at (%d,%d)", fadePkt.UID, fadePkt.X, fadePkt.Y)
+
+	// 复活
+	c.send(t, protocol.CM_REQUESTREVIVE, nil)
+	rev := c.recvUntil(t, protocol.SM_REVIVE, 3*time.Second)
+	var revPkt protocol.SMRevive
+	if _, err := protocol.ReadWirePayload(&revPkt, rev.Payload); err != nil {
+		t.Fatalf("decode SM_REVIVE: %v", err)
+	}
+	if revPkt.MapUID == 0 {
+		t.Fatal("SM_REVIVE should carry a map uid")
+	}
+	t.Logf("revived at (%d,%d) dir=%d mapuid=%#x",
+		revPkt.X, revPkt.Y, revPkt.Direction, revPkt.MapUID)
+}
+
+// TestE2EBuyOverNetwork 走真网络验证购买链路。
+//
+// 两条路径都测，因为它们的失败模式完全不同：
+//
+//	成功：SM_BUYSUCCEED + SM_GOLD + SM_INVENTORY，三包缺一客户端就不同步
+//	失败：SM_BUYERROR 带回显的 itemID/seqID，客户端靠它弹提示
+//
+// ★ 新角色的初始金币不是 0 而是 schema 默认的 9900，
+// 所以「买不起」要用一个必定超额的 count 来构造。
+func TestE2EBuyOverNetwork(t *testing.T) {
+	srv := startE2EServer(t)
+	c, _ := e2eLogin(t, srv.addr, "alice")
+	defer c.close()
+
+	// 金创药（小）：itemID 6，price 80
+	const potionID = 6
+	const npcUID = 0x0F00000000000001
+
+	// ---- 成功路径 ----
+	c.send(t, protocol.CM_BUY, mustWire(t, protocol.CMBuy{
+		NPCUID: npcUID, ItemID: potionID, SeqID: 1, Count: 1,
+	}))
+	pkt := c.recvUntil(t, protocol.SM_BUYSUCCEED, 3*time.Second)
+	var ok protocol.SMBuySucceed
+	if _, err := protocol.ReadWirePayload(&ok, pkt.Payload); err != nil {
+		t.Fatalf("decode SM_BUYSUCCEED: %v", err)
+	}
+	if ok.ItemID != potionID {
+		t.Fatalf("bought item = %d, want %d", ok.ItemID, potionID)
+	}
+	t.Logf("buy succeeded: item=%d seq=%d", ok.ItemID, ok.SeqID)
+
+	// ---- 失败路径：数量远超金币能买的量 ----
+	c.send(t, protocol.CM_BUY, mustWire(t, protocol.CMBuy{
+		NPCUID: npcUID, ItemID: potionID, SeqID: 1, Count: MaxBuyCount,
+	}))
+	errPkt := c.recvUntil(t, protocol.SM_BUYERROR, 3*time.Second)
+	var buyErr protocol.SMBuyError
+	if _, err := protocol.ReadWirePayload(&buyErr, errPkt.Payload); err != nil {
+		t.Fatalf("decode SM_BUYERROR: %v", err)
+	}
+	if buyErr.ItemID != potionID || buyErr.Error != BuyErrInsufficient {
+		t.Fatalf("buy error = %+v, want itemID=%d err=%d", buyErr, potionID, BuyErrInsufficient)
+	}
+	t.Logf("buy rejected as expected: code=%d", buyErr.Error)
+}
+
+// mustWire 编码一个定长载荷，失败直接 t.Fatal。
+func mustWire(t *testing.T, payload any) []byte {
+	t.Helper()
+	body, err := protocol.AppendWirePayload(nil, payload)
+	if err != nil {
+		t.Fatalf("encode payload: %v", err)
+	}
+	return body
+}
+
+// TestE2EMagicKeyOverNetwork 验证 CM_SETMAGICKEY 不会让连接崩掉。
+//
+// 这条消息没有回包（原版也是静默落库），所以断言方式只能是
+// 「发完之后连接还活着、还能收到下一条消息的应答」。
+func TestE2EMagicKeyOverNetwork(t *testing.T) {
+	srv := startE2EServer(t)
+	c, _ := e2eLogin(t, srv.addr, "alice")
+	defer c.close()
+
+	var key protocol.CMSetMagicKey
+	key.MagicID = 14 // 雷电术（角色没学，服务端会静默忽略）
+	key.Key = 'a'
+	body, err := protocol.AppendWirePayload(nil, key)
+	if err != nil {
+		t.Fatalf("encode setmagickey: %v", err)
+	}
+	c.send(t, protocol.CM_SETMAGICKEY, body)
+
+	// 连接必须还活着：用一个必然有回包的消息探活
+	var health protocol.CMRequestAddHealth
+	health.AddHP = 0
+	health.AddMP = 0
+	hbody, err := protocol.AppendWirePayload(nil, health)
+	if err != nil {
+		t.Fatalf("encode addhealth: %v", err)
+	}
+	c.send(t, protocol.CM_REQUESTADDHEALTH, hbody)
+	c.recvUntil(t, protocol.SM_HEALTH, 3*time.Second)
+	t.Log("connection alive after CM_SETMAGICKEY")
 }

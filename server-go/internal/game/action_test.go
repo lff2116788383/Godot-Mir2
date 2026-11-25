@@ -615,26 +615,53 @@ func TestLeaveWorldRemovesAndBroadcasts(t *testing.T) {
 
 // ---------- 属性 ----------
 
+// TestPlayerCombatStatsByJob 校验按职业分配主属性。
+//
+// 【依据】combatnode.cpp:113-125：
+//
+//	if(job & JOB_WARRIOR){ node.dc[0] += level/2; node.dc[1] += level/2 + level%2; }
+//	if(job & JOB_TAOIST  ){ node.sc[...] 同上 }
+//	if(job & JOB_WIZARD ){ node.mc[...] 同上 }
+//
+// ★ 三者是 if 而不是 else-if，但职业是单一值，实际只有一个会命中。
+//
+//	道士主属性是 **SC（道术）** 而不是 MC —— 这两个在装备上完全独立
+//	（道袍给 SC、魔法长袍给 MC）。初版把道士写成「DC 和 MC 都有」，
+//	结果道士穿道袍攻击力不涨，穿魔法长袍反而涨。
 func TestPlayerCombatStatsByJob(t *testing.T) {
-	warrior := PlayerCombatStats(1, 10)
-	if warrior.DC.Max <= 0 {
-		t.Fatalf("warrior DC should be positive, got %+v", warrior.DC)
+	const level = 10
+	half, halfUp := level/2, level/2+level%2
+
+	warrior := PlayerCombatStats(1, level)
+	if warrior.DC.Min != half || warrior.DC.Max != halfUp {
+		t.Fatalf("warrior DC should be [%d,%d], got %+v", half, halfUp, warrior.DC)
 	}
-	if warrior.MC.Max != 0 {
-		t.Fatalf("warrior should have no magic, got %+v", warrior.MC)
+	if warrior.MC.Max != 0 || warrior.SC.Max != 0 {
+		t.Fatalf("warrior should have no magic/taoist power, got MC=%+v SC=%+v", warrior.MC, warrior.SC)
 	}
 
-	wizard := PlayerCombatStats(2, 10)
-	if wizard.MC.Max <= 0 {
-		t.Fatalf("wizard MC should be positive, got %+v", wizard.MC)
+	wizard := PlayerCombatStats(2, level)
+	if wizard.MC.Min != half || wizard.MC.Max != halfUp {
+		t.Fatalf("wizard MC should be [%d,%d], got %+v", half, halfUp, wizard.MC)
 	}
-	if wizard.MC.Max <= wizard.DC.Max {
-		t.Fatalf("wizard magic should exceed physical: MC=%+v DC=%+v", wizard.MC, wizard.DC)
+	if wizard.DC.Max != 0 || wizard.SC.Max != 0 {
+		t.Fatalf("wizard should have no physical/taoist power, got DC=%+v SC=%+v", wizard.DC, wizard.SC)
 	}
 
-	taoist := PlayerCombatStats(3, 10)
-	if taoist.MC.Max <= 0 || taoist.DC.Max <= 0 {
-		t.Fatalf("taoist should have both, got %+v", taoist)
+	taoist := PlayerCombatStats(3, level)
+	if taoist.SC.Min != half || taoist.SC.Max != halfUp {
+		t.Fatalf("taoist SC should be [%d,%d], got %+v", half, halfUp, taoist.SC)
+	}
+	if taoist.DC.Max != 0 || taoist.MC.Max != 0 {
+		t.Fatalf("taoist should have no physical/magic power, got DC=%+v MC=%+v", taoist.DC, taoist.MC)
+	}
+
+	// 三职业的 AC/MAC 都按等级给（combatnode.cpp:102-104）
+	for _, job := range []uint8{1, 2, 3} {
+		s := PlayerCombatStats(job, level)
+		if s.AC.Min != half || s.MAC.Max != halfUp {
+			t.Fatalf("job %d AC/MAC should be level-based, got AC=%+v MAC=%+v", job, s.AC, s.MAC)
+		}
 	}
 
 	// 等级越高属性越强
@@ -642,6 +669,13 @@ func TestPlayerCombatStatsByJob(t *testing.T) {
 	high := PlayerCombatStats(1, 50)
 	if high.DC.Max <= low.DC.Max {
 		t.Fatalf("higher level should have bigger DC: %d vs %d", high.DC.Max, low.DC.Max)
+	}
+
+	// ★ 奇数级的 Max 要比 Min 大 1（level/2 + level%2），
+	//   不是 Min == Max。写成 level/2*2 会让 9 级玩家与 8 级一样。
+	odd := PlayerCombatStats(1, 9)
+	if odd.DC.Max-odd.DC.Min != 1 {
+		t.Fatalf("odd level should give Max = Min+1, got %+v", odd.DC)
 	}
 }
 

@@ -54,8 +54,31 @@ type Player struct {
 	Magics    []uint32
 	Buffs     []uint32
 
+	// MagicTrain 各技能的修炼等级（0..3，对应 magicrecord req.train 三档）。
+	//
+	// 影响两处：MP 消耗（mp + mpInc*trainLevel）与技能伤害
+	// （power + addPower*trainLevel）。没练过的技能是 0 级。
+	MagicTrain map[uint32]int
+	// MagicCooldown 各技能上次施放的世界时钟（毫秒）。
+	//
+	// ★ 必须用世界时钟而不是 time.Now()：
+	//
+	//	地图 actor 串行执行，同一 tick 内 NowMS 一致；
+	//	用系统时间会让「同一 tick 内连点两次」这种边界行为不确定。
+	MagicCooldown map[uint32]int64
+	// MagicKeys 技能快捷键绑定（magicID -> 按键），1-6 留给腰带
+	MagicKeys map[uint32]uint8
+
 	// 掉落/拾取节流（原版 m_pickUpLock）
 	PickUpLock bool
+}
+
+// MagicTrainLevel 返回某技能的修炼等级（未学/未练都返回 0）。
+func (p *Player) MagicTrainLevel(magicID uint32) int {
+	if p.MagicTrain == nil {
+		return 0
+	}
+	return p.MagicTrain[magicID]
 }
 
 // Item 是背包里的一件物品（精简版，完整 SDItem 在 protocol 层）。
@@ -173,9 +196,9 @@ func (m *PlayerManager) Snapshot() []*Player {
 
 // WorldEntity 把 Player 转成 world 侧实体。
 //
-// 等级 -> 属性映射先给一组保守值，等 magicrecord/monsterrecord 的属性表
-// 接进来（B5 后半）再替换成真实公式。
-func (p *Player) WorldEntity(mapUID uint64) world.Entity {
+// Stats 用 CombatStatsFor(items)：等级 + 职业 + 装备 + 已学技能。
+// items 为 nil 时退化成只算等级部分（测试环境常见）。
+func (p *Player) WorldEntity(mapUID uint64, items *ItemDB) world.Entity {
 	return world.Entity{
 		UID:       p.UID,
 		Type:      world.EntityPlayer,
@@ -188,56 +211,101 @@ func (p *Player) WorldEntity(mapUID uint64) world.Entity {
 		MP:        p.MP,
 		MaxMP:     p.MaxMP,
 		ViewRange: p.ViewRange,
-		Stats:     PlayerCombatStats(p.Job, p.Level),
+		Stats:     p.CombatStatsFor(items),
 	}
 }
 
 // PlayerCombatStats 按职业与等级给出战斗属性。
 //
-// 原版从 hero.cpp 的 _getAttackPower/_getMagicPower 与 tbl_char 的装备
-// 综合计算，公式依赖 magicrecord/物品表。这里先给「能打但不荒谬」的
-// 基础值，等属性表接入后替换（会在 REPLICA_AUDIT 里标注为临时代码）。
+// 【依据】common/src/combatnode.cpp getCombatNode：真实公式是
 //
-// 不这么做的话，玩家进图后 DC=0，连怪都打不动，B5 无法端到端验证。
+//	等级基础：ac += level/2 .. level/2+level%2，mac 同上
+//	职业加成：战士 dc += 半级，道士 sc += 半级，法师 mc += 半级
+//	学了「基本剑术」：dcHit += 2
+//	再累加所有已穿装备的 equip.dc/ac/mc/sc/dcHit/mcHit/...
+//
+// ★ 这里只算「等级 + 职业 + 技能」的部分，装备部分由 CombatStatsFor
+//
+//	单独累加。拆开的理由：装备会变（穿脱），等级也会变，但两者的
+//	重算时机不同 —— 合成一个函数会让每次穿装备都重跑等级公式。
+//
+// 初版曾按「战士 DC=level/2+3」这类拍脑袋公式写，结果法师的 MC
+// 与道士的 SC 完全不存在，任何法术伤害都算成 0。
 func PlayerCombatStats(job uint8, level int) world.CombatStats {
 	if level < 1 {
 		level = 1
 	}
-	// 战士偏物理、法道偏魔法，与 jobf.hpp 的职业定位一致
+	// level/2 与 level/2+level%2 —— 原版就是这么写的，
+	// 奇数级多 1 点上限，不能写成 level/2*2。
+	half := level / 2
+	halfUp := half + level%2
+
+	stats := world.CombatStats{
+		AC:  world.AbilityBounds{Min: half, Max: halfUp},
+		MAC: world.AbilityBounds{Min: half, Max: halfUp},
+	}
+	// jobf.hpp：JOB_WARRIOR=1 / JOB_WIZARD=2 / JOB_TAOIST=3（按位）
 	switch job {
-	case 1: // 战士
-		return world.CombatStats{
-			DC:    world.AbilityBounds{Min: level/3 + 1, Max: level/2 + 3},
-			DCHit: 8 + level*2,
-			AC:    world.AbilityBounds{Min: level / 4, Max: level/2 + 1},
-			MAC:   world.AbilityBounds{Min: level / 6, Max: level/3 + 1},
+	case 1: // 战士：只有 DC
+		stats.DC = world.AbilityBounds{Min: half, Max: halfUp}
+	case 2: // 法师：只有 MC
+		stats.MC = world.AbilityBounds{Min: half, Max: halfUp}
+	case 3: // 道士：只有 SC（道术）
+		stats.SC = world.AbilityBounds{Min: half, Max: halfUp}
+	}
+	return stats
+}
+
+// CombatStatsFor 算出玩家的完整战斗属性（等级 + 职业 + 装备 + 已学技能）。
+//
+// items 可为 nil（物品表没载入时退化，只算等级部分）。
+// 这是「玩家当前真实战力」的唯一入口 —— world 层的 SetStats
+// 与所有伤害结算都应该用它，不要各算一份。
+func (p *Player) CombatStatsFor(items *ItemDB) world.CombatStats {
+	stats := PlayerCombatStats(p.Job, p.Level)
+
+	for _, it := range p.Wear {
+		if it == nil || items == nil {
+			continue
 		}
-	case 2: // 法师
-		return world.CombatStats{
-			DC:    world.AbilityBounds{Min: level/6 + 1, Max: level/4 + 2},
-			DCHit: 6 + level,
-			MC:    world.AbilityBounds{Min: level/2 + 1, Max: level + 2},
-			MCHit: 8 + level*2,
-			AC:    world.AbilityBounds{Min: level / 6, Max: level/3 + 1},
-			MAC:   world.AbilityBounds{Min: level / 4, Max: level/2 + 1},
+		rec, ok := items.Get(it.ItemID)
+		if !ok || rec.Equip == nil {
+			continue
 		}
-	case 3: // 道士
-		return world.CombatStats{
-			DC:    world.AbilityBounds{Min: level/5 + 1, Max: level/3 + 2},
-			DCHit: 7 + level,
-			MC:    world.AbilityBounds{Min: level/3 + 1, Max: level/2 + 2},
-			MCHit: 7 + level,
-			AC:    world.AbilityBounds{Min: level / 5, Max: level/3 + 1},
-			MAC:   world.AbilityBounds{Min: level / 4, Max: level/2 + 1},
-		}
-	default:
-		return world.CombatStats{
-			DC:    world.AbilityBounds{Min: 1, Max: 3},
-			DCHit: 8,
-			AC:    world.AbilityBounds{Min: 0, Max: 1},
-			MAC:   world.AbilityBounds{Min: 0, Max: 1},
+		eq := rec.Equip
+		stats.DC.Min += eq.DC[0]
+		stats.DC.Max += eq.DC[1]
+		stats.MC.Min += eq.MC[0]
+		stats.MC.Max += eq.MC[1]
+		stats.SC.Min += eq.SC[0]
+		stats.SC.Max += eq.SC[1]
+		stats.AC.Min += eq.AC[0]
+		stats.AC.Max += eq.AC[1]
+		stats.MAC.Min += eq.MAC[0]
+		stats.MAC.Max += eq.MAC[1]
+		stats.DCHit += eq.DCHit
+		stats.MCHit += eq.MCHit
+		stats.DCDodge += eq.DCDodge
+		stats.MCDodge += eq.MCDodge
+	}
+
+	// 基本剑术（学了就 +2 命中）
+	if items != nil {
+		if basicID, ok := items.FindByName("基本剑术"); ok && p.HasMagic(basicID) {
+			stats.DCHit += 2
 		}
 	}
+	return stats
+}
+
+// HasMagic 判断玩家是否已学某个 magicID。
+func (p *Player) HasMagic(magicID uint32) bool {
+	for _, id := range p.Magics {
+		if id == magicID {
+			return true
+		}
+	}
+	return false
 }
 
 // SyncFromWorld 把 world 侧的坐标/血量同步回 Player。

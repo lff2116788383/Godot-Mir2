@@ -63,14 +63,27 @@ func RegisterBootstrapRoutes(dispatcher *transport.Dispatcher, handler *Handler)
 	return RegisterLoginRoutes(dispatcher, handler)
 }
 
-// RegisterAllRoutes 注册登录 + 动作 + 背包装备（B5 完整装配）。
+// RegisterAllRoutes 注册登录 + 动作 + 背包装备 + 技能/死亡/商店（B5 完整装配）。
+//
+// 后三个 handler 允许为 nil（早期测试只装了前两个），
+// 传 nil 就跳过对应路由。
 func RegisterAllRoutes(dispatcher *transport.Dispatcher, handler *Handler,
-	actions *ActionHandler, inventory *InventoryHandler) error {
+	actions *ActionHandler, inventory *InventoryHandler,
+	spells *SpellHandler, deaths *DeathHandler, shops *ShopHandler) error {
 	if err := RegisterBootstrapRoutes(dispatcher, handler); err != nil {
 		return err
 	}
 	if err := RegisterActionRoutes(dispatcher, actions); err != nil {
 		return err
 	}
-	return RegisterInventoryRoutes(dispatcher, inventory)
+	if err := RegisterInventoryRoutes(dispatcher, inventory); err != nil {
+		return err
+	}
+	if err := RegisterSpellRoutes(dispatcher, spells); err != nil {
+		return err
+	}
+	if err := RegisterDeathRoutes(dispatcher, deaths); err != nil {
+		return err
+	}
+	return RegisterShopRoutes(dispatcher, shops)
 }

@@ -35,6 +35,9 @@ type ActionHandler struct {
 	Sessions  *SessionManager
 	Worlds    *world.World
 	Broadcast Broadcaster
+	// Spells 施法处理器（ACTION_SPELL 转发给它）。
+	// 为 nil 时施法退化成「回站立」，不会崩但技能放不出来。
+	Spells *SpellHandler
 }
 
 // Broadcaster 把一条 SM 发给指定玩家。
@@ -71,8 +74,14 @@ func (h *ActionHandler) CMAction(ctx context.Context, channelID uint64, req prot
 		return h.handleAttack(ctx, player, action)
 	case common.ActionPickUp:
 		return h.handlePickUp(ctx, player, action)
-	case common.ActionSpell, common.ActionMine, common.ActionSpinKick:
-		// B5 后半实现；先回站立让客户端状态收敛
+	case common.ActionSpell:
+		// 施法：交给 SpellHandler（原版 onCMActionSpell）
+		if h.Spells == nil {
+			return h.reportStand(ctx, player)
+		}
+		return h.Spells.Cast(ctx, channelID, action)
+	case common.ActionMine, common.ActionSpinKick:
+		// 挖矿/回旋踢：B6 实现；先回站立让客户端状态收敛
 		return h.reportStand(ctx, player)
 	default:
 		return nil

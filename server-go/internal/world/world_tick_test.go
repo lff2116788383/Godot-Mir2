@@ -213,23 +213,39 @@ func TestCombatNoNegativeHP(t *testing.T) {
 func TestCommitDeathOnlyOnce(t *testing.T) {
 	st := newTestMap(t)
 	addTestEntity(t, st, 1, 5, 5, 0, CombatStats{}) // 已死
-	rec := MonsterRecord{DropItems: [][]DropItem{{{Item: "药", ProbRecip: 1, Count: 1}}}}
+	rec := MonsterRecord{
+		Exp:       42,
+		DropItems: [][]DropItem{{{Item: "药", ProbRecip: 1, Count: 1}}},
+	}
+	// 怪物记录挂在实体上（CommitDeath 从实体取，不再接受参数）
+	if err := st.MutateEntity(1, func(e *Entity) error {
+		e.MonsterRec = &rec
+		return nil
+	}); err != nil {
+		t.Fatalf("set monster rec: %v", err)
+	}
 	r := rand.New(rand.NewSource(67))
 
-	first, drops := st.CommitDeath(1, rec, r)
-	if !first {
+	first, ok := st.CommitDeath(1, r)
+	if !ok {
 		t.Fatal("首次结算应返回 true")
 	}
-	if len(drops) != 1 {
-		t.Fatalf("应掉 1 件，实际 %d", len(drops))
+	if len(first.Drops) != 1 {
+		t.Fatalf("应掉 1 件，实际 %d", len(first.Drops))
+	}
+	if first.Exp != 42 {
+		t.Fatalf("经验应为 42，实际 %d", first.Exp)
+	}
+	if first.X != 5 || first.Y != 5 {
+		t.Fatalf("掉落位置应为 (5,5)，实际 (%d,%d)", first.X, first.Y)
 	}
 	// 第二次必须不重复掉
-	second, drops2 := st.CommitDeath(1, rec, r)
-	if second {
+	second, ok2 := st.CommitDeath(1, r)
+	if ok2 {
 		t.Fatal("重复结算应返回 false")
 	}
-	if len(drops2) != 0 {
-		t.Fatalf("重复结算不应掉落，实际 %v", drops2)
+	if len(second.Drops) != 0 {
+		t.Fatalf("重复结算不应掉落，实际 %v", second.Drops)
 	}
 }
 
@@ -237,9 +253,12 @@ func TestCommitDeathAliveEntity(t *testing.T) {
 	st := newTestMap(t)
 	addTestEntity(t, st, 1, 5, 5, 100, CombatStats{})
 	r := rand.New(rand.NewSource(71))
-	ok, drops := st.CommitDeath(1, MonsterRecord{}, r)
-	if ok || drops != nil {
+	ok, settled := st.CommitDeath(1, r)
+	if settled {
 		t.Fatal("活着不应结算死亡")
+	}
+	if ok.Exp != 0 || ok.Drops != nil {
+		t.Fatal("活着不应产生任何结算结果")
 	}
 }
 

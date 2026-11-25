@@ -15,6 +15,7 @@ var (
 	ErrInvalidMove       = errors.New("invalid move")
 	ErrEntityDead        = errors.New("entity dead")
 	ErrAttackOutOfRange  = errors.New("attack out of range")
+	ErrAttackInSafeZone  = errors.New("attack blocked by safe zone")
 	ErrNoPath            = errors.New("no path")
 
 	// buff 相关（buff.go）
@@ -63,6 +64,17 @@ type Entity struct {
 
 	// 受击/攻击用的属性（由怪物/玩家记录填充）
 	Stats CombatStats
+
+	// MonsterRec 怪物的静态配置（掉落表 / 经验 / AI 参数）。
+	//
+	// ★ 必须挂在实体上，不能靠「死亡时按名字反查表」：
+	//
+	//	CommitDeath 要用 DropItems 与 Exp，而这两个值在怪物被刷出来
+	//	的那一刻就确定了。刷怪后如果配置表被热更新，反查会给出
+	//	跟这只怪不一致的掉落，玩家看到「打死 A 掉 B 的东西」。
+	//
+	// 玩家实体为 nil。
+	MonsterRec *MonsterRecord
 }
 
 func (e Entity) Point() Point { return Point{X: e.X, Y: e.Y} }
@@ -296,6 +308,64 @@ func (m *MapState) MoveEntity(uid uint64, x, y, maxStep int) (Point, error, []Ob
 	}
 
 	// 4. 新格观察者获得视线
+	events = append(events, m.NotifyCOAppear(uid, x, y)...)
+	return from, nil, events
+}
+
+// Teleport 把实体瞬移到指定坐标（不校验步长，只校验落点可站）。
+//
+// 用途：复活、传送卷轴、GM 拉人、跨图换图。
+//
+// ★ 不能用 MoveEntity(..., maxStep=0) 代替：
+//
+//	HopValid 要求 1 <= maxStep <= 3，传 0 直接返回 false，
+//	于是「瞬移 300 格」永远失败。而传一个够大的 maxStep 也不行 ——
+//	HopValid 只接受 distance² == maxStep² 或 2*maxStep²，
+//	是个精确匹配而不是「不超过」，想靠调参数绕过会掉进
+//	「有时能传有时不能」的怪状态。
+//
+// 与 MoveEntity 相同的地方：仍然产生完整的 AOI 事件（旧的消失 +
+// 新的出现），否则目标位置周围的玩家看不到传送过来的人。
+func (m *MapState) Teleport(uid uint64, x, y int) (Point, error, []ObserverEvent) {
+	entity, ok := m.Entities[uid]
+	if !ok {
+		return Point{}, ErrEntityNotFound, nil
+	}
+	from := entity.Point()
+	to := Point{X: x, Y: y}
+	if from.Equal(to) {
+		return from, nil, nil
+	}
+	if !m.Data.InBounds(to) {
+		return from, ErrInvalidCoordinate, nil
+	}
+	if !m.CanOccupy(uid, x, y) {
+		return from, ErrGridOccupied, nil
+	}
+	oldCell, err := m.cell(from.X, from.Y)
+	if err != nil {
+		return from, err, nil
+	}
+	newCell, err := m.cell(to.X, to.Y)
+	if err != nil {
+		return from, err, nil
+	}
+
+	var events []ObserverEvent
+	events = append(events, m.NotifyCODisappear(uid, from.X, from.Y)...)
+
+	delete(oldCell.Occupants, uid)
+	if newCell.Occupants == nil {
+		newCell.Occupants = make(map[uint64]struct{})
+	}
+	newCell.Occupants[uid] = struct{}{}
+	entity.X, entity.Y = x, y
+	// 瞬移不改朝向：复活后角色应该保持死前的朝向，
+	// 由调用方（复活流程）自己补 direction。
+
+	if entity.ViewRange > 0 {
+		events = append(events, m.MoveGridObserverCircle(uid, entity.ViewRange, from.X, from.Y, x, y)...)
+	}
 	events = append(events, m.NotifyCOAppear(uid, x, y)...)
 	return from, nil, events
 }
@@ -567,10 +637,32 @@ type AttackResult struct {
 // 与原来的 Attack（直接传 damage）相比，这才是原版真实的链路。
 // Attack 保留给测试与简化调用。
 func (m *MapState) Combat(attackerUID, targetUID uint64, magicID int, r *rand.Rand) (AttackResult, error) {
+	return m.combatWith(attackerUID, targetUID, magicID, nil, 0, r)
+}
+
+// CombatWithBounds 用显式指定的伤害区间结算（技能伤害用）。
+//
+// 为什么要单独一个入口：法术伤害的数值不来自「攻击方 MC 区间」，
+// 而是来自「技能 power/addPower + 攻击方属性」。原版
+// player.cpp:1265 getAttackDamage 就是这么算的：
+//
+//	case 雷电术: MagicDamage{ .damage = randPickMC() * elemRatio }
+//	case 灵魂火符: MagicDamage{ .damage = randPickSC() * elemRatio }
+//
+// 注意原版魔法伤害是「属性值 * 元素倍率」，技能 power 只影响
+// 部分技能的最终数值，所以这里做成 bounds 注入，把
+// 「技能基础 + 属性」的加法留在调用方，world 层只管结算。
+func (m *MapState) CombatWithBounds(attackerUID, targetUID uint64, magicID int,
+	bounds AbilityBounds, hit int, r *rand.Rand) (AttackResult, error) {
+	return m.combatWith(attackerUID, targetUID, magicID, &bounds, hit, r)
+}
+
+func (m *MapState) combatWith(attackerUID, targetUID uint64, magicID int,
+	bounds *AbilityBounds, hit int, r *rand.Rand) (AttackResult, error) {
 	if r == nil {
 		// 外部（World.Combat）不一定持有随机源，这里用默认源，
 		// 避免调用方漏传导致 panic。
-		r = rand.New(rand.NewSource(m.NowMS))
+		r = rand.New(rand.NewSource(m.NowMS + int64(magicID)))
 	}
 	attacker, ok := m.Entities[attackerUID]
 	if !ok {
@@ -583,18 +675,33 @@ func (m *MapState) Combat(attackerUID, targetUID uint64, magicID int, r *rand.Ra
 	if attacker.Dead() || target.Dead() {
 		return AttackResult{}, ErrEntityDead
 	}
+	// ★ 安全区：站在安全区里的目标不能被攻击（battleobject.hpp:222）。
+	//   这条必须在距离判定之前 —— 否则安全区内的玩家会先被判「在射程内」
+	//   再被静默丢弃，客户端看起来像「打中了但没伤害」。
+	if m.SafeZoneBlocksAttack(targetUID, false) {
+		return AttackResult{}, ErrAttackInSafeZone
+	}
 	if ChebyshevDistance(attacker.Point(), target.Point()) > 1 {
-		return AttackResult{}, ErrAttackOutOfRange
+		// 法术不要求相邻：远程技能由调用方校验 castRange，
+		// 这里只对「近身攻击」做校验。
+		if magicID == MagicIDPlainAttack {
+			return AttackResult{}, ErrAttackOutOfRange
+		}
 	}
 
 	// 1. roll 伤害
-	node := RollAttackDamage(magicID, attacker.Stats.DC, attacker.Stats.MC,
-		attacker.Stats.DCHit, attacker.Stats.MCHit, AttackModifierNone, r)
+	var node DamageNode
+	if bounds != nil {
+		node = RollAttackDamageWith(magicID, *bounds, hit, r)
+	} else {
+		node = RollAttackDamage(magicID, attacker.Stats.DC, attacker.Stats.MC,
+			attacker.Stats.DCHit, attacker.Stats.MCHit, AttackModifierNone, r)
+	}
 
 	// 2. 结算
-	damage, hit := ResolveDamage(node, target.Stats, r)
-	res := AttackResult{Damage: damage, Hit: hit}
-	if !hit {
+	damage, hitOK := ResolveDamage(node, target.Stats, r)
+	res := AttackResult{Damage: damage, Hit: hitOK}
+	if !hitOK {
 		return res, nil
 	}
 
@@ -628,24 +735,46 @@ func (m *MapState) Combat(attackerUID, targetUID uint64, magicID int, r *rand.Ra
 	return res, nil
 }
 
-// CommitDeath 结算死亡，返回掉落（每只怪只结算一次）。
+// DeathResult 是一次死亡结算的完整结果。
+type DeathResult struct {
+	Drops []DropResult
+	// Exp 击杀经验（来自怪物记录的 Exp）
+	Exp uint64
+	// Owner 掉落归属（仇恨最高的来源），0 表示无人认领
+	Owner uint64
+	// X, Y 死亡位置（掉落落在这里）
+	X, Y int
+}
+
+// CommitDeath 结算死亡，返回掉落与经验（每只怪只结算一次）。
 //
 // 【依据】battleobject.cpp 的 goDie + monster.cpp 的掉落逻辑：
 //   - 死亡时按 dropItemList 掉落
 //   - 掉落归属给仇恨最高的来源（m_offenderList）
 //
-// 返回 (是否首次结算, 掉落列表)
-func (m *MapState) CommitDeath(uid uint64, rec MonsterRecord, r *rand.Rand) (bool, []DropResult) {
+// ★ 掉落只结算一次：DropSettled 是实体上的标记，不是调用方的责任。
+//
+//	击杀路径有两处会调它（攻击结算打死、tick 里的死亡处理），
+//	如果靠调用方去重，任何一条路径漏判都会让怪物掉两份东西。
+func (m *MapState) CommitDeath(uid uint64, r *rand.Rand) (DeathResult, bool) {
 	e, ok := m.Entities[uid]
 	if !ok || !e.Dead() {
-		return false, nil
+		return DeathResult{}, false
 	}
 	if e.DropSettled {
-		return false, nil // 已结算过，防重复掉落
+		return DeathResult{}, false // 已结算过，防重复掉落
 	}
 	e.DropSettled = true
-	drops := RollDrop(rec, r)
-	return true, drops
+
+	result := DeathResult{X: e.X, Y: e.Y}
+	if owner, found := e.Offenders.TopOffender(); found {
+		result.Owner = owner.UID
+	}
+	if e.MonsterRec != nil {
+		result.Drops = RollDrop(*e.MonsterRec, r)
+		result.Exp = e.MonsterRec.Exp
+	}
+	return result, true
 }
 
 // DropOwner 返回掉落归属（仇恨最高的来源）。

@@ -236,3 +236,50 @@ func canWear(rec ItemRecord, level int, job uint8) bool {
 	}
 	return level >= requiredLevel
 }
+
+// HasItemCount 判断背包里某 itemID 的总数是否 >= count（不限 seqID）。
+//
+// 用于商店/任务的「凑够材料」判断：玩家手里可能分散在多格
+// （seqID 不同但 itemID 相同），按单格判会误判成不够。
+func (p *Player) HasItemCount(itemID uint32, count uint32) bool {
+	if count == 0 {
+		return true
+	}
+	var total uint32
+	for i := range p.Inventory {
+		if p.Inventory[i].ItemID == itemID {
+			total += p.Inventory[i].Count
+			if total >= count {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// RemoveItemByID 按 itemID 移除指定总数（跨多格依次扣）。
+//
+// 返回实际移除的数量；不足时按现有量全扣（调用方需先 HasItemCount 校验）。
+//
+// ★ 必须从后往前删，否则 splice 会让后面的索引整体前移，
+// 循环里再取 p.Inventory[i] 会跳格，导致「扣了 1 件却少了两格」。
+func (p *Player) RemoveItemByID(itemID uint32, count uint32) uint32 {
+	if count == 0 {
+		return 0
+	}
+	removed := uint32(0)
+	for i := len(p.Inventory) - 1; i >= 0 && removed < count; i-- {
+		if p.Inventory[i].ItemID != itemID {
+			continue
+		}
+		need := count - removed
+		if p.Inventory[i].Count <= need {
+			removed += p.Inventory[i].Count
+			p.Inventory = append(p.Inventory[:i], p.Inventory[i+1:]...)
+			continue
+		}
+		p.Inventory[i].Count -= need
+		removed += need
+	}
+	return removed
+}

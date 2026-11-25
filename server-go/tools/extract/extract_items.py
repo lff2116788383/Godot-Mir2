@@ -76,9 +76,75 @@ def parse_int(pattern, block, default=0):
     if v is None:
         return default
     try:
-        return int(v)
+        return int(v, 0)
     except ValueError:
         return default
+
+
+def parse_pair(pattern, block, default=(0, 0)):
+    """解析 `.dc = {0, 2}` 这种 int[2]。"""
+    m = re.search(pattern, block)
+    if not m:
+        return list(default)
+    parts = [p.strip() for p in m.group(1).split(",") if p.strip()]
+    out = []
+    for i in range(2):
+        if i < len(parts):
+            try:
+                out.append(int(parts[i], 0))
+            except ValueError:
+                out.append(0)
+        else:
+            out.append(0)
+    return out
+
+
+def parse_ext_health(pattern, block):
+    """解析 `.hp { .add = 10, .steal = 1, .recover = 2 }`。"""
+    body = find_nested(pattern, block)
+    if not body:
+        return None
+    return {
+        "add": parse_int(r'\.add\s*=\s*(-?\d+)', body),
+        "steal": parse_int(r'\.steal\s*=\s*(-?\d+)', body),
+        "recover": parse_int(r'\.recover\s*=\s*(-?\d+)', body),
+    }
+
+
+def skip_string(text, i):
+    """从引号位置跳到字符串结束后一位。"""
+    n = len(text)
+    i += 1
+    while i < n:
+        if text[i] == '\\':
+            i += 2
+            continue
+        if text[i] == '"':
+            return i + 1
+        i += 1
+    return i
+
+
+def find_nested(pattern, block):
+    """取 `.<field> { ... }` 的块体（花括号配对，容忍嵌套）。"""
+    m = re.search(pattern, block)
+    if not m:
+        return ""
+    start = block.index("{", m.start())
+    depth = 0
+    j = start
+    while j < len(block):
+        if block[j] == '"':
+            j = skip_string(block, j)
+            continue
+        if block[j] == '{':
+            depth += 1
+        elif block[j] == '}':
+            depth -= 1
+            if depth == 0:
+                return block[start + 1:j]
+        j += 1
+    return ""
 
 
 def parse_block(name, block):
@@ -134,6 +200,35 @@ def parse_block(name, block):
             "job": first_match(r'\.job\s*=\s*u8"([^"]*)"', body, ""),
             "level": parse_int(r'\.level\s*=\s*(-?\d+)', body),
             "magic": first_match(r'\.magic\s*=\s*u8"([^"]*)"', body, ""),
+        }
+
+    # equip { ... } —— 装备战斗属性
+    #
+    # 【依据】itemrecord.hpp:20-100 EquipAttribute。
+    # 服务端算玩家属性（getCombatNode）必须拿到这些值，
+    # 否则玩家永远只有「等级基础值」，穿装备不涨攻击。
+    #
+    # 注意 equip 里还嵌套了 .req{ .level = 1 }，
+    # 不能用 .*? 通到第一个 } —— 那会在 req 的花括号处截断。
+    em = find_nested(r'\.equip\s*\{', block)
+    if em:
+        rec["equip"] = {
+            "duration": parse_int(r'\.duration\s*=\s*(-?\d+)', em),
+            "dc": parse_pair(r'\.dc\s*=\s*\{([^}]*)\}', em),
+            "mc": parse_pair(r'\.mc\s*=\s*\{([^}]*)\}', em),
+            "sc": parse_pair(r'\.sc\s*=\s*\{([^}]*)\}', em),
+            "ac": parse_pair(r'\.ac\s*=\s*\{([^}]*)\}', em),
+            "mac": parse_pair(r'\.mac\s*=\s*\{([^}]*)\}', em),
+            "dcHit": parse_int(r'\.dcHit\s*=\s*(-?\d+)', em),
+            "mcHit": parse_int(r'\.mcHit\s*=\s*(-?\d+)', em),
+            "dcDodge": parse_int(r'\.dcDodge\s*=\s*(-?\d+)', em),
+            "mcDodge": parse_int(r'\.mcDodge\s*=\s*(-?\d+)', em),
+            "speed": parse_int(r'\.speed\s*=\s*(-?\d+)', em),
+            "comfort": parse_int(r'\.comfort\s*=\s*(-?\d+)', em),
+            "luckCurse": parse_int(r'\.luckCurse\s*=\s*(-?\d+)', em),
+            "hp": parse_ext_health(r'\.hp\s*\{', em),
+            "mp": parse_ext_health(r'\.mp\s*\{', em),
+            "reqLevel": parse_int(r'\.req\s*\{[^}]*\.level\s*=\s*(-?\d+)', em),
         }
 
     return rec

@@ -362,3 +362,102 @@ func (w *World) SetStats(ctx context.Context, mapID uint32, uid uint64, stats Co
 	}))
 	return err
 }
+
+// CombatWithBounds 用显式伤害区间结算一次攻击（技能伤害用）。
+func (w *World) CombatWithBounds(ctx context.Context, mapID uint32, attackerUID, targetUID uint64,
+	magicID uint32, bounds AbilityBounds, hit int) (AttackResult, error) {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return state.CombatWithBounds(attackerUID, targetUID, int(magicID), bounds, hit, nil)
+	}))
+	if err != nil {
+		return AttackResult{}, err
+	}
+	result, _ := value.(AttackResult)
+	return result, nil
+}
+
+// CommitDeath 结算死亡（掉落 + 经验），每只怪只结算一次。
+func (w *World) CommitDeath(ctx context.Context, mapID uint32, uid uint64) (DeathResult, bool, error) {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		result, ok := state.CommitDeath(uid, nil)
+		return deathSettleResult{Result: result, OK: ok}, nil
+	}))
+	if err != nil {
+		return DeathResult{}, false, err
+	}
+	settled, _ := value.(deathSettleResult)
+	return settled.Result, settled.OK, nil
+}
+
+type deathSettleResult struct {
+	Result DeathResult
+	OK     bool
+}
+
+// MutateEntity 在 actor 上下文里修改实体。
+//
+// 这是 Entity 的写版本：fn 拿到真实指针，改动会写回地图状态。
+//
+// ★ 为什么必须要这个：
+//
+//	Entity() 返回的是值拷贝，`e := World.Entity(...); e.HP = 10` 不生效。
+//	改血量、改属性、挂 buff 都必须走这里，否则会出现
+//	「代码跑了但状态没变」这种最难查的一类 bug。
+func (w *World) MutateEntity(ctx context.Context, mapID uint32, uid uint64, fn func(*Entity) error) error {
+	_, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return nil, state.MutateEntity(uid, fn)
+	}))
+	return err
+}
+
+// NowMS 返回地图当前世界时钟（毫秒）。
+//
+// 冷却、buff 过期都用它，不读系统时间 —— 地图 actor 串行执行，
+// 同一 tick 内所有实体看到一致的时间，行为才可复现。
+func (w *World) NowMS(ctx context.Context, mapID uint32) int64 {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return state.NowMS, nil
+	}))
+	if err != nil {
+		return 0
+	}
+	now, _ := value.(int64)
+	return now
+}
+
+// SpawnMonster 在地图上刷一只怪物，并把怪物记录挂到实体上。
+//
+// 记录挂在实体上而不是靠死亡时反查表：掉落与经验在刷怪那一刻就固定了，
+// 反查会受配置热更新影响（详见 Entity.MonsterRec 的注释）。
+func (w *World) SpawnMonster(ctx context.Context, mapID uint32, entity Entity, rec MonsterRecord) ([]ObserverEvent, error) {
+	entity.MonsterRec = &rec
+	entity.Type = EntityMonster
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		return state.AddEntity(entity)
+	}))
+	if err != nil {
+		return nil, err
+	}
+	events, _ := value.([]ObserverEvent)
+	return events, nil
+}
+
+// Teleport 把实体瞬移到指定坐标，返回瞬移后的实体快照。
+//
+// 与 MoveEntityFull 的区别：不校验步长（复活/传送卷轴/GM 拉人都用它）。
+// 仍然产生完整 AOI 事件。
+func (w *World) Teleport(ctx context.Context, mapID uint32, uid uint64, x, y int) (Entity, bool, error) {
+	value, err := w.Execute(ctx, mapID, commandFunc(func(state *MapState) (any, error) {
+		_, moveErr, events := state.Teleport(uid, x, y)
+		if moveErr != nil {
+			return moveEntityResult{OK: false, Events: events}, moveErr
+		}
+		entity, ok := state.Entity(uid)
+		return moveEntityResult{OK: ok, Entity: entity, Events: events}, nil
+	}))
+	if err != nil {
+		return Entity{}, false, err
+	}
+	result, _ := value.(moveEntityResult)
+	return result.Entity, result.OK, nil
+}

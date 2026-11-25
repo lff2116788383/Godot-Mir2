@@ -255,3 +255,92 @@ world 包测试 56 -> 99 项，common 12 项，game 19 项，
 | `internal/game/inventory_op.go` | 6 条消息处理器（穿/脱/腰带×2/丢弃/使用） |
 
 服务端测试 231 → **268 项**。
+
+### B5 第三批新增（本轮）
+
+**本轮主题：技能施法 + 死亡复活 + 金币/经验/商店**
+
+| 文件 | 行数 | 内容 |
+|---|---|---|
+| `tools/extract/extract_magics.py` | 253 | 从 magicrecord.inc 提取 116 条魔法（顶层块配对，不误抓嵌套） |
+| `content/magics.json` | — | 魔法表（elem/req/castRange/mp/coolDown/power/addPower） |
+| `internal/game/magicdb.go` | 205 | 魔法表加载、MPCost 公式、learnable 判定 |
+| `internal/game/spell.go` | 700 | 施法全链路、技能分类、击中/治疗/Buff/地面技能 |
+| `internal/game/death.go` | 330 | 死亡（SM_NOTIFYDEAD+FADEOUT）、复活（先传送后拉人、10% 血） |
+| `internal/game/shop.go` | 400 | 经验/金币/查价/购买（以物易物的三段校验） |
+| `internal/game/tick.go` | 215 | 世界时钟驱动器（**此前完全缺失**） |
+| `internal/world/damage.go` 补 | +80 | CombatStats 加 SC、ElementFromName、RollAttackDamageWith |
+| `internal/world/map_state.go` 补 | +90 | CombatWithBounds、Teleport、安全区拦截、实体挂 MonsterRec |
+| `internal/world/world.go` 补 | +85 | CombatWithBounds/CommitDeath/MutateEntity/NowMS/SpawnMonster/Teleport |
+| `internal/game/player.go` 改写 | ~90 | 按 combatnode.cpp 的真实公式重算属性；装备累加；基本剑术 +2 命中 |
+| `tools/extract/extract_items.py` 补 | +75 | 提取 equip 段（dc/ac/mc/sc/dcHit/mcHit/hp/mp/reqLevel） |
+
+**本轮修掉的 6 个真实缺陷**（都不是「代码写错了」，而是「语义理解偏了」）：
+
+1. **世界时钟从没走过**。`World.Advance` 语义完整但没人调用，`NowMS` 恒为 0。
+   后果：技能冷却判断 `now - last = 0 < coolDown` 永远成立 → **每个技能放一次就永久冷却**。
+   修法：新增 `MapTicker` 100ms 推进 + `WorldService.trackMap`。
+
+2. **复活用 `MoveEntity(maxStep=0)` 必然失败**。`HopValid` 要求 `1 <= maxStep <= 3`，
+   而且只接受 `distance² == maxStep²` 的**精确**匹配，无法表达「任意距离瞬移」。
+   修法：新增 `MapState.Teleport` / `World.Teleport`。
+
+3. **道士主属性写错成 MC**。原版 `getCombatNode` 里 `JOB_TAOIST` 加的是 `sc`，
+   与 `mc` 是两套独立装备属性。混用导致道士穿道袍攻击力不涨。
+   修法：`CombatStats` 加 `SC` 字段，技能按名字分流（灵魂火符/冰月神掌/冰月震天 走 SC）。
+
+4. **`castRange` 缺省值取错**。`MagicRecord::castRange` 默认是 `CRT_LONG`（无距离限制），
+   提取脚本却按 `CRT_NONE` 兜底 → 雷电术/火球术被判「距离非法」而永远放不出来。
+
+5. **magicID 整体偏移 1**。`.inc` 第 0 个顶层块就是空占位 `{}`，块序号即 magicID。
+   提取脚本写成 `enumerate(..., start=1)`，全表 +1，客户端按 14 发的雷电术在服务端查不到。
+
+6. **`mp` 字段正则永远不匹配**。写成 `\b\.mp`，`\b` 在「空白与点」之间不成立，
+   结果全表 mp=0 → 施法永不耗蓝。
+
+**新增测试（39 项）**：
+
+| 测试组 | 项数 | 覆盖 |
+|---|---|---|
+| 魔法表 | 4 | 116 条计数、关键 ID 与客户端一致、字段值、MPCost 公式、元素映射 |
+| 属性 | 2 | 装备累加、基本剑术 +2 命中 |
+| 施法 | 8 | 未学拒绝、MP 不足、MP 扣除+广播、冷却、施法击杀+经验、治疗、治疗封顶、死者不能施法 |
+| 快捷键 | 3 | validKey 白名单（1-6 保留给腰带）、未学拒绝、同键换绑 |
+| 死亡复活 | 6 | 归零、幂等、活着不能复活、10% 血、低级角色最少 1 点、先传送后站起来 |
+| 金币经验 | 4 | 升级回满、金币上限钳制、购买成功、金币不足、数量非法、未知物品 |
+| 商店查询 | 1 | SM_SELLITEMLIST 内容核对 |
+| 时钟 | 2 | NowMS 推进、地图被 Track |
+| 击杀结算 | 1 | 经验/掉落/位置、二次结算不重复 |
+| 背包 | 3 | 跨格计数、跨格移除、HasMagic、金币 itemID 解析 |
+
+服务端测试 268 → **307 项**，全部通过。
+
+**实测验证**：
+
+```
+item db loaded count=1258 gold_item_id=1
+magic db loaded count=116 learnable=63
+map ready map=1 size=600x600
+player entered world name=测试角色 uid=PLY_1 map=1 at=(400,402)
+```
+
+客户端 `--login --run-test c9c8` 连真服务端 **15 项全过**。
+
+**魔法表与客户端一致性**：116 条逐条比对 `name` / `mp` / `coolDown`，**0 差异**。
+
+---
+
+## 六、下一步（B5 第四批及以后）
+
+按「对玩家可感知程度」排序：
+
+| 优先级 | 项目 | 为什么排在这 |
+|---|---|---|
+| P0 | Lua 协程运行时（1,693 行） | NPC 对话、任务、GM 命令全挂在这上面；没有它 NPC 只能靠硬编码 |
+| P0 | NPC 对话与任务 | 是「能玩」与「能玩下去」的分界线 |
+| P1 | 19 个怪物子类 AI 差异 | 现在所有怪行为一样，怪物生态没有层次 |
+| P1 | buffact 细分（攻击/属性/光环/触发/法术修正） | 现在 buff 只有时长没有实际效果 |
+| P2 | AOI 视野增量广播调优 | 人多时才有感知 |
+| P2 | 火墙命中接 SM_STRIKE | 已有 firewall 计算，缺消息落地 |
+| P3 | 复活点按 maprecord 配置 | 现在硬编码道馆_1 (405,120) |
+| P3 | 跨图切换（AM_SWITCHMAP） | 复活跨图、传送卷轴都要它 |

@@ -220,3 +220,92 @@ func BuildHandler(store *storage.Store) *Handler {
 		storage.NewCharacterRepository(store),
 	)
 }
+
+// RegisterSpellRoutes 注册施法相关消息。
+//
+// 只有一条 CM_SETMAGICKEY 走独立消息；真正的施法动作（ACTION_SPELL）
+// 是 CM_ACTION 的一个 type，由 RegisterActionRoutes 的 CMAction
+// 分发到 SpellHandler（见 ActionHandler.CMAction）。
+func RegisterSpellRoutes(dispatcher *transport.Dispatcher, handler *SpellHandler) error {
+	if handler == nil {
+		return nil
+	}
+	// CM_SETMAGICKEY：设置技能快捷键（magicID -> 按键）
+	return dispatcher.Register(protocol.CM_SETMAGICKEY, func(ctx context.Context, session *transport.Session, packet protocol.Packet) error {
+		var req protocol.CMSetMagicKey
+		if err := decode(packet, &req); err != nil {
+			return err
+		}
+		return handler.SetMagicKey(ctx, session.ID(), req)
+	})
+}
+
+// RegisterDeathRoutes 注册死亡与复活。
+func RegisterDeathRoutes(dispatcher *transport.Dispatcher, handler *DeathHandler) error {
+	if handler == nil {
+		return nil
+	}
+	routes := []struct {
+		id      protocol.CMType
+		handler transport.HandlerFunc
+	}{
+		{protocol.CM_REQUESTDIE, func(ctx context.Context, s *transport.Session, _ protocol.Packet) error {
+			return handler.RequestDie(ctx, s.ID())
+		}},
+		{protocol.CM_REQUESTREVIVE, func(ctx context.Context, s *transport.Session, _ protocol.Packet) error {
+			return handler.RequestRevive(ctx, s.ID())
+		}},
+	}
+	for _, route := range routes {
+		if err := dispatcher.Register(route.id, route.handler); err != nil {
+			return fmt.Errorf("register %v: %w", route.id, err)
+		}
+	}
+	return nil
+}
+
+// RegisterShopRoutes 注册金币、经验与商店买卖。
+func RegisterShopRoutes(dispatcher *transport.Dispatcher, handler *ShopHandler) error {
+	if handler == nil {
+		return nil
+	}
+	routes := []struct {
+		id      protocol.CMType
+		handler transport.HandlerFunc
+	}{
+		{protocol.CM_REQUESTADDEXP, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRequestAddExp
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return handler.RequestAddExp(ctx, s.ID(), req)
+		}},
+		{protocol.CM_REQUESTADDHEALTH, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMRequestAddHealth
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return handler.RequestAddHealth(ctx, s.ID(), req)
+		}},
+		{protocol.CM_QUERYSELLITEMLIST, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMQuerySellItemList
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return handler.QuerySellItemList(ctx, s.ID(), req)
+		}},
+		{protocol.CM_BUY, func(ctx context.Context, s *transport.Session, p protocol.Packet) error {
+			var req protocol.CMBuy
+			if err := decode(p, &req); err != nil {
+				return err
+			}
+			return handler.Buy(ctx, s.ID(), req)
+		}},
+	}
+	for _, route := range routes {
+		if err := dispatcher.Register(route.id, route.handler); err != nil {
+			return fmt.Errorf("register %v: %w", route.id, err)
+		}
+	}
+	return nil
+}
