@@ -1123,3 +1123,61 @@ func rec0CoolDown(f *b5spellFixture, magicID uint32) int {
 	}
 	return rec.CoolDown
 }
+
+// TestGoldIDIsDeterministic 是 GoldID 的回归测试。
+//
+// 背景：金币在物品表里有 5 条面额（金币（小）.. 金币（超），id 1..5）。
+// 初版用 `for id := range db.records { return id }`，Go 的 map 遍历
+// 顺序随机，导致**每次进程启动返回的金币 itemID 都不一样**
+// （实测同一份数据两次启动分别是 1 和 4）。
+//
+// 危害：购买时 costList 用某个面额计价，addGold 又按另一条面额找，
+// 两边对不上，表现为「扣了钱金币数不变」。
+//
+// 这条测试用「重复加载多个 DB 实例」来暴露 map 顺序问题：
+// 单实例多次调用会命中缓存，测不出随机性。
+func TestGoldIDIsDeterministic(t *testing.T) {
+	const rounds = 20
+	var first uint32
+	for i := 0; i < rounds; i++ {
+		db, err := LoadItemDB("../../content/items.json")
+		if err != nil {
+			t.Fatalf("load #%d: %v", i, err)
+		}
+		id := db.GoldID()
+		if id == 0 {
+			t.Fatalf("round %d: gold item not found", i)
+		}
+		if i == 0 {
+			first = id
+			continue
+		}
+		if id != first {
+			t.Fatalf("round %d: GoldID = %d, first was %d (map iteration order leaked)", i, id, first)
+		}
+	}
+
+	// 必须是面额最小的那条（金币（小），id=1），不是随机面额
+	db, err := LoadItemDB("../../content/items.json")
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if got := db.GoldID(); got != 1 {
+		t.Fatalf("GoldID = %d, want 1 (金币（小）, the smallest denomination)", got)
+	}
+	rec, _ := db.Get(1)
+	if rec.Name != "金币（小）" {
+		t.Fatalf("item 1 is %q, want 金币（小）", rec.Name)
+	}
+
+	// 全部 5 种面额都要能识别成金币类型
+	goldCount := 0
+	for _, r := range db.records {
+		if r.Type == TypeGold {
+			goldCount++
+		}
+	}
+	if goldCount != 5 {
+		t.Fatalf("gold denominations = %d, want 5", goldCount)
+	}
+}

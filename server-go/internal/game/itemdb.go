@@ -279,12 +279,23 @@ func (db *ItemDB) FindByName(name string) (uint32, bool) {
 
 // GoldID 返回「金币」这一物品的 itemID（找不到时返回 0）。
 //
-// ★ 为什么要查表而不是硬编码 1：
+// ★ 金币不是一条记录，而是 5 条面额：金币（小/中/大/特/超），
 //
-//	当前 itemrecord.inc 的第 1 条恰好是「金币（小）」，但那是数组顺序。
-//	重新生成物品表（比如原版加了一条记录在最前）就会整体错位。
-//	购买路径里到处都要判「这个 cost 是不是金币」，判错等于
-//	「买东西不扣钱」或者「扣了金币物品的空间」。
+//	itemID 1..5。这里必须返回**面额最小的那条（itemID 最小）**，
+//	不能随便取一条。
+//
+// 为什么不能"随便一条"：
+//
+//	GoldID 决定 costList 里金币用哪个 itemID 表示。
+//	若用金币（超）(id=5) 当"计价单位"，玩家付 80 金币时会写成
+//	"5 号物品 x80"，而 addGold 又按另一条面额找，两边对不上 ——
+//	表现是"扣了钱但金币数不变"，或者反过来。
+//
+// ★ 必须按 itemID 升序取，因为 Go 的 map 遍历顺序是随机的。
+//
+//	初版写成 `for id := range db.records { if rec.Type == 金币 { return id } }`，
+//	每次进程启动返回的 ID 都不一样（实测同一份数据两次启动分别是 1 和 4）。
+//	这是最难查的一类 bug：单进程内自洽，重启后行为变化。
 //
 // 缓存到 db 上：每次购买都线性扫 1258 条太浪费。
 func (db *ItemDB) GoldID() uint32 {
@@ -294,11 +305,15 @@ func (db *ItemDB) GoldID() uint32 {
 	if db.goldID != 0 {
 		return db.goldID
 	}
+	var best uint32
 	for id, rec := range db.records {
-		if rec.Type == TypeGold {
-			db.goldID = id
-			return id
+		if rec.Type != TypeGold {
+			continue
+		}
+		if best == 0 || id < best {
+			best = id
 		}
 	}
-	return 0
+	db.goldID = best
+	return best
 }
